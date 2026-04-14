@@ -7,13 +7,18 @@ const taskService = {
     return response.data.tasks || []; 
   },
 
-  completeTask: async (userTaskId) => {
-    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`);
+  completeTask: async (userTaskId, verificationData = {}) => {
+    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`, verificationData);
     return response.data;
   },
 
   requestNewQuests: async () => {
     const response = await axiosClient.post('/user-tasks/request-new');
+    return response.data;
+  },
+
+  assignSpecificTask: async (appTaskId) => {
+    const response = await axiosClient.post(`/user-tasks/assign/${appTaskId}`);
     return response.data;
   },
 

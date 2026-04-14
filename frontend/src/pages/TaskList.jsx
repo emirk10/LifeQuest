@@ -60,20 +60,26 @@ const TaskList = () => {
     }
   };
 
-  const handleCompleteTask = async (taskId) => {
+  const handleCompleteTask = async (taskId, verificationData = {}) => {
     try {
-      await taskService.completeTask(taskId);
+      const result = await taskService.completeTask(taskId, verificationData);
 
-      setTasks((prevTasks) =>
-        prevTasks.map((t) =>
-          t.id === taskId ? { ...t, isCompleted: true } : t
-        )
-      );
-
-      window.dispatchEvent(new Event("userUpdated"));
+      if (result.success) {
+        setTasks((prevTasks) =>
+          prevTasks.map((t) =>
+            t.id === taskId ? { ...t, isCompleted: true } : t
+          )
+        );
+        window.dispatchEvent(new Event("userUpdated"));
+      } else {
+        alert(result.verificationMessage || result.message || "Dogrulama basarisiz.");
+      }
     } catch (err) {
       console.error(err);
-      alert("Hata: " + (err.response?.data?.message || err.message));
+      const errMsg = err.response?.data?.verificationMessage
+        || err.response?.data?.message
+        || err.message;
+      alert("Hata: " + errMsg);
     }
   };
 
@@ -82,11 +88,11 @@ const TaskList = () => {
     try {
       const response = await taskService.requestNewQuests();
       if (response.success) {
-        alert(`Harika! ${response.assignedCount} yeni görev eklendi.`);
+        alert(`${response.assignedCount} yeni gorev eklendi!`);
         fetchTasks();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Yeni görev alınamadı.");
+      alert(err.response?.data?.message || "Yeni gorev alinamadi.");
     } finally {
       setRequesting(false);
     }
@@ -98,13 +104,13 @@ const TaskList = () => {
         <section className="flex flex-col md:flex-row justify-between items-end gap-4">
           <div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2">
-              GÖREVLER
+              GOREVLER
             </h2>
             <div className="h-1.5 w-24 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)]"></div>
             <p className="text-slate-500 mt-2 text-sm italic font-medium">
               {currentCategoryName
-                ? `${currentCategoryName.toUpperCase()} KATEGORİSİ`
-                : "TÜM GÖREVLERİN LİSTESİ"}
+                ? `${currentCategoryName.toUpperCase()} KATEGORISI`
+                : "TUM GOREVLERIN LISTESI"}
             </p>
           </div>
 
@@ -115,9 +121,9 @@ const TaskList = () => {
               className="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
             >
               {requesting ? (
-                <span className="animate-spin">↻</span>
+                <span className="animate-spin">&#8635;</span>
               ) : (
-                <span>⚡ Yeni Görev İste</span>
+                <span>&#10024; Yeni Gorev Iste</span>
               )}
             </button>
 
@@ -127,18 +133,15 @@ const TaskList = () => {
                 onChange={handleCategoryChange}
                 value={currentCategoryName || "all"}
               >
-                <option value="all">📂 Tüm Kategoriler</option>
-                {categories.map((c) => {
-
-                  return (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  );
-                })}
+                <option value="all">Tum Kategoriler</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
-                ▼
+                &#9660;
               </div>
             </div>
           </div>
@@ -150,19 +153,27 @@ const TaskList = () => {
               tasks.map((task) => (
                 <TaskItem
                   key={task.id}
-                  {...task}
-                  onComplete={() => handleCompleteTask(task.id)}
+                  id={task.id}
+                  title={task.title}
+                  xp={task.baseXP || task.xp}
+                  difficulty={task.difficulty}
+                  isCompleted={task.isCompleted}
+                  verificationType={task.verificationType || 0}
+                  verificationHint={task.verificationHint}
+                  minReflectionWords={task.minReflectionWords || 10}
+                  minTimerMinutes={task.minTimerMinutes || 5}
+                  onComplete={handleCompleteTask}
                 />
               ))
             ) : (
               <div className="text-center py-16 border-2 border-slate-800/50 rounded-[2rem] bg-slate-900/20 border-dashed flex flex-col items-center gap-6">
-                <div className="text-6xl animate-bounce">✨</div>
+                <div className="text-6xl animate-bounce">&#127919;</div>
                 <div>
                   <h3 className="text-white font-bold text-xl">
-                    Maceraya Hazır Mısın?
+                    Maceraya Hazir Misin?
                   </h3>
                   <p className="text-slate-500 text-sm mt-1">
-                    Şu an aktif bir görevin yok. Hemen yenilerini alabilirsin.
+                    Su an aktif bir gorevin yok. Hemen yenilerini alabilirsin.
                   </p>
                 </div>
                 <button
@@ -170,7 +181,7 @@ const TaskList = () => {
                   disabled={requesting}
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
                 >
-                  {requesting ? "Yükleniyor..." : "YENİ GÖREVLER GETİR"}
+                  {requesting ? "Yukleniyor..." : "YENI GOREVLER GETIR"}
                 </button>
               </div>
             )

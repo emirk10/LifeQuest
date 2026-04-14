@@ -1,0 +1,17 @@
+namespace LifeQuestAPI.Application.Features.Chat.Commands.SendMessage;
+
+public class SendMessageCommandResponse
+{
+    public bool Success { get; set; }
+    public string Intent { get; set; } = string.Empty;
+    public float Confidence { get; set; }
+    public string Response { get; set; } = string.Empty;
+    public string Sentiment { get; set; } = string.Empty;
+    public float SentimentConfidence { get; set; }
+    public List<string> Suggestions { get; set; } = new();
+
+    public Guid? SuggestedTaskId { get; set; }
+    public string? SuggestedTaskTitle { get; set; }
+    public int? SuggestedTaskXp { get; set; }
+    public string? SuggestedTaskDifficulty { get; set; }
+}

@@ -11,17 +11,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddInfrastructureServices();
+builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHostedService<DailyQuestWorker>();
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        builder =>
+        policy =>
         {
-            builder.AllowAnyOrigin()
-                   .AllowAnyMethod()
-                   .AllowAnyHeader();
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
         });
 });
 builder.Services.AddAuthentication(options =>
@@ -50,6 +50,9 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Statik dosyalar (uploads klasoru icin)
+app.UseStaticFiles();
+
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
@@ -62,7 +65,7 @@ using (var scope = app.Services.CreateScope())
     catch (Exception ex)
     {
         var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Veritabanýna seed data eklenirken bir hata oluþtu.");
+        logger.LogError(ex, "Veritabanina seed data eklenirken bir hata olustu.");
     }
 }
 

@@ -1,9 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace LifeQuestAPI.Application.DTOs;
 
 public sealed record UserTaskDto
@@ -13,4 +7,11 @@ public sealed record UserTaskDto
     public int Xp { get; set; }
     public string Difficulty { get; set; } = string.Empty;
     public bool IsCompleted { get; set; }
+
+    // Dogrulama alanlari
+    public int VerificationType { get; set; }
+    public int MinReflectionWords { get; set; }
+    public int MinTimerMinutes { get; set; }
+    public string? VerificationHint { get; set; }
+    public string? ExpectedImageCategory { get; set; }
 }

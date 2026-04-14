@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import aiService from "../services/aiService";
+import taskService from "../services/taskService";
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -60,11 +61,7 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const userId = localStorage.getItem("user_data")
-        ? JSON.parse(localStorage.getItem("user_data")).id || "anonymous"
-        : "anonymous";
-
-      const response = await aiService.chat(userId, trimmed);
+      const response = await chatService.sendMessage(trimmed);
 
       const botMsg = {
         id: Date.now() + 1,
@@ -73,8 +70,11 @@ const ChatBot = () => {
         intent: response.intent,
         confidence: response.confidence,
         sentiment: response.sentiment,
-        sentimentConfidence: response.sentiment_confidence,
+        sentimentConfidence: response.sentimentConfidence,
         suggestions: response.suggestions || [],
+        suggestedTaskId: response.suggestedTaskId,
+        suggestedTaskTitle: response.suggestedTaskTitle,
+        suggestedTaskXp: response.suggestedTaskXp,
         time: new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
       };
 
@@ -90,6 +90,30 @@ const ChatBot = () => {
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAssignTask = async (taskId) => {
+    try {
+      await taskService.assignSpecificTask(taskId);
+      const successMsg = {
+        id: Date.now(),
+        sender: "bot",
+        text: "✅ Görev başarıyla eklendi! Görevler sayfasından detaylara bakabilirsin.",
+        time: new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, successMsg]);
+      // Optional: hide the button by removing suggestedTaskId from the message in state
+      setMessages((prev) => prev.map(m => m.suggestedTaskId === taskId ? { ...m, suggestedTaskId: null } : m));
+    } catch(err) {
+      const errorMsg = {
+        id: Date.now(),
+        sender: "bot",
+        text: "⚠️ Görev eklenirken bir hata oluştu: " + (err.response?.data?.message || err.message),
+        isError: true,
+        time: new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
     }
   };
 
@@ -112,10 +136,7 @@ const ChatBot = () => {
     setLoading(true);
 
     try {
-      const userId = localStorage.getItem("user_data")
-        ? JSON.parse(localStorage.getItem("user_data")).id || "anonymous"
-        : "anonymous";
-      const response = await aiService.chat(userId, text);
+      const response = await chatService.sendMessage(text);
       const botMsg = {
         id: Date.now() + 1,
         sender: "bot",
@@ -123,8 +144,11 @@ const ChatBot = () => {
         intent: response.intent,
         confidence: response.confidence,
         sentiment: response.sentiment,
-        sentimentConfidence: response.sentiment_confidence,
+        sentimentConfidence: response.sentimentConfidence,
         suggestions: response.suggestions || [],
+        suggestedTaskId: response.suggestedTaskId,
+        suggestedTaskTitle: response.suggestedTaskTitle,
+        suggestedTaskXp: response.suggestedTaskXp,
         time: new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -256,6 +280,22 @@ const ChatBot = () => {
                       >
                         {msg.sentiment === "positive" ? "😊 Pozitif" : msg.sentiment === "negative" ? "😔 Negatif" : "😐 Nötr"}
                       </span>
+                    </div>
+                  )}
+
+                  {/* Task Suggestion Action Card */}
+                  {msg.sender === "bot" && msg.suggestedTaskId && (
+                    <div className="mt-3 bg-slate-900/50 rounded-xl p-3 border border-indigo-500/30">
+                      <div className="flex justify-between items-start mb-2">
+                        <h4 className="text-white font-bold text-sm">{msg.suggestedTaskTitle}</h4>
+                        <span className="text-xs font-bold text-amber-400">+{msg.suggestedTaskXp} XP</span>
+                      </div>
+                      <button
+                        onClick={() => handleAssignTask(msg.suggestedTaskId)}
+                        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors shadow-lg shadow-indigo-500/20"
+                      >
+                        ✅ Görevi Kabul Et ve Listeme Ekle
+                      </button>
                     </div>
                   )}
 

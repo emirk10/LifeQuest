@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
@@ -10,7 +5,6 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.Application.Features.UserTasks.Queries.GetUserTasks;
-
 
 public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQueryRequest, GetUserTasksQueryResponse>
 {
@@ -40,7 +34,13 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
                 Title = ut.AppTask.Title,
                 Xp = ut.AppTask.BaseXP,
                 Difficulty = ut.AppTask.Difficulty.ToString(),
-                IsCompleted = ut.CompletedAt.HasValue
+                IsCompleted = ut.CompletedAt.HasValue,
+                // Dogrulama alanlari
+                VerificationType = (int)ut.AppTask.VerificationType,
+                MinReflectionWords = ut.AppTask.MinReflectionWords,
+                MinTimerMinutes = ut.AppTask.MinTimerMinutes,
+                VerificationHint = ut.AppTask.VerificationHint,
+                ExpectedImageCategory = ut.AppTask.ExpectedImageCategory
             })
             .ToListAsync(cancellationToken);
 
