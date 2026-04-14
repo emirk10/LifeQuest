@@ -12,7 +12,7 @@ const ProfilePage = () => {
         const data = await userService.getProfile();
         setProfile(data);
       } catch (err) {
-        console.error("Profil yüklenirken hata:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -114,13 +114,22 @@ const ProfilePage = () => {
                 profile.categoryStats.map((stat, idx) => {
                   const progressPercent =
                     (stat.currentXp / stat.xpToNextLevel) * 100;
+                  const showIcon = stat.iconPath && stat.iconPath.length < 5;
+
                   return (
                     <div key={idx} className="space-y-2 group">
                       <div className="flex justify-between items-end">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">
-                            {stat.iconPath || "🔹"}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-indigo-500/30 transition-colors">
+                            {showIcon ? (
+                              <span className="text-xl">{stat.iconPath}</span>
+                            ) : (
+                              <span className="font-black text-indigo-500 text-lg font-mono">
+                                {stat.categoryName?.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
                           <div>
                             <p className="text-xs font-black uppercase tracking-widest text-slate-300">
                               {stat.categoryName}
@@ -166,19 +175,30 @@ const ProfilePage = () => {
 
             {profile?.earnedBadges && profile.earnedBadges.length > 0 ? (
               <div className="grid grid-cols-3 gap-4">
-                {profile.earnedBadges.slice(0, 6).map((badge, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square bg-slate-950 border border-slate-800 rounded-2xl flex flex-col items-center justify-center p-2 text-center group hover:border-indigo-500/50 transition-all"
-                  >
-                    <div className="text-3xl mb-1 group-hover:scale-110 transition-transform">
-                      {badge.iconPath || "🎖️"}
+                {profile.earnedBadges.slice(0, 6).map((badge, i) => {
+                  const showBadgeIcon =
+                    badge.iconPath && badge.iconPath.length < 5;
+
+                  return (
+                    <div
+                      key={i}
+                      className="aspect-square bg-slate-950 border border-slate-800 rounded-2xl flex flex-col items-center justify-center p-2 text-center group hover:border-indigo-500/50 transition-all relative overflow-hidden"
+                    >
+                      <div className="mb-1 group-hover:scale-110 transition-transform z-10">
+                        {showBadgeIcon ? (
+                          <span className="text-3xl">{badge.iconPath}</span>
+                        ) : (
+                          <span className="text-2xl font-black text-amber-500 font-mono">
+                            {badge.badgeName?.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight group-hover:text-indigo-300 z-10">
+                        {badge.badgeName}
+                      </p>
                     </div>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase leading-tight group-hover:text-indigo-300">
-                      {badge.badgeName}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
                 {profile.earnedBadges.length > 6 && (
                   <div className="aspect-square bg-slate-800/30 border border-slate-800 rounded-2xl flex items-center justify-center text-xs font-bold text-slate-500">
                     +{profile.earnedBadges.length - 6}

@@ -128,12 +128,14 @@ const TaskList = () => {
                 value={currentCategoryName || "all"}
               >
                 <option value="all">📂 Tüm Kategoriler</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.name}>
-                    {c.iconPath ? c.iconPath + " " : ""}
-                    {c.name}
-                  </option>
-                ))}
+                {categories.map((c) => {
+
+                  return (
+                    <option key={c.id} value={c.name}>
+                      {c.name}
+                    </option>
+                  );
+                })}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">
                 ▼

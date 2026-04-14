@@ -22,6 +22,47 @@ namespace LifeQuestAPI.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Achievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BonusXP")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("IconPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsHidden")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("RequiredCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Achievements");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.AppTask", b =>
                 {
                     b.Property<Guid>("Id")
@@ -44,6 +85,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("Difficulty")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ExpectedImageCategory")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -56,12 +100,24 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("MinLevel")
                         .HasColumnType("integer");
 
+                    b.Property<int>("MinReflectionWords")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MinTimerMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VerificationHint")
+                        .HasColumnType("text");
+
+                    b.Property<int>("VerificationType")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -139,6 +195,66 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Challenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ChallengerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ChallengerProgress")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OpponentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OpponentProgress")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TargetTaskCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("WinnerBonusXP")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("WinnerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ChallengerId");
+
+                    b.HasIndex("OpponentId");
+
+                    b.ToTable("Challenges");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.ChatBotMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -166,6 +282,40 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.HasIndex("AppUserId");
 
                     b.ToTable("ChatBotMessages");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Friendship", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("AddresseeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RequesterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddresseeId");
+
+                    b.HasIndex("RequesterId", "AddresseeId")
+                        .IsUnique();
+
+                    b.ToTable("Friendships");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Identity.AppRole", b =>
@@ -241,6 +391,158 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("AppUsers");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionUrl")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IconEmoji")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId", "IsRead");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.TaskVerification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AIAnalysisResult")
+                        .HasColumnType("text");
+
+                    b.Property<float?>("AIConfidenceScore")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool?>("IsReflectionRelevant")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("MinimumMinutesRequired")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PhotoPath")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("QuizScore")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("QuizTotalQuestions")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReflectionText")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ReflectionWordCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("text");
+
+                    b.Property<float?>("SentimentScore")
+                        .HasColumnType("real");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TimerEndedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("TimerStartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserTaskId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserTaskId");
+
+                    b.ToTable("TaskVerifications");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AchievementId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentProgress")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EarnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AchievementId");
+
+                    b.HasIndex("AppUserId", "AchievementId")
+                        .IsUnique();
+
+                    b.ToTable("UserAchievements");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserBadge", b =>
                 {
                     b.Property<Guid>("Id")
@@ -308,6 +610,62 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("UserCategoryProgresses");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserGoal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BonusXP")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TargetValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("UserGoals");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserTask", b =>
                 {
                     b.Property<Guid>("Id")
@@ -350,6 +708,129 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("UserTasks");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserTaskInteraction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<float>("CompletionTimeHours")
+                        .HasColumnType("real");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DayOfWeek")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HourOfDay")
+                        .HasColumnType("integer");
+
+                    b.Property<float>("Rating")
+                        .HasColumnType("real");
+
+                    b.Property<int>("TaskBaseXP")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TaskDifficulty")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserCategoryLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserCompletedTaskCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserStreakDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("WasCompleted")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppTaskId");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("WasCompleted");
+
+                    b.ToTable("UserTaskInteractions");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.WeeklyReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AIInsight")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AIRecommendation")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CategoryBreakdownJson")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<float?>("OverallPerformanceScore")
+                        .HasColumnType("real");
+
+                    b.Property<int>("StreakDays")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("StrongestCategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TasksCompleted")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TasksFailed")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalXPEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("WeakestCategory")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("WeekEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("WeekStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId", "WeekStartDate")
+                        .IsUnique();
+
+                    b.ToTable("WeeklyReports");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.AppTask", b =>
                 {
                     b.HasOne("LifeQuestAPI.Domain.Entities.Category", "Category")
@@ -370,6 +851,31 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Challenge", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Challenger")
+                        .WithMany()
+                        .HasForeignKey("ChallengerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Opponent")
+                        .WithMany()
+                        .HasForeignKey("OpponentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Challenger");
+
+                    b.Navigation("Opponent");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.ChatBotMessage", b =>
                 {
                     b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
@@ -381,6 +887,25 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Friendship", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Addressee")
+                        .WithMany()
+                        .HasForeignKey("AddresseeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Addressee");
+
+                    b.Navigation("Requester");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Identity.AppUser", b =>
                 {
                     b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppRole", "AppRole")
@@ -390,6 +915,47 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("AppRole");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Notification", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany("Notifications")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.TaskVerification", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.UserTask", "UserTask")
+                        .WithMany()
+                        .HasForeignKey("UserTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserTask");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Achievement", "Achievement")
+                        .WithMany("UserAchievements")
+                        .HasForeignKey("AchievementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany("UserAchievements")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Achievement");
+
+                    b.Navigation("AppUser");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserBadge", b =>
@@ -430,6 +996,23 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserGoal", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany("Goals")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserTask", b =>
                 {
                     b.HasOne("LifeQuestAPI.Domain.Entities.AppTask", "AppTask")
@@ -449,6 +1032,41 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserTaskInteraction", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.AppTask", "AppTask")
+                        .WithMany()
+                        .HasForeignKey("AppTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany("TaskInteractions")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppTask");
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.WeeklyReport", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany("WeeklyReports")
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Achievement", b =>
+                {
+                    b.Navigation("UserAchievements");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Badges");
@@ -464,9 +1082,19 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Navigation("ChatMessages");
 
+                    b.Navigation("Goals");
+
+                    b.Navigation("Notifications");
+
+                    b.Navigation("TaskInteractions");
+
+                    b.Navigation("UserAchievements");
+
                     b.Navigation("UserBadges");
 
                     b.Navigation("UserTasks");
+
+                    b.Navigation("WeeklyReports");
                 });
 #pragma warning restore 612, 618
         }

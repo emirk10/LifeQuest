@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -33,7 +33,12 @@ public sealed class GetAllTasksQueryHandler : IRequestHandler<GetAllTasksQueryRe
             CategoryName = t.Category != null ? t.Category.Name : "Kategorisiz",
             Difficulty = t.Difficulty.ToString(),
             BaseXP = t.BaseXP,
-            MinLevel = t.MinLevel
+            MinLevel = t.MinLevel,
+            VerificationType = t.VerificationType.ToString(),
+            MinReflectionWords = t.MinReflectionWords,
+            MinTimerMinutes = t.MinTimerMinutes,
+            VerificationHint = t.VerificationHint,
+            ExpectedImageCategory = t.ExpectedImageCategory
         }).ToList();
 
         return response;

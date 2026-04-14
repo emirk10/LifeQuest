@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -64,13 +64,43 @@ public static class SeedData
         {
             var tasks = new List<AppTask>
             {
-                new AppTask { Title = "Kitap Oku", Description = "En az 20 sayfa kitap oku.", CategoryId = egitim.Id, BaseXP = 50, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true },
-                new AppTask { Title = "Makale İncele", Description = "Alanında bir adet akademik makale oku.", CategoryId = egitim.Id, BaseXP = 100, MinLevel = 2, Difficulty = DifficultyLevel.Medium, IsActive = true },
-                new AppTask { Title = "Su İç", Description = "Günde 2 litre su hedefini tamamla.", CategoryId = saglik.Id, BaseXP = 20, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true },
-                new AppTask { Title = "Yürüyüş Yap", Description = "5000 adım at.", CategoryId = saglik.Id, BaseXP = 80, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true },
-                new AppTask { Title = "Sokak Hayvanlarını Besle", Description = "Bir kap mama veya su bırak.", CategoryId = sosyal.Id, BaseXP = 150, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true }
+                // Doğrulama gerektirmeyen görevler (mevcut)
+                new AppTask { Title = "Kitap Oku", Description = "En az 20 sayfa kitap oku.", CategoryId = egitim.Id, BaseXP = 50, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true, VerificationType = VerificationType.Reflection, MinReflectionWords = 20, VerificationHint = "Okuduğun bölüm hakkında kısa bir yansıma yaz." },
+                new AppTask { Title = "Makale İncele", Description = "Alanında bir adet akademik makale oku.", CategoryId = egitim.Id, BaseXP = 100, MinLevel = 2, Difficulty = DifficultyLevel.Medium, IsActive = true, VerificationType = VerificationType.Reflection, MinReflectionWords = 30, VerificationHint = "Makale hakkında öğrendiklerini özetle." },
+                new AppTask { Title = "Su İç", Description = "Günde 2 litre su hedefini tamamla.", CategoryId = saglik.Id, BaseXP = 20, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true, VerificationType = VerificationType.None },
+                new AppTask { Title = "Yürüyüş Yap", Description = "5000 adım at.", CategoryId = saglik.Id, BaseXP = 80, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true, VerificationType = VerificationType.Photo, ExpectedImageCategory = "outdoor_exercise", VerificationHint = "Yürüyüş sırasında bir fotoğraf çek." },
+                new AppTask { Title = "Sokak Hayvanlarını Besle", Description = "Bir kap mama veya su bırak.", CategoryId = sosyal.Id, BaseXP = 150, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true, VerificationType = VerificationType.Photo, ExpectedImageCategory = "social", VerificationHint = "Mama bıraktığın anı fotoğrafla." },
+
+                // Yeni doğrulama tipli görevler
+                new AppTask { Title = "30 Dakika Meditasyon", Description = "Sessiz bir ortamda 30 dakika meditasyon yap.", CategoryId = saglik.Id, BaseXP = 120, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true, VerificationType = VerificationType.Timer, MinTimerMinutes = 30, VerificationHint = "Zamanlayıcıyı başlat ve meditasyonunu tamamla." },
+                new AppTask { Title = "Günlük Tutma", Description = "Bugünün değerlendirmesini yaz.", CategoryId = egitim.Id, BaseXP = 40, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true, VerificationType = VerificationType.Reflection, MinReflectionWords = 50, VerificationHint = "Bugün neler yaptığını ve nasıl hissettiğini yaz." },
+                new AppTask { Title = "Spor Yap", Description = "En az 45 dakika egzersiz yap.", CategoryId = saglik.Id, BaseXP = 150, MinLevel = 2, Difficulty = DifficultyLevel.Hard, IsActive = true, VerificationType = VerificationType.PhotoAndReflection, MinReflectionWords = 15, ExpectedImageCategory = "indoor_exercise", VerificationHint = "Egzersiz sırasında/sonrasında fotoğraf çek ve deneyimini yaz." },
+                new AppTask { Title = "Yeni Bir Beceri Öğren", Description = "Online bir eğitim videosu izle ve not al.", CategoryId = kariyer.Id, BaseXP = 100, MinLevel = 1, Difficulty = DifficultyLevel.Medium, IsActive = true, VerificationType = VerificationType.Reflection, MinReflectionWords = 40, VerificationHint = "Öğrendiğin konuyu ve aldığın notları paylaş." },
+                new AppTask { Title = "Sağlıklı Yemek Pişir", Description = "Evde sağlıklı bir öğün hazırla.", CategoryId = saglik.Id, BaseXP = 90, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true, VerificationType = VerificationType.Photo, ExpectedImageCategory = "cooking", VerificationHint = "Hazırladığın yemeğin fotoğrafını çek." },
             };
             await context.AppTasks.AddRangeAsync(tasks);
+            await context.SaveChangesAsync();
+        }
+
+        // Achievement seed data
+        if (!await context.Achievements.AnyAsync())
+        {
+            var achievements = new List<Achievement>
+            {
+                new Achievement { Title = "İlk Adım", Description = "İlk görevini tamamla!", IconPath = "🎯", Type = AchievementType.TaskComplete, RequiredCount = 1, BonusXP = 50, IsHidden = false },
+                new Achievement { Title = "Çalışkan Arı", Description = "10 görev tamamla.", IconPath = "🐝", Type = AchievementType.TaskComplete, RequiredCount = 10, BonusXP = 200, IsHidden = false },
+                new Achievement { Title = "Görev Makinesi", Description = "50 görev tamamla.", IconPath = "⚙️", Type = AchievementType.TaskComplete, RequiredCount = 50, BonusXP = 500, IsHidden = false },
+                new Achievement { Title = "Efsane", Description = "100 görev tamamla.", IconPath = "🏆", Type = AchievementType.TaskComplete, RequiredCount = 100, BonusXP = 1000, IsHidden = false },
+                new Achievement { Title = "3 Günlük Seri", Description = "3 gün üst üste görev tamamla.", IconPath = "🔥", Type = AchievementType.StreakDays, RequiredCount = 3, BonusXP = 100, IsHidden = false },
+                new Achievement { Title = "Haftalık Seri", Description = "7 gün üst üste görev tamamla.", IconPath = "💥", Type = AchievementType.StreakDays, RequiredCount = 7, BonusXP = 300, IsHidden = false },
+                new Achievement { Title = "Aylık Seri", Description = "30 gün üst üste görev tamamla.", IconPath = "👑", Type = AchievementType.StreakDays, RequiredCount = 30, BonusXP = 1000, IsHidden = false },
+                new Achievement { Title = "Erken Kuş", Description = "Sabah 7'den önce bir görev tamamla.", IconPath = "🌅", Type = AchievementType.EarlyBird, RequiredCount = 1, BonusXP = 150, IsHidden = true },
+                new Achievement { Title = "Gece Kuşu", Description = "Gece 23'ten sonra bir görev tamamla.", IconPath = "🌙", Type = AchievementType.NightOwl, RequiredCount = 1, BonusXP = 150, IsHidden = true },
+                new Achievement { Title = "Koleksiyoncu", Description = "5 farklı rozet topla.", IconPath = "🎖️", Type = AchievementType.Collector, RequiredCount = 5, BonusXP = 300, IsHidden = false },
+                new Achievement { Title = "Sosyal Kelebek", Description = "3 arkadaş edin.", IconPath = "🦋", Type = AchievementType.SocialButterfly, RequiredCount = 3, BonusXP = 200, IsHidden = false },
+                new Achievement { Title = "Hız Koşucusu", Description = "Bir görevi 10 dakikadan kısa sürede tamamla.", IconPath = "⚡", Type = AchievementType.SpeedRunner, RequiredCount = 1, BonusXP = 100, IsHidden = true },
+            };
+            await context.Achievements.AddRangeAsync(achievements);
             await context.SaveChangesAsync();
         }
 

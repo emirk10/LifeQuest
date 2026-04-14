@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,4 +26,11 @@ public sealed class AppUser : BaseEntity
     public ICollection<UserTask> UserTasks { get; set; } = default!;
     public ICollection<UserBadge> UserBadges { get; set; } = default!;
     public ICollection<ChatBotMessage> ChatMessages { get; set; } = default!;
-}
+
+    // Yeni navigation property'ler
+    public ICollection<UserGoal> Goals { get; set; } = default!;
+    public ICollection<UserAchievement> UserAchievements { get; set; } = default!;
+    public ICollection<Notification> Notifications { get; set; } = default!;
+    public ICollection<WeeklyReport> WeeklyReports { get; set; } = default!;
+    public ICollection<UserTaskInteraction> TaskInteractions { get; set; } = default!;
+}

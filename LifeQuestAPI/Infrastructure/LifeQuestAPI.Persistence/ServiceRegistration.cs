@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,6 +18,8 @@ public static class ServiceRegistration
     {
         services.AddDbContext<LifeQuestDbContext>(options =>
                     options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+        // Mevcut repository'ler
         services.AddScoped<IAppUserReadRepository, AppUserReadRepository>();
         services.AddScoped<IAppUserWriteRepository, AppUserWriteRepository>();
 
@@ -41,5 +43,33 @@ public static class ServiceRegistration
 
         services.AddScoped<IUserCategoryProgressReadRepository, UserCategoryProgressReadRepository>();
         services.AddScoped<IUserCategoryProgressWriteRepository, UserCategoryProgressWriteRepository>();
+
+        // Yeni repository'ler
+        services.AddScoped<ITaskVerificationReadRepository, TaskVerificationReadRepository>();
+        services.AddScoped<ITaskVerificationWriteRepository, TaskVerificationWriteRepository>();
+
+        services.AddScoped<IUserGoalReadRepository, UserGoalReadRepository>();
+        services.AddScoped<IUserGoalWriteRepository, UserGoalWriteRepository>();
+
+        services.AddScoped<IAchievementReadRepository, AchievementReadRepository>();
+        services.AddScoped<IAchievementWriteRepository, AchievementWriteRepository>();
+
+        services.AddScoped<IUserAchievementReadRepository, UserAchievementReadRepository>();
+        services.AddScoped<IUserAchievementWriteRepository, UserAchievementWriteRepository>();
+
+        services.AddScoped<INotificationReadRepository, NotificationReadRepository>();
+        services.AddScoped<INotificationWriteRepository, NotificationWriteRepository>();
+
+        services.AddScoped<IWeeklyReportReadRepository, WeeklyReportReadRepository>();
+        services.AddScoped<IWeeklyReportWriteRepository, WeeklyReportWriteRepository>();
+
+        services.AddScoped<IFriendshipReadRepository, FriendshipReadRepository>();
+        services.AddScoped<IFriendshipWriteRepository, FriendshipWriteRepository>();
+
+        services.AddScoped<IChallengeReadRepository, ChallengeReadRepository>();
+        services.AddScoped<IChallengeWriteRepository, ChallengeWriteRepository>();
+
+        services.AddScoped<IUserTaskInteractionReadRepository, UserTaskInteractionReadRepository>();
+        services.AddScoped<IUserTaskInteractionWriteRepository, UserTaskInteractionWriteRepository>();
     }
 }
