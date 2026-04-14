@@ -18,6 +18,7 @@ public static class ServiceRegistration
         // Mevcut servisler
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IGamificationService, GamificationService>();
+        services.AddScoped<IAchievementService, AchievementService>();
         services.AddScoped<IDailyQuestService, DailyQuestService>();
 
         // AI mikro servis base URL (appsettings.json'dan okunuyor)
@@ -41,5 +42,8 @@ public static class ServiceRegistration
             client.BaseAddress = new Uri(aiServiceBaseUrl);
             client.Timeout = TimeSpan.FromSeconds(15);
         });
+
+        // ML.NET Öneri servisi (Singleton olabilir, MLContext thread-safe'tir model yuklendikten sonra)
+        services.AddSingleton<ITaskRecommendationService, TaskRecommendationService>();
     }
 }

@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LifeQuestAPI.Application.Abstractions.AI;
 using LifeQuestAPI.Application.Abstractions.DailyQuest;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
@@ -19,19 +20,22 @@ public class DailyQuestService : IDailyQuestService
     private readonly IUserTaskReadRepository _userTaskReadRepository;
     private readonly IUserTaskWriteRepository _userTaskWriteRepository;
     private readonly ILogger<DailyQuestService> _logger;
+    private readonly ITaskRecommendationService _recommendationService;
 
     public DailyQuestService(
         ILogger<DailyQuestService> logger,
         IUserTaskWriteRepository userTaskWriteRepository,
         IUserTaskReadRepository userTaskReadRepository,
         IAppTaskReadRepository taskReadRepository,
-        IAppUserReadRepository userReadRepository)
+        IAppUserReadRepository userReadRepository,
+        ITaskRecommendationService recommendationService)
     {
         _userReadRepository = userReadRepository;
         _taskReadRepository = taskReadRepository;
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
         _logger = logger;
+        _recommendationService = recommendationService;
     }
 
     public async Task DistributeDailyQuestsAsync()
@@ -109,16 +113,18 @@ public class DailyQuestService : IDailyQuestService
             }
 
             return true;
-        })
-        .OrderBy(x => Guid.NewGuid())
-        .Take(3)
-        .ToList();
+        }).ToList();
+
+        // ML Modeli üzerinden önerileri al
+        var recommendedTaskIds = await _recommendationService.GetRecommendedTasksAsync(user, suitableTasks, 3);
+        
+        var selectedTasks = suitableTasks.Where(t => recommendedTaskIds.Contains(t.Id)).ToList();
 
         if (!suitableTasks.Any()) return new List<Guid>();
 
         var newTasks = new List<UserTask>();
 
-        foreach (var task in suitableTasks)
+        foreach (var task in selectedTasks)
         {
             newTasks.Add(new UserTask
             {

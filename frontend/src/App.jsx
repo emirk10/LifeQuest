@@ -10,6 +10,8 @@ import BadgeGallery from './pages/BadgeGallery';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
 import AITestPage from './pages/AITestPage';
+import GoalsPage from './pages/GoalsPage';
+import ReportsPage from './pages/ReportsPage';
 
 import PrivateRoute from './components/PrivateRoute';
 import ChatBot from './components/ChatBot';
@@ -56,6 +58,24 @@ function App() {
             element={
               <PrivateRoute>
                 <ProfilePage />
+              </PrivateRoute>
+            } 
+          />
+
+          <Route 
+            path="/goals" 
+            element={
+              <PrivateRoute>
+                <GoalsPage />
+              </PrivateRoute>
+            } 
+          />
+
+          <Route 
+            path="/reports" 
+            element={
+              <PrivateRoute>
+                <ReportsPage />
               </PrivateRoute>
             } 
           />

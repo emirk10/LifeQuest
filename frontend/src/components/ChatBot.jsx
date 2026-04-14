@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import aiService from "../services/aiService";
 import taskService from "../services/taskService";
+import chatService from "../services/chatService";
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -105,7 +106,7 @@ const ChatBot = () => {
       setMessages((prev) => [...prev, successMsg]);
       // Optional: hide the button by removing suggestedTaskId from the message in state
       setMessages((prev) => prev.map(m => m.suggestedTaskId === taskId ? { ...m, suggestedTaskId: null } : m));
-    } catch(err) {
+    } catch (err) {
       const errorMsg = {
         id: Date.now(),
         sender: "bot",
@@ -190,11 +191,10 @@ const ChatBot = () => {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
-          isOpen
-            ? "bg-slate-700 rotate-0"
-            : "bg-indigo-600 shadow-indigo-500/40 hover:shadow-indigo-500/60"
-        }`}
+        className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${isOpen
+          ? "bg-slate-700 rotate-0"
+          : "bg-indigo-600 shadow-indigo-500/40 hover:shadow-indigo-500/60"
+          }`}
       >
         {isOpen ? (
           <span className="text-2xl text-white">✕</span>
@@ -223,9 +223,8 @@ const ChatBot = () => {
                 </h3>
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      aiStatus === "online" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
-                    }`}
+                    className={`w-2 h-2 rounded-full ${aiStatus === "online" ? "bg-emerald-400 animate-pulse" : "bg-rose-400"
+                      }`}
                   ></span>
                   <span className="text-indigo-200 text-[10px] font-medium">
                     {aiStatus === "online" ? "Çevrimiçi" : "Çevrimdışı"}
@@ -250,13 +249,12 @@ const ChatBot = () => {
                 className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
-                    msg.sender === "user"
-                      ? "bg-indigo-600 text-white rounded-br-md"
-                      : msg.isError
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${msg.sender === "user"
+                    ? "bg-indigo-600 text-white rounded-br-md"
+                    : msg.isError
                       ? "bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-bl-md"
                       : "bg-slate-800 text-slate-100 rounded-bl-md border border-slate-700/50"
-                  }`}
+                    }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
 
@@ -270,13 +268,12 @@ const ChatBot = () => {
                         %{(msg.confidence * 100).toFixed(0)} güven
                       </span>
                       <span
-                        className={`px-2 py-0.5 rounded-full font-bold ${
-                          msg.sentiment === "positive"
-                            ? "bg-emerald-500/20 text-emerald-300"
-                            : msg.sentiment === "negative"
+                        className={`px-2 py-0.5 rounded-full font-bold ${msg.sentiment === "positive"
+                          ? "bg-emerald-500/20 text-emerald-300"
+                          : msg.sentiment === "negative"
                             ? "bg-rose-500/20 text-rose-300"
                             : "bg-slate-700/50 text-slate-400"
-                        }`}
+                          }`}
                       >
                         {msg.sentiment === "positive" ? "😊 Pozitif" : msg.sentiment === "negative" ? "😔 Negatif" : "😐 Nötr"}
                       </span>

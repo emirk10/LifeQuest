@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import userService from "../services/userService";
 import { getUserRoleFromToken } from "../utils/authUtils";
+import NotificationBell from "../components/NotificationBell";
 
 const MainLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -43,6 +44,8 @@ const MainLayout = ({ children }) => {
   const menuItems = [
     { name: "Dashboard", path: "/dashboard", icon: "🏠" },
     { name: "Görevler", path: "/tasks", icon: "⚔️" },
+    { name: "Hedefler", path: "/goals", icon: "🎯" },
+    { name: "Raporlar", path: "/reports", icon: "📈" },
     { name: "Rozetler", path: "/badges", icon: "🏆" },
     { name: "Profil", path: "/profile", icon: "👤" },
     { name: "AI Test", path: "/ai-test", icon: "🤖" },
@@ -130,13 +133,16 @@ const MainLayout = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-10">
-            <div className="text-right">
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">
-                Current Level
-              </p>
-              <p className="text-4xl font-black text-indigo-500 italic tracking-tighter drop-shadow-[0_0_10px_rgba(79,70,229,0.3)]">
-                {Math.floor(headerUser?.level || 1)}
-              </p>
+            <div className="text-right flex items-center gap-6">
+              <NotificationBell />
+              <div>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">
+                  Current Level
+                </p>
+                <p className="text-4xl font-black text-indigo-500 italic tracking-tighter drop-shadow-[0_0_10px_rgba(79,70,229,0.3)]">
+                  {Math.floor(headerUser?.level || 1)}
+                </p>
+              </div>
             </div>
           </div>
         </header>

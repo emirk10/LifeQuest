@@ -13,7 +13,10 @@ builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHostedService<DailyQuestWorker>();
+builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyReportWorker>();
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.IAppNotificationService, LifeQuestAPI.API.Services.AppNotificationService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -54,6 +57,7 @@ app.UseAuthorization();
 app.UseStaticFiles();
 
 app.MapControllers();
+app.MapHub<LifeQuestAPI.API.Hubs.NotificationHub>("/hubs/notification");
 
 using (var scope = app.Services.CreateScope())
 {

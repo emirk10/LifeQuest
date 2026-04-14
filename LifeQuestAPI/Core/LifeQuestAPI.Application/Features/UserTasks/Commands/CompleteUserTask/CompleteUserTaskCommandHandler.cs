@@ -18,6 +18,9 @@ public sealed class CompleteUserTaskCommandHandler
     private readonly IGamificationService _gamificationService;
     private readonly IImageVerificationService _imageVerificationService;
     private readonly IReflectionVerificationService _reflectionVerificationService;
+    private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IUserTaskInteractionWriteRepository _interactionWriteRepository;
+    private readonly IAchievementService _achievementService;
 
     public CompleteUserTaskCommandHandler(
         IUserTaskReadRepository userTaskReadRepository,
@@ -25,7 +28,10 @@ public sealed class CompleteUserTaskCommandHandler
         ITaskVerificationWriteRepository verificationWriteRepository,
         IGamificationService gamificationService,
         IImageVerificationService imageVerificationService,
-        IReflectionVerificationService reflectionVerificationService)
+        IReflectionVerificationService reflectionVerificationService,
+        IAppUserReadRepository userReadRepository,
+        IUserTaskInteractionWriteRepository interactionWriteRepository,
+        IAchievementService achievementService)
     {
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
@@ -33,6 +39,9 @@ public sealed class CompleteUserTaskCommandHandler
         _gamificationService = gamificationService;
         _imageVerificationService = imageVerificationService;
         _reflectionVerificationService = reflectionVerificationService;
+        _userReadRepository = userReadRepository;
+        _interactionWriteRepository = interactionWriteRepository;
+        _achievementService = achievementService;
     }
 
     public async Task<CompleteUserTaskCommandResponse> Handle(
@@ -143,6 +152,41 @@ public sealed class CompleteUserTaskCommandHandler
 
         await _userTaskWriteRepository.SaveAsync();
         await _gamificationService.AddExperienceAsync(request.UserId, xpToEarn, task.CategoryId);
+
+        // 5. ML modeli için etkileşim verisini kaydet
+        var user = await _userReadRepository.Table
+            .Include(u => u.CategoryProgresses)
+            .Include(u => u.UserTasks)
+            .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken);
+            
+        if (user != null)
+        {
+            var userCatLevelObj = user.CategoryProgresses?.FirstOrDefault(c => c.CategoryId == task.CategoryId);
+            int userCatLevel = userCatLevelObj?.Level ?? 1;
+            
+            var interaction = new UserTaskInteraction
+            {
+                AppUserId = request.UserId,
+                AppTaskId = task.Id,
+                UserLevel = (int)user.GeneralLevel,
+                UserCategoryLevel = userCatLevel,
+                TaskDifficulty = (int)task.Difficulty,
+                TaskBaseXP = task.BaseXP,
+                DayOfWeek = (int)DateTime.UtcNow.DayOfWeek,
+                HourOfDay = DateTime.UtcNow.Hour,
+                UserCompletedTaskCount = user.UserTasks?.Count(ut => ut.Status == AppTaskStatus.Completed) ?? 0,
+                UserStreakDays = 0, // Şimdilik sabit
+                WasCompleted = true,
+                CompletionTimeHours = (float)(DateTime.UtcNow - userTask.AssignedAt).TotalHours,
+                Rating = 5.0f // Varsayılan puan
+            };
+
+            await _interactionWriteRepository.AddAsync(interaction);
+            await _interactionWriteRepository.SaveAsync();
+        }
+
+        // 6. Başarımları Kontrol Et
+        await _achievementService.CheckAchievementsAsync(request.UserId);
 
         return new()
         {

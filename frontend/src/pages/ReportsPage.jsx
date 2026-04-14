@@ -1,0 +1,111 @@
+import React, { useState, useEffect } from 'react';
+import MainLayout from '../layouts/MainLayout';
+import reportService from '../services/reportService';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+
+const ReportsPage = () => {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+        try {
+            const data = await reportService.getReports();
+            
+            // Recharts için veriyi ters çevirip formatla (eski → yeni)
+            const formattedData = [...data].reverse().map(r => ({
+                name: new Date(r.weekEndDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+                XPKazanci: r.totalXPEarned,
+                Tamamlanan: r.tasksCompleted
+            }));
+            
+            setReports(formattedData);
+        } catch (error) {
+            console.error("Raporlar alınamadı:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    fetchReports();
+  }, []);
+
+  return (
+    <MainLayout>
+      <div className="space-y-8">
+        <section className="relative">
+            <div className="absolute -left-10 -top-10 w-40 h-40 bg-fuchsia-600/10 blur-[80px] rounded-full"></div>
+            <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">RAPORLAR</h2>
+            <div className="h-1.5 w-24 bg-fuchsia-600 rounded-full shadow-[0_0_20px_rgba(192,38,211,0.6)]"></div>
+        </section>
+
+        {loading ? (
+            <p className="text-slate-400">Raporlar yükleniyor...</p>
+        ) : reports.length === 0 ? (
+            <div className="bg-slate-900/50 p-10 border border-slate-800 rounded-2xl text-center text-slate-400">
+                Henüz yeterli veri yok. Raporların her hafta sonu oluşturulacak.
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* XP Grafiği */}
+                <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl shadow-xl">
+                    <h3 className="text-slate-300 font-bold mb-6 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-fuchsia-500 rounded-full"></span> 
+                        Haftalık XP Gelişimi
+                    </h3>
+                    <div className="h-64">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={reports}>
+                                <defs>
+                                    <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#c026d3" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#c026d3" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                    itemStyle={{ color: '#c026d3' }}
+                                />
+                                <Area type="monotone" dataKey="XPKazanci" stroke="#c026d3" strokeWidth={3} fillOpacity={1} fill="url(#colorXp)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Görev Başarı Grafiği */}
+                <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl shadow-xl">
+                    <h3 className="text-slate-300 font-bold mb-6 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> 
+                        Tamamlanan Görevler
+                    </h3>
+                    <div className="h-64">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={reports}>
+                                <defs>
+                                    <linearGradient id="colorTasks" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip 
+                                    contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                    itemStyle={{ color: '#10b981' }}
+                                />
+                                <Area type="monotone" dataKey="Tamamlanan" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTasks)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+        )}
+      </div>
+    </MainLayout>
+  );
+};
+
+export default ReportsPage;
