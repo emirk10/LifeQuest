@@ -45,6 +45,7 @@ const MainLayout = ({ children }) => {
     { name: "Görevler", path: "/tasks", icon: "⚔️" },
     { name: "Rozetler", path: "/badges", icon: "🏆" },
     { name: "Profil", path: "/profile", icon: "👤" },
+    { name: "AI Test", path: "/ai-test", icon: "🤖" },
     ...(isAdmin ? [{ name: "Admin", path: "/admin", icon: "⚙️" }] : []),
   ];
 

@@ -1,0 +1,9 @@
+# AI Service
+ai_service/models/*.pkl
+ai_service/models/*.h5
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/

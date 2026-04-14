@@ -9,8 +9,10 @@ import Register from './pages/Register';
 import BadgeGallery from './pages/BadgeGallery';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
+import AITestPage from './pages/AITestPage';
 
 import PrivateRoute from './components/PrivateRoute';
+import ChatBot from './components/ChatBot';
 
 function App() {
   return (
@@ -67,7 +69,17 @@ function App() {
             } 
           />
 
+          <Route 
+            path="/ai-test" 
+            element={
+              <PrivateRoute>
+                <AITestPage />
+              </PrivateRoute>
+            } 
+          />
+
         </Routes>
+        <ChatBot />
       </AuthProvider>
     </Router>
   );

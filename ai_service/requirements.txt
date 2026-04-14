@@ -1,0 +1,23 @@
+# LifeQuest AI Mikro Servis - Bağımlılıklar
+# Python 3.10+
+
+# Web Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# ML & NLP
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# Deep Learning (Image Verification)
+tensorflow==2.18.0
+pillow==11.1.0
+
+# Data Validation
+pydantic==2.10.4
+
+# File Upload Support
+python-multipart==0.0.20
+
+# Utilities
+numpy==1.26.4

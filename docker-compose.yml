@@ -1,0 +1,50 @@
+# LifeQuest — Docker Compose
+# .NET API + Python AI Servis birlikte çalışır
+
+version: "3.8"
+
+services:
+  # ─────────────────────────────────────────
+  # Python AI Mikro Servis
+  # ─────────────────────────────────────────
+  ai_service:
+    build:
+      context: ./ai_service
+      dockerfile: Dockerfile
+    container_name: lifequest-ai
+    ports:
+      - "5001:5001"
+    volumes:
+      # Eğitilmiş modelleri kalıcı tut
+      - ai_models:/app/models
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+
+  # ─────────────────────────────────────────
+  # .NET Backend API (opsiyonel — mevcut API'yi de Docker'a almak istersen)
+  # ─────────────────────────────────────────
+  # api:
+  #   build:
+  #     context: ./LifeQuestAPI
+  #     dockerfile: Dockerfile
+  #   container_name: lifequest-api
+  #   ports:
+  #     - "5000:5000"
+  #   environment:
+  #     - ASPNETCORE_URLS=http://+:5000
+  #     - AI_SERVICE_URL=http://ai_service:5001
+  #   depends_on:
+  #     ai_service:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+volumes:
+  ai_models:
+    driver: local
