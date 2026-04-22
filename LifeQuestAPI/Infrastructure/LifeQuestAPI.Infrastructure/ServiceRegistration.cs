@@ -21,10 +21,9 @@ public static class ServiceRegistration
         services.AddScoped<IAchievementService, AchievementService>();
         services.AddScoped<IDailyQuestService, DailyQuestService>();
 
-        // AI mikro servis base URL (appsettings.json'dan okunuyor)
-        var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "https://localhost:5001";
+        // AI Chat servisi — Python mikro servise bağlanır
+        var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "http://localhost:5001";
 
-        // AI servisleri — Named HttpClient factory ile (SSL bypass eklendi - self-signed certs için)
         services.AddHttpClient<IAIChatService, AIChatService>(client =>
         {
             client.BaseAddress = new Uri(aiServiceBaseUrl);
@@ -34,25 +33,7 @@ public static class ServiceRegistration
             ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
         });
 
-        services.AddHttpClient<IImageVerificationService, ImageVerificationService>(client =>
-        {
-            client.BaseAddress = new Uri(aiServiceBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(60); // Görüntü işleme daha uzun sürebilir
-        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-        });
-
-        services.AddHttpClient<IReflectionVerificationService, ReflectionVerificationService>(client =>
-        {
-            client.BaseAddress = new Uri(aiServiceBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(15);
-        }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-        {
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
-        });
-
-        // ML.NET Öneri servisi (Singleton olabilir, MLContext thread-safe'tir model yuklendikten sonra)
+        // ML.NET Öneri servisi (Singleton - MLContext thread-safe)
         services.AddSingleton<ITaskRecommendationService, TaskRecommendationService>();
     }
 }

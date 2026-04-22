@@ -1,8 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LifeQuestAPI.Application.Repositories;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -22,14 +17,15 @@ public sealed class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQ
     {
         var topUsers = await _userReadRepository.GetAll(tracking: false)
                                                 .OrderByDescending(u => u.TotalXP)
-                                                .Take(10)
+                                                .Take(50)
                                                 .ToListAsync(cancellationToken);
 
         return topUsers.Select((user, index) => new GetLeaderboardQueryResponse
         {
             Rank = index + 1,
             UserName = user.UserName,
-            ProfileImage = "default.png",
+            Name = user.Name,
+            Surname = user.Surname,
             TotalXP = user.TotalXP,
             GeneralLevel = user.GeneralLevel
         }).ToList();

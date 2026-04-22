@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LifeQuestAPI.Domain.Entities.Identity;
 using LifeQuestAPI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +10,6 @@ public sealed class LifeQuestDbContext : DbContext
     {
     }
 
-    // Mevcut DbSet'ler
     public DbSet<AppUser> AppUsers { get; set; }
     public DbSet<AppRole> AppRoles { get; set; }
     public DbSet<Category> Categories { get; set; }
@@ -25,9 +19,6 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<Badge> Badges { get; set; }
     public DbSet<UserBadge> UserBadges { get; set; }
     public DbSet<ChatBotMessage> ChatBotMessages { get; set; }
-
-    // Yeni DbSet'ler
-    public DbSet<TaskVerification> TaskVerifications { get; set; }
     public DbSet<UserGoal> UserGoals { get; set; }
     public DbSet<Achievement> Achievements { get; set; }
     public DbSet<UserAchievement> UserAchievements { get; set; }
@@ -39,7 +30,6 @@ public sealed class LifeQuestDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Mevcut konfigürasyonlar
         modelBuilder.Entity<UserCategoryProgress>()
             .HasIndex(u => new { u.AppUserId, u.CategoryId })
             .IsUnique();
@@ -49,14 +39,7 @@ public sealed class LifeQuestDbContext : DbContext
             .WithMany()
             .HasForeignKey(u => u.AppRoleId);
 
-        // TaskVerification -> UserTask ilişkisi
-        modelBuilder.Entity<TaskVerification>()
-            .HasOne(tv => tv.UserTask)
-            .WithMany()
-            .HasForeignKey(tv => tv.UserTaskId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Friendship - self-referencing many-to-many
+        // Friendship - self-referencing
         modelBuilder.Entity<Friendship>()
             .HasOne(f => f.Requester)
             .WithMany()
@@ -98,7 +81,7 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<UserTaskInteraction>()
             .HasIndex(uti => uti.WasCompleted);
 
-        // Notification index for unread notifications
+        // Notification index
         modelBuilder.Entity<Notification>()
             .HasIndex(n => new { n.AppUserId, n.IsRead });
 

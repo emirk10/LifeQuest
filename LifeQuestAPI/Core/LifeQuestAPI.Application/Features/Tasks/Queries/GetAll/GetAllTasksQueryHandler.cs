@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using LifeQuestAPI.Application.Repositories;
-using LifeQuestAPI.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,24 +17,24 @@ public sealed class GetAllTasksQueryHandler : IRequestHandler<GetAllTasksQueryRe
     {
         var tasks = await _taskReadRepository.GetAll(tracking: false)
                                              .Include(t => t.Category)
+                                             .Where(t => t.IsActive)
+                                             .OrderBy(t => t.MinLevel)
+                                             .ThenBy(t => t.Title)
                                              .ToListAsync(cancellationToken);
 
-        var response = tasks.Select(t => new GetAllTasksQueryResponse
+        return tasks.Select(t => new GetAllTasksQueryResponse
         {
             Id = t.Id,
             Title = t.Title,
             Description = t.Description,
             CategoryName = t.Category != null ? t.Category.Name : "Kategorisiz",
+            CategoryId = t.CategoryId,
             Difficulty = t.Difficulty.ToString(),
             BaseXP = t.BaseXP,
             MinLevel = t.MinLevel,
-            VerificationType = t.VerificationType.ToString(),
-            MinReflectionWords = t.MinReflectionWords,
-            MinTimerMinutes = t.MinTimerMinutes,
-            VerificationHint = t.VerificationHint,
-            ExpectedImageCategory = t.ExpectedImageCategory
+            MaxLevel = t.MaxLevel,
+            IsDaily = t.IsDaily,
+            IsActive = t.IsActive
         }).ToList();
-
-        return response;
     }
 }

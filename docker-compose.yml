@@ -35,7 +35,7 @@ services:
       - db
 
   # ─────────────────────────────────────────
-  # Python AI Mikro Servis (HTTPS)
+  # Python AI Mikro Servis (HTTP)
   # ─────────────────────────────────────────
   ai_service:
     build:
@@ -50,14 +50,14 @@ services:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; import ssl; ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE; urllib.request.urlopen('https://localhost:5001/health', context=ctx)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
       interval: 30s
       timeout: 10s
       start_period: 60s
       retries: 3
 
   # ─────────────────────────────────────────
-  # .NET Backend API (HTTPS)
+  # .NET Backend API (HTTP)
   # ─────────────────────────────────────────
   api:
     build:
@@ -69,11 +69,9 @@ services:
       - "7071:7071"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_URLS=https://+:7071;http://+:5020
-      - ASPNETCORE_Kestrel__Certificates__Default__Password=password123
-      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/cert.pfx
+      - ASPNETCORE_URLS=http://+:5020
       - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
-      - AIService__BaseUrl=https://ai_service:5001
+      - AIService__BaseUrl=http://ai_service:5001
     depends_on:
       - db
       - ai_service
@@ -91,8 +89,8 @@ services:
       - "${FRONTEND_PORT}:5173"
     environment:
       # Ensure Vite can see environment variables
-      - VITE_API_BASE_URL=https://localhost:7071/api
-      - VITE_AI_SERVICE_URL=https://localhost:${AI_SERVICE_PORT}
+      - VITE_API_BASE_URL=http://localhost:5020/api
+      - VITE_AI_SERVICE_URL=http://localhost:${AI_SERVICE_PORT}
     volumes:
       # Mount source code for hot reload
       - ./frontend:/app

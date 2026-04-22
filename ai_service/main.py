@@ -4,11 +4,9 @@ LifeQuest AI Mikro Servis — Ana Giriş Noktası
 FastAPI tabanlı AI servisi. .NET backend'den gelen istekleri karşılar.
 
 Endpoint'ler:
-  POST /api/chat              → Chatbot (Intent + Sentiment + Cevap)
-  POST /api/verify-reflection → Yansıma metni doğrulama
-  POST /api/verify-image      → Görüntü doğrulama
-  POST /api/train             → Modelleri yeniden eğit
-  GET  /health                → Sağlık kontrolü
+  POST /api/chat  → Chatbot (Intent + Sentiment + Cevap)
+  POST /api/train → Modelleri yeniden eğit (Admin)
+  GET  /health    → Sağlık kontrolü
 
 Çalıştırma:
   uvicorn main:app --reload --port 5001
@@ -24,8 +22,6 @@ from pydantic import BaseModel, Field
 
 from services.intent_classifier import IntentClassifier
 from services.sentiment_analyzer import SentimentAnalyzer
-from services.reflection_verifier import ReflectionVerifier
-from services.image_verifier import ImageVerifier
 
 # ------------------------------------------------------------------ #
 #  LOGGING
@@ -43,8 +39,6 @@ logger = logging.getLogger("lifequest_ai")
 
 intent_clf = IntentClassifier()
 sentiment_analyzer = SentimentAnalyzer()
-reflection_verifier = ReflectionVerifier()
-image_verifier = ImageVerifier()
 
 
 # ------------------------------------------------------------------ #
@@ -56,7 +50,6 @@ async def lifespan(app: FastAPI):
     """Uygulama başlangıcında modelleri eğit (eğer henüz yoksa)."""
     logger.info("🚀 LifeQuest AI Servis başlatılıyor...")
 
-    # Modellerinin eğitilmesini sağla
     if intent_clf.model is None:
         logger.info("Intent modeli eğitiliyor...")
         result = intent_clf.train()
@@ -74,8 +67,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="LifeQuest AI Service",
-    description="Yapay Zeka Destekli Kişisel Gelişim — AI Mikro Servis",
-    version="1.0.0",
+    description="Yapay Zeka Destekli Kişisel Gelişim — AI Chatbot & Öneri Servisi",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -105,37 +98,6 @@ class ChatResponse(BaseModel):
     sentiment: str
     sentiment_confidence: float
     suggestions: list[str] = []
-
-
-class ReflectionVerifyRequest(BaseModel):
-    text: str = Field(..., min_length=1)
-    min_word_count: int = Field(default=10, ge=1)
-    task_category: str | None = None
-
-
-class ReflectionVerifyResponse(BaseModel):
-    is_valid: bool
-    word_count: int
-    quality_score: float
-    relevance_score: float
-    spam_detected: bool
-    issues: list[str]
-    message: str
-
-
-class ImageVerifyRequest(BaseModel):
-    user_id: str
-    task_id: str
-    task_category: str
-    image_base64: str = Field(..., min_length=10)
-
-
-class ImageVerifyResponse(BaseModel):
-    is_valid: bool
-    confidence: float
-    detected_labels: list[dict] = []
-    expected_category: str
-    message: str
 
 
 class TrainResponse(BaseModel):
@@ -181,7 +143,7 @@ RESPONSE_TEMPLATES: dict[str, dict[str, list[str]]] = {
     },
     "gorev_sorgula": {
         "default": [
-            "📋 Görevlerini kontrol ediyorum! Aktif görevlerini profil sayfandan görebilirsin.",
+            "📋 Görevlerini kontrol ediyorum! Aktif görevlerini görev sayfasından görebilirsin.",
             "📋 Günlük görevlerini görmek için görev listesine göz at! Her tamamladığın görev seni ileriye taşır.",
             "📋 Bugünkü görev listeni kontrol edelim. Hadi bakalım neler var!",
             "📋 Görevlerin seni bekliyor! Hangisiyle başlamak istersin?",
@@ -231,10 +193,17 @@ RESPONSE_TEMPLATES: dict[str, dict[str, list[str]]] = {
     },
     "rozet": {
         "default": [
-            "🏆 Rozetlerini profil sayfandan görebilirsin! Yeni rozetler kazanmak için görevleri tamamlamaya devam et.",
+            "🏆 Rozetlerini rozet sayfasından görebilirsin! Yeni rozetler kazanmak için görevleri tamamlamaya devam et.",
             "🏆 Her rozet bir başarı hikayesi! Hangi rozeti kazanmak istiyorsun? Hedefe kilitlen!",
             "🏆 Rozet koleksiyonun büyüyor! Sıradaki rozet için hangi görevleri yapman gerektiğini kontrol et.",
             "🏆 Başarıların seni tanımlıyor! Yeni rozetler almak için farklı kategorilerde görevler tamamla.",
+        ],
+    },
+    "hedef": {
+        "default": [
+            "🎯 Hedeflerini hedefler sayfasından takip edebilirsin! İlerlemenin seni motive edeceğini düşünüyorum.",
+            "🎯 Harika hedefler belirlemişsin! Düzenli görev tamamlayarak hedeflerine ulaşabilirsin.",
+            "🎯 Hedef koymak başarının ilk adımı. Şimdi harekete geçme zamanı!",
         ],
     },
 }
@@ -247,6 +216,7 @@ SUGGESTION_MAP: dict[str, list[str]] = {
     "selamlama": ["Bugünkü görevlerim", "İstatistiklerim", "Beni motive et"],
     "saglik": ["Egzersiz öner", "Su içmeyi hatırlat", "Uyku ipuçları"],
     "rozet": ["Tüm rozetler", "Sıradaki hedef", "Görevleri göster"],
+    "hedef": ["Yeni hedef oluştur", "İlerlememimi göster", "Görevleri tamamla"],
 }
 
 
@@ -261,7 +231,6 @@ def generate_response(intent: str, confidence: float, sentiment_label: str) -> s
 
     intent_responses = RESPONSE_TEMPLATES.get(intent, {})
 
-    # Duygu durumuna göre cevap seç
     if sentiment_label in intent_responses:
         return random.choice(intent_responses[sentiment_label])
     elif "default" in intent_responses:
@@ -286,7 +255,7 @@ async def health_check():
         status="ok",
         intent_model_loaded=intent_clf.model is not None,
         sentiment_model_loaded=sentiment_analyzer.model is not None,
-        version="1.0.0",
+        version="2.0.0",
     )
 
 
@@ -299,13 +268,9 @@ async def chat(request: ChatRequest):
     3. Cevap üretimi
     """
     try:
-        # Intent tahmin et
         intent_result = intent_clf.predict(request.message)
-
-        # Duygu analizi
         sentiment_result = sentiment_analyzer.analyze(request.message)
 
-        # Cevap üret
         response_text = generate_response(
             intent_result["intent"],
             intent_result["confidence"],
@@ -323,45 +288,6 @@ async def chat(request: ChatRequest):
 
     except Exception as e:
         logger.error("Chat hatası: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post(
-    "/api/verify-reflection",
-    response_model=ReflectionVerifyResponse,
-    tags=["Verification"],
-)
-async def verify_reflection(request: ReflectionVerifyRequest):
-    """Görev tamamlama yansıma metnini doğrula."""
-    try:
-        result = reflection_verifier.verify(
-            text=request.text,
-            min_word_count=request.min_word_count,
-            task_category=request.task_category,
-        )
-        return ReflectionVerifyResponse(**result)
-
-    except Exception as e:
-        logger.error("Reflection doğrulama hatası: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post(
-    "/api/verify-image",
-    response_model=ImageVerifyResponse,
-    tags=["Verification"],
-)
-async def verify_image(request: ImageVerifyRequest):
-    """Görev tamamlama fotoğrafını doğrula."""
-    try:
-        result = image_verifier.verify(
-            image_base64=request.image_base64,
-            expected_category=request.task_category,
-        )
-        return ImageVerifyResponse(**result)
-
-    except Exception as e:
-        logger.error("Image doğrulama hatası: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

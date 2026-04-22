@@ -19,7 +19,8 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
     {
         IQueryable<UserTask> query = _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId, tracking: false)
-            .Include(ut => ut.AppTask);
+            .Include(ut => ut.AppTask)
+                .ThenInclude(t => t.Category);
 
         if (request.CategoryId.HasValue)
         {
@@ -27,20 +28,19 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
         }
 
         var tasks = await query
-            .OrderByDescending(ut => ut.AssignedAt)
+            .OrderBy(ut => ut.CompletedAt.HasValue)
+            .ThenByDescending(ut => ut.AssignedAt)
             .Select(ut => new UserTaskDto
             {
                 Id = ut.Id,
                 Title = ut.AppTask.Title,
+                Description = ut.AppTask.Description,
                 Xp = ut.AppTask.BaseXP,
+                BaseXP = ut.AppTask.BaseXP,
                 Difficulty = ut.AppTask.Difficulty.ToString(),
                 IsCompleted = ut.CompletedAt.HasValue,
-                // Dogrulama alanlari
-                VerificationType = (int)ut.AppTask.VerificationType,
-                MinReflectionWords = ut.AppTask.MinReflectionWords,
-                MinTimerMinutes = ut.AppTask.MinTimerMinutes,
-                VerificationHint = ut.AppTask.VerificationHint,
-                ExpectedImageCategory = ut.AppTask.ExpectedImageCategory
+                AssignedAt = ut.AssignedAt,
+                CategoryName = ut.AppTask.Category != null ? ut.AppTask.Category.Name : null
             })
             .ToListAsync(cancellationToken);
 

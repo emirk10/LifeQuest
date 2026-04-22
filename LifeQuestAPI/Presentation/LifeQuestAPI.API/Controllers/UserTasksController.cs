@@ -36,13 +36,8 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>
-    /// Gorevi tamamla. Dogrulama tipi gerektiren gorevler icin body'de ilgili veriyi gonderin.
-    /// </summary>
     [HttpPatch("{id}/complete")]
-    public async Task<IActionResult> CompleteTask(
-        [FromRoute] Guid id,
-        [FromBody] CompleteTaskBody? body)
+    public async Task<IActionResult> CompleteTask([FromRoute] Guid id)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
@@ -50,12 +45,7 @@ public class UserTasksController : ControllerBase
         var request = new CompleteUserTaskCommandRequest
         {
             UserTaskId = id,
-            UserId = Guid.Parse(userIdString),
-            PhotoBase64 = body?.PhotoBase64,
-            ReflectionText = body?.ReflectionText,
-            TimerSeconds = body?.TimerSeconds,
-            QuizScore = body?.QuizScore,
-            QuizTotalQuestions = body?.QuizTotalQuestions
+            UserId = Guid.Parse(userIdString)
         };
 
         var response = await _mediator.Send(request);
@@ -87,8 +77,8 @@ public class UserTasksController : ControllerBase
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
-        var request = new LifeQuestAPI.Application.Features.UserTasks.Commands.AssignSpecificTask.AssignSpecificTaskCommandRequest 
-        { 
+        var request = new LifeQuestAPI.Application.Features.UserTasks.Commands.AssignSpecificTask.AssignSpecificTaskCommandRequest
+        {
             UserId = Guid.Parse(userIdString),
             AppTaskId = appTaskId
         };
@@ -100,16 +90,4 @@ public class UserTasksController : ControllerBase
 
         return Ok(response);
     }
-}
-
-/// <summary>
-/// Gorev tamamlama istegi icin opsiyonel dogrulama verileri.
-/// </summary>
-public class CompleteTaskBody
-{
-    public string? PhotoBase64 { get; set; }
-    public string? ReflectionText { get; set; }
-    public int? TimerSeconds { get; set; }
-    public int? QuizScore { get; set; }
-    public int? QuizTotalQuestions { get; set; }
 }

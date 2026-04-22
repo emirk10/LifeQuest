@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using LifeQuestAPI.API.BackgroundServices;
 using LifeQuestAPI.Application;
 using LifeQuestAPI.Infrastructure;
@@ -17,16 +18,36 @@ builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyRepo
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.IAppNotificationService, LifeQuestAPI.API.Services.AppNotificationService>();
+
+// CORS Politikası
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll",
+    options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.SetIsOriginAllowed(origin => true) // Tüm originlere izin ver
                   .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .AllowAnyHeader()
+                  .AllowCredentials(); // SignalR için gerekli
         });
 });
+
+// Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 100,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+    options.RejectionStatusCode = 429;
+});
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -37,7 +58,7 @@ builder.Services.AddAuthentication(options =>
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"] ?? "")),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"] ?? "bu_proje_icin_cok_gizli_ve_cok_uzun_bir_anahtar_olusturdum_en_az_64_karakter_olmali_ki_sha512_calissin_lifequest_2025")),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true,
@@ -48,8 +69,9 @@ builder.Services.AddAuthentication(options =>
 var app = builder.Build();
 app.UseMiddleware<LifeQuestAPI.API.Middlewares.GlobalExceptionMiddleware>();
 
-app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+// app.UseHttpsRedirection(); // Dev ortamında (Docker) localhost mixed-content ve sertifika sorunlarını önlemek için kapatıldı
+app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "../layouts/MainLayout";
 import userService from "../services/userService";
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
@@ -104,65 +105,42 @@ const ProfilePage = () => {
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800 h-full">
+          <div className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800 h-full flex flex-col">
             <h3 className="text-lg font-black text-white mb-6 tracking-widest uppercase italic flex items-center gap-2">
               <span className="text-xl">📊</span> Yetenek İlerlemesi
             </h3>
 
-            <div className="space-y-6">
+            <div className="flex-1 flex items-center justify-center min-h-[300px]">
               {profile?.categoryStats && profile.categoryStats.length > 0 ? (
-                profile.categoryStats.map((stat, idx) => {
-                  const progressPercent =
-                    (stat.currentXp / stat.xpToNextLevel) * 100;
-                  const showIcon = stat.iconPath && stat.iconPath.length < 5;
-
-                  return (
-                    <div key={idx} className="space-y-2 group">
-                      <div className="flex justify-between items-end">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0 shadow-inner group-hover:border-indigo-500/30 transition-colors">
-                            {showIcon ? (
-                              <span className="text-xl">{stat.iconPath}</span>
-                            ) : (
-                              <span className="font-black text-indigo-500 text-lg font-mono">
-                                {stat.categoryName?.charAt(0).toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-black uppercase tracking-widest text-slate-300">
-                              {stat.categoryName}
-                            </p>
-                            <p className="text-[10px] text-slate-500 font-bold">
-                              Level {stat.level}
-                            </p>
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold text-white bg-slate-800 px-2 py-1 rounded-lg">
-                          {stat.currentXp} / {stat.xpToNextLevel} XP
-                        </span>
-                      </div>
-
-                      <div className="h-2.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
-                        <div
-                          className={`h-full ${
-                            colors[idx % colors.length]
-                          } shadow-[0_0_10px_rgba(255,255,255,0.2)] transition-all duration-1000 relative group-hover:brightness-110`}
-                          style={{ width: `${progressPercent}%` }}
-                        >
-                          <div className="absolute right-0 top-0 bottom-0 w-[1px] bg-white/20"></div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
+                <div className="w-full h-full -ml-4">
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="70%" data={profile.categoryStats.map(stat => ({
+                      subject: stat.categoryName,
+                      A: stat.level,
+                      fullMark: Math.max(...profile.categoryStats.map(s => s.level)) + 5
+                    }))}>
+                      <PolarGrid stroke="#334155" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} />
+                      <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={false} axisLine={false} />
+                      <Radar
+                        name="Level"
+                        dataKey="A"
+                        stroke="#818cf8"
+                        strokeWidth={2}
+                        fill="#6366f1"
+                        fillOpacity={0.5}
+                      />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '0.75rem' }}
+                        itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <div className="text-center py-10 opacity-50">
+                <div className="text-center opacity-50">
                   <p>Henüz kategori istatistiği oluşmadı.</p>
-                  <p className="text-xs mt-2">
-                    Görev tamamladıkça burası dolacak.
-                  </p>
+                  <p className="text-xs mt-2">Görev tamamladıkça burası dolacak.</p>
                 </div>
               )}
             </div>

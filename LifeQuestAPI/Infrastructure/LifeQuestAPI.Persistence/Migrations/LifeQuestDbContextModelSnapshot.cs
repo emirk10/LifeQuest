@@ -85,9 +85,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("Difficulty")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ExpectedImageCategory")
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -100,24 +97,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("MinLevel")
                         .HasColumnType("integer");
 
-                    b.Property<int>("MinReflectionWords")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MinTimerMinutes")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("VerificationHint")
-                        .HasColumnType("text");
-
-                    b.Property<int>("VerificationType")
-                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -434,76 +419,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.HasIndex("AppUserId", "IsRead");
 
                     b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.TaskVerification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AIAnalysisResult")
-                        .HasColumnType("text");
-
-                    b.Property<float?>("AIConfidenceScore")
-                        .HasColumnType("real");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool?>("IsReflectionRelevant")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("MinimumMinutesRequired")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PhotoPath")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("QuizScore")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("QuizTotalQuestions")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ReflectionText")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("ReflectionWordCount")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("text");
-
-                    b.Property<float?>("SentimentScore")
-                        .HasColumnType("real");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("TimerEndedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("TimerStartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserTaskId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserTaskId");
-
-                    b.ToTable("TaskVerifications");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>
@@ -926,17 +841,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("AppUser");
-                });
-
-            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.TaskVerification", b =>
-                {
-                    b.HasOne("LifeQuestAPI.Domain.Entities.UserTask", "UserTask")
-                        .WithMany()
-                        .HasForeignKey("UserTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("UserTask");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>

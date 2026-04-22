@@ -4,11 +4,11 @@ const taskService = {
   getAllTasks: async (categoryId = null) => {
     const url = categoryId ? `/user-tasks?categoryId=${categoryId}` : '/user-tasks';
     const response = await axiosClient.get(url);
-    return response.data.tasks || []; 
+    return response.data.tasks || [];
   },
 
-  completeTask: async (userTaskId, verificationData = {}) => {
-    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`, verificationData);
+  completeTask: async (userTaskId) => {
+    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`);
     return response.data;
   },
 
@@ -25,7 +25,7 @@ const taskService = {
   createTask: async (taskData) => {
     return await axiosClient.post('/Tasks/create-task', taskData);
   },
-  
+
   createBulkTasks: async (tasksArray) => {
     return await axiosClient.post('/Tasks/create-bulk-tasks', { tasks: tasksArray });
   }
