@@ -1,10 +1,12 @@
 using LifeQuestAPI.Application.Abstractions.AI;
 using LifeQuestAPI.Application.Abstractions.DailyQuest;
 using LifeQuestAPI.Application.Abstractions.Gamification;
+using LifeQuestAPI.Application.Abstractions.Social;
 using LifeQuestAPI.Application.Abstractions.Token;
 using LifeQuestAPI.Infrastructure.Services.AI;
 using LifeQuestAPI.Infrastructure.Services.DailyQuest;
 using LifeQuestAPI.Infrastructure.Services.Gamification;
+using LifeQuestAPI.Infrastructure.Services.Social;
 using LifeQuestAPI.Infrastructure.Services.Token;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +22,7 @@ public static class ServiceRegistration
         services.AddScoped<IGamificationService, GamificationService>();
         services.AddScoped<IAchievementService, AchievementService>();
         services.AddScoped<IDailyQuestService, DailyQuestService>();
+        services.AddScoped<IChallengeService, ChallengeService>();
 
         // AI Chat servisi — Python mikro servise bağlanır
         var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "http://localhost:5001";

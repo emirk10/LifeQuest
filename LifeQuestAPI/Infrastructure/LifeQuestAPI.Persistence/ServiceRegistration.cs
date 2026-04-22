@@ -4,6 +4,7 @@ using LifeQuestAPI.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace LifeQuestAPI.Persistence;
 
@@ -12,7 +13,13 @@ public static class ServiceRegistration
     public static void AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<LifeQuestDbContext>(options =>
-                    options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), npgsqlOptions => 
+            {
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorCodesToAdd: null);
+            }));
 
         services.AddScoped<IAppUserReadRepository, AppUserReadRepository>();
         services.AddScoped<IAppUserWriteRepository, AppUserWriteRepository>();

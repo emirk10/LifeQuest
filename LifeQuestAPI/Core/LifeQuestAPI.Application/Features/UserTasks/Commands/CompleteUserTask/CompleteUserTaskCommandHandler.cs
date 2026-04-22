@@ -1,4 +1,5 @@
 using LifeQuestAPI.Application.Abstractions.Gamification;
+using LifeQuestAPI.Application.Abstractions.Social;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
 using LifeQuestAPI.Domain.Enums;
@@ -16,6 +17,7 @@ public sealed class CompleteUserTaskCommandHandler
     private readonly IAppUserReadRepository _userReadRepository;
     private readonly IUserTaskInteractionWriteRepository _interactionWriteRepository;
     private readonly IAchievementService _achievementService;
+    private readonly IChallengeService _challengeService;
 
     public CompleteUserTaskCommandHandler(
         IUserTaskReadRepository userTaskReadRepository,
@@ -23,7 +25,8 @@ public sealed class CompleteUserTaskCommandHandler
         IGamificationService gamificationService,
         IAppUserReadRepository userReadRepository,
         IUserTaskInteractionWriteRepository interactionWriteRepository,
-        IAchievementService achievementService)
+        IAchievementService achievementService,
+        IChallengeService challengeService)
     {
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
@@ -31,6 +34,7 @@ public sealed class CompleteUserTaskCommandHandler
         _userReadRepository = userReadRepository;
         _interactionWriteRepository = interactionWriteRepository;
         _achievementService = achievementService;
+        _challengeService = challengeService;
     }
 
     public async Task<CompleteUserTaskCommandResponse> Handle(
@@ -96,8 +100,9 @@ public sealed class CompleteUserTaskCommandHandler
             await _interactionWriteRepository.SaveAsync();
         }
 
-        // 4. Başarımları kontrol et
+        // 4. Başarımları ve Mücadeleleri kontrol et
         await _achievementService.CheckAchievementsAsync(request.UserId);
+        await _challengeService.UpdateChallengeProgressAsync(request.UserId, task.CategoryId);
 
         return new()
         {

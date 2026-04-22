@@ -6,18 +6,27 @@ services:
   # PostgreSQL Veritabanı
   # ─────────────────────────────────────────
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: lifequest-db
-    restart: unless-stopped
+    restart: always
+    shm_size: 256mb
     env_file: .env
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      # Bağlantı sorunlarını önlemek için ek ayarlar
+      POSTGRES_MAX_CONNECTIONS: 200
+      POSTGRES_SHARED_BUFFERS: 128MB
     ports:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # ─────────────────────────────────────────
   # pgAdmin (Veritabanı Yönetimi)
@@ -32,7 +41,8 @@ services:
     ports:
       - "5050:80"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   # ─────────────────────────────────────────
   # Python AI Mikro Servis (HTTP)
@@ -70,11 +80,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:5020
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      # Bağlantı dizesine havuzlama ve timeout ayarları eklendi
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD};Pooling=true;Minimum Pool Size=0;Maximum Pool Size=100;Command Timeout=60;
       - AIService__BaseUrl=http://ai_service:5001
     depends_on:
-      - db
-      - ai_service
+      db:
+        condition: service_healthy
+      ai_service:
+        condition: service_healthy
     restart: unless-stopped
 
   # ─────────────────────────────────────────
@@ -96,7 +109,8 @@ services:
       - ./frontend:/app
       - /app/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
