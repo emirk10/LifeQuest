@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LifeQuestAPI.Persistence.Migrations
 {
     [DbContext(typeof(LifeQuestDbContext))]
-    [Migration("20260414101419_BigExpansion_Sprint1")]
-    partial class BigExpansion_Sprint1
+    [Migration("20260422114502_Initial_Migration")]
+    partial class Initial_Migration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

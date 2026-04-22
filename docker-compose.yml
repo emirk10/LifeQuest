@@ -1,11 +1,41 @@
 # LifeQuest — Docker Compose
-# .NET API + Python AI Servis birlikte çalışır
-
 version: "3.8"
 
 services:
   # ─────────────────────────────────────────
-  # Python AI Mikro Servis
+  # PostgreSQL Veritabanı
+  # ─────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    container_name: lifequest-db
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  # ─────────────────────────────────────────
+  # pgAdmin (Veritabanı Yönetimi)
+  # ─────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: lifequest-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  # ─────────────────────────────────────────
+  # Python AI Mikro Servis (HTTPS)
   # ─────────────────────────────────────────
   ai_service:
     build:
@@ -13,38 +43,66 @@ services:
       dockerfile: Dockerfile
     container_name: lifequest-ai
     ports:
-      - "5001:5001"
+      - "${AI_SERVICE_PORT}:5001"
     volumes:
-      # Eğitilmiş modelleri kalıcı tut
       - ai_models:/app/models
     environment:
       - PYTHONUNBUFFERED=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; import ssl; ctx = ssl.create_default_context(); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE; urllib.request.urlopen('https://localhost:5001/health', context=ctx)"]
       interval: 30s
       timeout: 10s
       start_period: 60s
       retries: 3
 
   # ─────────────────────────────────────────
-  # .NET Backend API (opsiyonel — mevcut API'yi de Docker'a almak istersen)
+  # .NET Backend API (HTTPS)
   # ─────────────────────────────────────────
-  # api:
-  #   build:
-  #     context: ./LifeQuestAPI
-  #     dockerfile: Dockerfile
-  #   container_name: lifequest-api
-  #   ports:
-  #     - "5000:5000"
-  #   environment:
-  #     - ASPNETCORE_URLS=http://+:5000
-  #     - AI_SERVICE_URL=http://ai_service:5001
-  #   depends_on:
-  #     ai_service:
-  #       condition: service_healthy
-  #   restart: unless-stopped
+  api:
+    build:
+      context: ./LifeQuestAPI
+      dockerfile: Dockerfile
+    container_name: lifequest-api
+    ports:
+      - "5020:5020"
+      - "7071:7071"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=https://+:7071;http://+:5020
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=password123
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/cert.pfx
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+      - AIService__BaseUrl=https://ai_service:5001
+    depends_on:
+      - db
+      - ai_service
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────
+  # Frontend (Vite/React) (HTTPS)
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lifequest-frontend
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    environment:
+      # Ensure Vite can see environment variables
+      - VITE_API_BASE_URL=https://localhost:7071/api
+      - VITE_AI_SERVICE_URL=https://localhost:${AI_SERVICE_PORT}
+    volumes:
+      # Mount source code for hot reload
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    restart: unless-stopped
 
 volumes:
   ai_models:
+    driver: local
+  pgdata:
     driver: local

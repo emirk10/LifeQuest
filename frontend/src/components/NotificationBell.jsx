@@ -29,8 +29,9 @@ const NotificationBell = () => {
         const token = localStorage.getItem("token");
         if (!token) return;
 
+        const baseUrl = (import.meta.env.VITE_API_BASE_URL || "https://localhost:7071/api").replace("/api", "");
         const newConnection = new HubConnectionBuilder()
-            .withUrl("http://localhost:5020/hubs/notification", { 
+            .withUrl(`${baseUrl}/hubs/notification`, { 
                 accessTokenFactory: () => token 
             })
             .withAutomaticReconnect()

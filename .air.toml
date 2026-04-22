@@ -1,0 +1,38 @@
+# .air.toml
+# LifeQuest projesi için genel izleme ve otomatik yeniden başlatma (hot-reload) konfigürasyonu
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  # Dosya her değiştiğinde Docker Compose'u ayağa kaldırır/günceller
+  cmd = "docker-compose up -d --build"
+  # Terminalde başarılı olduğunu gösterir
+  bin = "echo 'LifeQuest Docker servisleri başlatıldı ve dosyalar izleniyor.'"
+  # Hangi uzantıların izleneceği (Frontend, Backend, AI servis ve çevre değişkenleri)
+  include_ext = ["cs", "py", "js", "jsx", "html", "css", "env"]
+  # Hangi klasörlerin yoksayılacağı (Performans için önemli)
+  exclude_dir = ["node_modules", "bin", "obj", ".vs", "tmp", "venv", ".git", "ai_models"]
+  # İzlenecek diğer dosyalar
+  include_file = ["docker-compose.yml", "Dockerfile"]
+  # Hata olsa da çalışmaya devam et
+  exclude_regex = ["_test.go"]
+  exclude_unchanged = false
+  follow_symlink = false
+  log = "build-errors.log"
+  send_interrupt = false
+  stop_on_error = true
+
+[color]
+  app = ""
+  build = "yellow"
+  main = "magenta"
+  runner = "green"
+  watcher = "cyan"
+
+[log]
+  time = false
+
+[misc]
+  # Uygulama çıktısı silinmez
+  clean_on_exit = false

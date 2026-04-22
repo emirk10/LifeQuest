@@ -1,8 +1,8 @@
 import axios from "axios";
 
-// Python AI Mikro Servis (port 5001)
+// Python AI Mikro Servis
 const aiClient = axios.create({
-  baseURL: "http://localhost:5001",
+  baseURL: import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:5001",
   headers: {
     "Content-Type": "application/json",
   },
