@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace LifeQuestAPI.Infrastructure.Services.DailyQuest;
 
 /// <summary>
-/// SP-01: Bağlam-duyarlı görev öneri servisi.
-/// 6 faktörlü scoring: GoalMatch, TimeMatch, EnergyMatch, DifficultyMatch, WeaknessTarget, StrengthMatch
+/// SP-01 + SP-03: Bağlam-duyarlı görev öneri servisi.
+/// SP-01: 6 faktörlü scoring: GoalMatch, TimeMatch, EnergyMatch, DifficultyMatch, WeaknessTarget, StrengthMatch
+/// SP-03: +3 faktör: BehaviorBonus, MostSkippedPenalty, TimeOfDayBonus
 /// </summary>
 public sealed class TaskRecommendationService : ITaskRecommendationService
 {
@@ -158,6 +159,40 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
             task.Description.Contains(s, StringComparison.OrdinalIgnoreCase) ||
             task.Title.Contains(s, StringComparison.OrdinalIgnoreCase)))
             score += 0.10;
+
+        // ── SP-03: Davranış Faktörleri ──────────────────────────────────
+
+        // 7. BehaviorBonus (0.10) — Bu kategoride geçmişte başarılıysa bonus
+        //    user.MostSkippedCategory dolu ve bu görev o kategoride değilse bonus
+        if (!string.IsNullOrEmpty(user.MostSkippedCategory))
+        {
+            bool isMostSkipped = string.Equals(
+                task.Category?.Name, user.MostSkippedCategory,
+                StringComparison.OrdinalIgnoreCase);
+
+            // 8. MostSkippedPenalty (-0.15)
+            if (isMostSkipped)
+                score -= 0.15;
+            else
+                score += 0.10; // BehaviorBonus — farklı kategori başarı şansı daha yüksek
+        }
+
+        // 9. TimeOfDayBonus (0.05) — Kullanıcının en verimli saat dilimiyle eşleşiyorsa bonus
+        if (user.PreferredMorningTime.HasValue)
+        {
+            var preferredSlot = user.PreferredMorningTime.Value.Hour switch
+            {
+                >= 6 and < 11 => DayTimeSlot.Morning,
+                >= 11 and < 14 => DayTimeSlot.Noon,
+                >= 14 and < 18 => DayTimeSlot.Afternoon,
+                >= 18 and < 22 => DayTimeSlot.Evening,
+                _ => DayTimeSlot.Night
+            };
+            bool slotMatch = task.RecommendedTimeSlots == null || !task.RecommendedTimeSlots.Any()
+                || task.RecommendedTimeSlots.Contains(preferredSlot);
+            if (slotMatch && preferredSlot == timeSlot)
+                score += 0.05;
+        }
 
         // Mood override bonus'lar
         if (mood == MoodMode.Energetic && task.MinEnergyLevel >= 4)

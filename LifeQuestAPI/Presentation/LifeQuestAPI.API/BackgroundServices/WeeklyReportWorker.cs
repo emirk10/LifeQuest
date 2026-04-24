@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,7 @@ public class WeeklyReportWorker : BackgroundService
             if (now.DayOfWeek == DayOfWeek.Sunday && now.Hour == 23)
             {
                 _logger.LogInformation("Haftalık raporlar hesaplanmaya başlanıyor...");
-                await GenerateReportsAsync();
+                await GenerateReportsAsync(stoppingToken);
                 
                 // Bir kez çalıştıktan sonra sonraki haftaya kadar veya ertesi saate kadar uyusun
                 await Task.Delay(TimeSpan.FromHours(2), stoppingToken);
@@ -48,7 +49,7 @@ public class WeeklyReportWorker : BackgroundService
         }
     }
 
-    private async Task GenerateReportsAsync()
+    private async Task GenerateReportsAsync(CancellationToken ct = default)
     {
         using var scope = _serviceProvider.CreateScope();
         var userReadRepo = scope.ServiceProvider.GetRequiredService<IAppUserReadRepository>();
@@ -119,5 +120,14 @@ public class WeeklyReportWorker : BackgroundService
 
         await reportWriteRepo.SaveAsync();
         _logger.LogInformation($"Haftalık raporlar {users.Count} kullanıcı için oluşturuldu ve kaydedildi.");
+
+        // SP-03: Davranış analizi güncelle
+        var behaviorService = scope.ServiceProvider.GetRequiredService<IUserBehaviorAnalysisService>();
+        foreach (var user in users)
+        {
+            try { await behaviorService.AnalyzeAndUpdateUserBehaviorAsync(user.Id, ct); }
+            catch (Exception ex) { _logger.LogError(ex, "Davranış analizi hatası — UserId: {Id}", user.Id); }
+        }
+        _logger.LogInformation("SP-03: Davranış analizi tüm kullanıcılar için tamamlandı.");
     }
 }

@@ -415,8 +415,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("FrozenStreak")
+                        .HasColumnType("integer");
+
                     b.Property<double>("GeneralLevel")
                         .HasColumnType("double precision");
+
+                    b.Property<bool>("IsOnVacation")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastActiveAt")
                         .HasColumnType("timestamp with time zone");
@@ -477,6 +483,15 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<string>("UserName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateOnly?>("VacationEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("VacationReason")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly?>("VacationStartDate")
+                        .HasColumnType("date");
 
                     b.Property<List<string>>("Weaknesses")
                         .HasColumnType("jsonb");

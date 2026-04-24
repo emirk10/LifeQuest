@@ -43,6 +43,13 @@ public class DailyQuestService : IDailyQuestService
 
         foreach (var user in users)
         {
+            // SP-04: Tatil modundaki kullanıcılara görev atama
+            if (user.IsOnVacation)
+            {
+                _logger.LogDebug("DailyQuestWorker: {UserId} tatil modunda, görev atlanıyor.", user.Id);
+                continue;
+            }
+
             var hasTasksToday = await _userTaskReadRepository.Table
                 .AnyAsync(ut => ut.AppUserId == user.Id && ut.AssignedAt.Date == DateTime.UtcNow.Date);
 

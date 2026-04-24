@@ -74,6 +74,22 @@ public sealed class AppUser : BaseEntity
     /// <summary>Son aktif olma zamanı</summary>
     public DateTime? LastActiveAt { get; set; }
 
+    // ─── SP-04: Tatil / Mola Modu ─────────────────────────────────────────
+    /// <summary>Kullanıcı tatil/mola modunda mı? Bu sürede görev gelmez, streak korunur.</summary>
+    public bool IsOnVacation { get; set; } = false;
+
+    /// <summary>Tatil/mola başlangıç tarihi</summary>
+    public DateOnly? VacationStartDate { get; set; }
+
+    /// <summary>Tatil/mola bitiş tarihi</summary>
+    public DateOnly? VacationEndDate { get; set; }
+
+    /// <summary>Tatil nedeni: Tatil / Hastalık / Çok yoğunum</summary>
+    public string? VacationReason { get; set; }
+
+    /// <summary>Tatile girmeden önceki streak değeri (tatil sonrası geri yüklenir)</summary>
+    public int FrozenStreak { get; set; } = 0;
+
     // ─── Navigation Properties ─────────────────────────────────────────────
     public ICollection<UserCategoryProgress> CategoryProgresses { get; set; } = default!;
     public ICollection<UserTask> UserTasks { get; set; } = default!;

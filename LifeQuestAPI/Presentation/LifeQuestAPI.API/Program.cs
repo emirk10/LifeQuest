@@ -15,6 +15,8 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHostedService<DailyQuestWorker>();
 builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyReportWorker>();
+builder.Services.AddHostedService<NudgeWorker>(); // SP-03
+builder.Services.AddHostedService<GoalRevisionWorker>(); // SP-04
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.IAppNotificationService, LifeQuestAPI.API.Services.AppNotificationService>();

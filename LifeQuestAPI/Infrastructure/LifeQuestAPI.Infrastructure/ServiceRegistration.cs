@@ -5,6 +5,7 @@ using LifeQuestAPI.Application.Abstractions.Gamification;
 using LifeQuestAPI.Application.Abstractions.Social;
 using LifeQuestAPI.Application.Abstractions.Token;
 using LifeQuestAPI.Infrastructure.Services.AI;
+using LifeQuestAPI.Infrastructure.Services.BehaviorAnalysis;
 using LifeQuestAPI.Infrastructure.Services.DailyQuest;
 using LifeQuestAPI.Infrastructure.Services.Gamification;
 using LifeQuestAPI.Infrastructure.Services.Social;
@@ -28,6 +29,9 @@ public static class ServiceRegistration
         // SP-01: Bağlam-duyarlı görev öneri servisi (explicit namespace - isim çakışması önleme)
         services.AddScoped<LifeQuestAPI.Application.Abstractions.ITaskRecommendationService,
             LifeQuestAPI.Infrastructure.Services.DailyQuest.TaskRecommendationService>();
+
+        // SP-03: Davranış analizi servisi
+        services.AddScoped<IUserBehaviorAnalysisService, UserBehaviorAnalysisService>();
 
         // AI Chat servisi — Python mikro servise bağlanır
         var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "http://localhost:5001";

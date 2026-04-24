@@ -7,6 +7,9 @@ using LifeQuestAPI.Application.Features.User.Queries.GetLeaderboard;
 using LifeQuestAPI.Application.Features.User.Queries.GetUserProfile;
 using LifeQuestAPI.Application.Features.User.Queries.GetUserStats;
 using LifeQuestAPI.Application.Features.User.Queries.GetUserActivities;
+using LifeQuestAPI.Application.Features.User.Queries.GetUserBehaviorSummary;
+using LifeQuestAPI.Application.Features.User.Commands.Vacation;
+using LifeQuestAPI.Application.Features.User.Commands.UpdateGoals;
 using LifeQuestAPI.Application.Repositories;
 
 namespace LifeQuestAPI.API.Controllers;
@@ -98,7 +101,63 @@ public class UsersController : ControllerBase
         await _userWriteRepository.SaveAsync();
         return Ok(new { success = true });
     }
+
+    /// <summary>SP-03: Kullanıcının son 30 gün davranış analizi özeti.</summary>
+    [HttpGet("{id}/behavior-summary")]
+    public async Task<IActionResult> GetBehaviorSummary(Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || Guid.Parse(userIdString) != id) return Unauthorized();
+
+        var response = await _mediator.Send(new GetUserBehaviorSummaryQueryRequest { UserId = id });
+        return Ok(response);
+    }
+
+    /// <summary>SP-04: Tatil/mola modunu başlat.</summary>
+    [HttpPost("{id}/vacation/start")]
+    public async Task<IActionResult> StartVacation(Guid id, [FromBody] StartVacationBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || Guid.Parse(userIdString) != id) return Unauthorized();
+
+        var response = await _mediator.Send(new StartVacationCommandRequest
+        {
+            UserId  = id,
+            EndDate = body.EndDate,
+            Reason  = body.Reason
+        });
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    /// <summary>SP-04: Tatil/mola modunu bitir.</summary>
+    [HttpPost("{id}/vacation/end")]
+    public async Task<IActionResult> EndVacation(Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || Guid.Parse(userIdString) != id) return Unauthorized();
+
+        var response = await _mediator.Send(new EndVacationCommandRequest { UserId = id });
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
+
+    /// <summary>SP-04: Kullanıcı hedeflerini güncelle.</summary>
+    [HttpPut("{id}/goals")]
+    public async Task<IActionResult> UpdateGoals(Guid id, [FromBody] UpdateGoalsBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || Guid.Parse(userIdString) != id) return Unauthorized();
+
+        var response = await _mediator.Send(new UpdateUserGoalsCommandRequest
+        {
+            UserId       = id,
+            NewGoals     = body.NewGoals,
+            RemovedGoals = body.RemovedGoals
+        });
+        return response.Success ? Ok(response) : BadRequest(response);
+    }
 }
 
 public class ChatPersonalityBody { public string ChatPersonality { get; set; } = "friendly"; }
 public class NudgeSettingsBody { public bool NudgeEnabled { get; set; } = true; }
+public class StartVacationBody { public DateOnly? EndDate { get; set; } public string? Reason { get; set; } }
+public class UpdateGoalsBody { public List<string> NewGoals { get; set; } = new(); public List<string> RemovedGoals { get; set; } = new(); }

@@ -3,6 +3,8 @@ import MainLayout from "../layouts/MainLayout";
 import userService from "../services/userService";
 import axiosClient from "../api/axiosClient";
 import { getUserIdFromToken } from "../utils/authUtils";
+import BehaviorInsightCard from "../components/BehaviorInsightCard";
+import VacationModeToggle from "../components/VacationModeToggle";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 const PERSONALITY_OPTIONS = [
@@ -17,6 +19,8 @@ const ProfilePage = () => {
   const [chatPersonality, setChatPersonality] = useState("friendly");
   const [nudgeEnabled, setNudgeEnabled] = useState(true);
   const [personalitySaving, setPersonalitySaving] = useState(false);
+  const [behaviorSummary, setBehaviorSummary] = useState(null);
+  const [isOnVacation, setIsOnVacation] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -25,6 +29,16 @@ const ProfilePage = () => {
         setProfile(data);
         setChatPersonality(data?.chatPersonality || "friendly");
         setNudgeEnabled(data?.nudgeEnabled ?? true);
+        setIsOnVacation(data?.isOnVacation ?? false);
+
+        // SP-03: Davranış analizi özeti
+        const userId = getUserIdFromToken();
+        if (userId) {
+          try {
+            const bRes = await axiosClient.get(`/users/${userId}/behavior-summary`);
+            setBehaviorSummary(bRes.data);
+          } catch { /* henüz veri yoksa sessizce geç */ }
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -272,6 +286,21 @@ const ProfilePage = () => {
               }`} />
             </button>
           </div>
+        </section>
+
+        {/* SP-03: Davranış Analizi */}
+        {behaviorSummary && (
+          <section>
+            <BehaviorInsightCard summary={behaviorSummary} />
+          </section>
+        )}
+
+        {/* SP-04: Tatil / Mola Modu */}
+        <section>
+          <VacationModeToggle
+            isOnVacation={isOnVacation}
+            onVacationChange={(val) => setIsOnVacation(val)}
+          />
         </section>
       </div>
     </MainLayout>

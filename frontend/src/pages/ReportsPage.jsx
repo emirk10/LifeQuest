@@ -2,10 +2,14 @@ import React, { useState, useEffect } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import reportService from '../services/reportService';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import BehaviorInsightCard from '../components/BehaviorInsightCard';
+import axiosClient from '../api/axiosClient';
+import { getUserIdFromToken } from '../utils/authUtils';
 
 const ReportsPage = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [behaviorSummary, setBehaviorSummary] = useState(null);
 
   useEffect(() => {
     const fetchReports = async () => {
@@ -26,7 +30,18 @@ const ReportsPage = () => {
             setLoading(false);
         }
     };
+
+    const fetchBehavior = async () => {
+      const userId = getUserIdFromToken();
+      if (!userId) return;
+      try {
+        const res = await axiosClient.get(`/users/${userId}/behavior-summary`);
+        setBehaviorSummary(res.data);
+      } catch (err) { }
+    };
+
     fetchReports();
+    fetchBehavior();
   }, []);
 
   return (
@@ -45,8 +60,14 @@ const ReportsPage = () => {
                 Henüz yeterli veri yok. Raporların her hafta sonu oluşturulacak.
             </div>
         ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* XP Grafiği */}
+            <div className="space-y-8">
+                {/* SP-04: Adaptif Davranış Analizi */}
+                {behaviorSummary && (
+                   <BehaviorInsightCard summary={behaviorSummary} />
+                )}
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* XP Grafiği */}
                 <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl shadow-xl">
                     <h3 className="text-slate-300 font-bold mb-6 flex items-center gap-2">
                         <span className="w-2 h-2 bg-fuchsia-500 rounded-full"></span> 
@@ -100,6 +121,7 @@ const ReportsPage = () => {
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
+                </div>
                 </div>
             </div>
         )}

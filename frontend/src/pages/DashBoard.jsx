@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import CategoryCard from '../components/CategoryCard';
 import categoryService from '../services/categoryService';
 import userService from '../services/userService';
 import axiosClient from '../api/axiosClient';
 import { getUserIdFromToken } from '../utils/authUtils';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import * as signalR from '@microsoft/signalr';
 
 const DashBoard = () => {
   const [categories, setCategories] = useState([]);
@@ -17,6 +20,47 @@ const DashBoard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [motivation, setMotivation] = useState("Günlük motivasyon yükleniyor...");
+  const connectionRef = useRef(null);
+
+  // SP-03: SignalR proaktif nudge bağlantısı
+  useEffect(() => {
+    const userId = getUserIdFromToken();
+    if (!userId) return;
+
+    const connection = new signalR.HubConnectionBuilder()
+      .withUrl(`${import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:5000'}/hubs/notification`, {
+        accessTokenFactory: () => localStorage.getItem('token') ?? ''
+      })
+      .withAutomaticReconnect()
+      .configureLogging(signalR.LogLevel.Warning)
+      .build();
+
+    connectionRef.current = connection;
+
+    connection.on('ReceiveNotification', (notif) => {
+      if (notif?.type === 'ProactiveNudge') {
+        toast(
+          <div>
+            <p className="font-bold text-sm mb-1">LifeQuest AI 🤖</p>
+            <p className="text-xs">{notif.message}</p>
+          </div>,
+          {
+            autoClose: 8000,
+            className: 'bg-slate-800 border border-indigo-500/40 text-white rounded-2xl shadow-xl',
+            progressClassName: 'bg-indigo-500',
+            onClick: () => {
+              // ChatBot açılsun — window event üzerinden ChatBot dinler
+              window.dispatchEvent(new CustomEvent('openChatBot', { detail: { message: notif.message } }));
+            }
+          }
+        );
+      }
+    });
+
+    connection.start().catch(err => console.warn('SignalR bağlanamıyor:', err));
+
+    return () => { connection.stop(); };
+  }, []);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -166,6 +210,13 @@ const DashBoard = () => {
           </div>
         </div>
       </div>
+      {/* SP-03: Nudge toast bildirimleri */}
+      <ToastContainer
+        position="bottom-right"
+        theme="dark"
+        toastClassName="!rounded-2xl !shadow-2xl"
+        progressClassName="!bg-indigo-500"
+      />
     </MainLayout>
   );
 };

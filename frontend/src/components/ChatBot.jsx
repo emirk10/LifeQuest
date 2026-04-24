@@ -2,7 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import aiService from "../services/aiService";
 import taskService from "../services/taskService";
 import chatService from "../services/chatService";
+import userService from "../services/userService";
 import MiniTaskCard from "./MiniTaskCard";
+import GoalRevisionModal from "./GoalRevisionModal";
 
 // ─── Sabitler ────────────────────────────────────────────────────────────────
 
@@ -38,6 +40,9 @@ const ChatBot = () => {
   const [aiStatus, setAiStatus] = useState("unknown");
   const [unreadCount, setUnreadCount] = useState(0);
   const [actionLoading, setActionLoading] = useState(null); // action type
+  const [revisionModalOpen, setRevisionModalOpen] = useState(false);
+  const [revisionCategory, setRevisionCategory] = useState("");
+  const [currentGoals, setCurrentGoals] = useState([]);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -52,6 +57,24 @@ const ChatBot = () => {
     checkHealth();
     const interval = setInterval(checkHealth, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // SP-03: Dashboard toast'tan gelen openChatBot event
+  useEffect(() => {
+    const handleOpen = (e) => {
+      setIsOpen(true);
+      const nudgeMsg = e?.detail?.message;
+      if (nudgeMsg) {
+        setMessages(prev => [...prev, {
+          id: Date.now(), sender: "bot", type: "proactive",
+          text: nudgeMsg,
+          time: new Date().toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" }),
+        }]);
+        setUnreadCount(0); // panel açık olduğu için sıfırla
+      }
+    };
+    window.addEventListener("openChatBot", handleOpen);
+    return () => window.removeEventListener("openChatBot", handleOpen);
   }, []);
 
   useEffect(() => {
@@ -120,6 +143,25 @@ const ChatBot = () => {
   };
 
   const handleAction = async (action, msgId) => {
+    // SP-04: Hedef revizyonu aksiyonlarını araya gir
+    if (action.type === "update_goal") {
+      try {
+        const profile = await userService.getProfile();
+        setCurrentGoals(profile.userGoals || []);
+        setRevisionCategory(action.payload);
+        setRevisionModalOpen(true);
+        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionsUsed: true } : m));
+      } catch (err) {
+        addBotMessage("⚠️ Hedefler alınırken hata oluştu.", { isError: true });
+      }
+      return;
+    }
+    if (action.type === "keep_goal") {
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionsUsed: true } : m));
+      addBotMessage("Harika! Bu hedefle devam ediyoruz. 💪");
+      return;
+    }
+
     setActionLoading(action.type);
     try {
       const res = await fetch("/api/chat/action", {
@@ -381,6 +423,18 @@ const ChatBot = () => {
           </div>
         </div>
       )}
+
+      {/* SP-04: GoalRevisionModal */}
+      <GoalRevisionModal
+        isOpen={revisionModalOpen}
+        category={revisionCategory}
+        currentGoals={currentGoals}
+        onClose={() => setRevisionModalOpen(false)}
+        onUpdated={(newGoals) => {
+          setRevisionModalOpen(false);
+          setCurrentGoals(newGoals);
+        }}
+      />
     </>
   );
 };
