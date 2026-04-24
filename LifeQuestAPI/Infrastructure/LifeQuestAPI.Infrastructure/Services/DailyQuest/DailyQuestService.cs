@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using LifeQuestAPI.Application.Abstractions.AI;
 using LifeQuestAPI.Application.Abstractions.DailyQuest;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
@@ -20,22 +18,19 @@ public class DailyQuestService : IDailyQuestService
     private readonly IUserTaskReadRepository _userTaskReadRepository;
     private readonly IUserTaskWriteRepository _userTaskWriteRepository;
     private readonly ILogger<DailyQuestService> _logger;
-    private readonly ITaskRecommendationService _recommendationService;
 
     public DailyQuestService(
         ILogger<DailyQuestService> logger,
         IUserTaskWriteRepository userTaskWriteRepository,
         IUserTaskReadRepository userTaskReadRepository,
         IAppTaskReadRepository taskReadRepository,
-        IAppUserReadRepository userReadRepository,
-        ITaskRecommendationService recommendationService)
+        IAppUserReadRepository userReadRepository)
     {
         _userReadRepository = userReadRepository;
         _taskReadRepository = taskReadRepository;
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
         _logger = logger;
-        _recommendationService = recommendationService;
     }
 
     public async Task DistributeDailyQuestsAsync()
@@ -67,7 +62,8 @@ public class DailyQuestService : IDailyQuestService
         if (user == null) throw new Exception("Kullanıcı bulunamadı.");
 
         var hasActiveTasks = await _userTaskReadRepository.Table
-            .AnyAsync(ut => ut.AppUserId == userId && ut.Status == AppTaskStatus.Assigned);
+            .AnyAsync(ut => ut.AppUserId == userId
+                && (ut.Status == AppTaskStatus.Suggested || ut.Status == AppTaskStatus.Selected || ut.Status == AppTaskStatus.InProgress));
 
         if (hasActiveTasks)
         {
@@ -115,10 +111,9 @@ public class DailyQuestService : IDailyQuestService
             return true;
         }).ToList();
 
-        // ML Modeli üzerinden önerileri al
-        var recommendedTaskIds = await _recommendationService.GetRecommendedTasksAsync(user, suitableTasks, 3);
-        
-        var selectedTasks = suitableTasks.Where(t => recommendedTaskIds.Contains(t.Id)).ToList();
+        // Eski ML tabanlı öneri kaldırıldı — SP-01 TaskRecommendationService kullanılacak
+        // Basit random seçim (eski davranış korunuyor)
+        var selectedTasks = suitableTasks.OrderBy(_ => Guid.NewGuid()).Take(6).ToList();
 
         if (!suitableTasks.Any()) return new List<Guid>();
 
@@ -131,7 +126,7 @@ public class DailyQuestService : IDailyQuestService
                 Id = Guid.NewGuid(),
                 AppUserId = user.Id,
                 AppTaskId = task.Id,
-                Status = AppTaskStatus.Assigned,
+                Status = AppTaskStatus.Suggested,
                 EarnedXp = 0,
                 AssignedAt = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddHours(24)

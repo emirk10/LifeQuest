@@ -1,17 +1,30 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "../layouts/MainLayout";
 import userService from "../services/userService";
+import axiosClient from "../api/axiosClient";
+import { getUserIdFromToken } from "../utils/authUtils";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+
+const PERSONALITY_OPTIONS = [
+  { value: "friendly", label: "Arkadaşça 😊", desc: "Sıcak, destekleyici ve neşeli" },
+  { value: "motivator", label: "Motivasyoncu 🔥", desc: "Enerjik, heyecanlı ve teşvik edici" },
+  { value: "coach", label: "Koç 🎯", desc: "Analitik, stratejik ve verimlilik odaklı" },
+];
 
 const ProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [chatPersonality, setChatPersonality] = useState("friendly");
+  const [nudgeEnabled, setNudgeEnabled] = useState(true);
+  const [personalitySaving, setPersonalitySaving] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const data = await userService.getProfile();
         setProfile(data);
+        setChatPersonality(data?.chatPersonality || "friendly");
+        setNudgeEnabled(data?.nudgeEnabled ?? true);
       } catch (err) {
         console.error(err);
       } finally {
@@ -20,6 +33,32 @@ const ProfilePage = () => {
     };
     fetchProfile();
   }, []);
+
+  const handlePersonalityChange = async (value) => {
+    setChatPersonality(value);
+    setPersonalitySaving(true);
+    try {
+      const userId = getUserIdFromToken();
+      await axiosClient.patch(`/users/${userId}/chat-personality`, { chatPersonality: value });
+    } catch (err) {
+      console.error("Kişilik kaydedilemedi:", err);
+    } finally {
+      setPersonalitySaving(false);
+    }
+  };
+
+  const handleNudgeToggle = async () => {
+    const newVal = !nudgeEnabled;
+    setNudgeEnabled(newVal);
+    try {
+      const userId = getUserIdFromToken();
+      await axiosClient.patch(`/users/${userId}/nudge-settings`, { nudgeEnabled: newVal });
+    } catch (err) {
+      console.error("Nudge kaydedilemedi:", err);
+      setNudgeEnabled(!newVal); // rollback
+    }
+  };
+
 
   const getActiveDays = (dateString) => {
     if (!dateString) return 0;
@@ -194,9 +233,49 @@ const ProfilePage = () => {
             )}
           </div>
         </section>
+
+        {/* SP-02: Chatbot Kişilik Ayarları */}
+        <section className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800">
+          <h3 className="text-lg font-black text-white mb-6 tracking-widest uppercase italic flex items-center gap-2">
+            <span className="text-xl">🤖</span> AI Asistan Kişiliği
+            {personalitySaving && <span className="text-xs text-indigo-400 font-normal animate-pulse">Kaydediliyor...</span>}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {PERSONALITY_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handlePersonalityChange(opt.value)}
+                className={`p-4 rounded-2xl border text-left transition-all ${
+                  chatPersonality === opt.value
+                    ? "bg-indigo-600/20 border-indigo-500 shadow-lg shadow-indigo-500/10"
+                    : "bg-slate-900/60 border-slate-700/50 hover:border-slate-600"
+                }`}
+              >
+                <p className="text-sm font-bold text-white mb-1">{opt.label}</p>
+                <p className="text-[11px] text-slate-400">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center justify-between bg-slate-900/60 rounded-2xl p-4 border border-slate-700/50">
+            <div>
+              <p className="text-sm font-bold text-white">Proaktif Hatırlatmalar</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Asistan beklenmedik anlarda seni motive etsin</p>
+            </div>
+            <button
+              onClick={handleNudgeToggle}
+              className={`relative w-12 h-6 rounded-full transition-all ${
+                nudgeEnabled ? "bg-indigo-600" : "bg-slate-700"
+              }`}
+            >
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${
+                nudgeEnabled ? "left-7" : "left-1"
+              }`} />
+            </button>
+          </div>
+        </section>
       </div>
     </MainLayout>
   );
 };
 
-export default ProfilePage;
+export default ProfilePage;

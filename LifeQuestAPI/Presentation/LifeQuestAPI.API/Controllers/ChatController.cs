@@ -1,8 +1,9 @@
+using LifeQuestAPI.Application.Features.Chat.Commands.ProcessChatAction;
+using LifeQuestAPI.Application.Features.Chat.Commands.SendMessage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using LifeQuestAPI.Application.Features.Chat.Commands.SendMessage;
+using System.Security.Claims;
 
 namespace LifeQuestAPI.API.Controllers;
 
@@ -18,31 +19,61 @@ public class ChatController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// AI chatbot'a mesaj gonder ve cevap al.
-    /// </summary>
+    /// <summary>AI chatbot'a mesaj gönder ve bağlam-duyarlı cevap al.</summary>
     [HttpPost("send")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageBody body)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
-        var request = new SendMessageCommandRequest
+        var response = await _mediator.Send(new SendMessageCommandRequest
         {
             UserId = Guid.Parse(userIdString),
             Message = body.Message
-        };
+        });
 
-        var response = await _mediator.Send(request);
-
-        if (!response.Success)
-            return BadRequest(response);
-
+        if (!response.Success) return BadRequest(response);
         return Ok(response);
+    }
+
+    /// <summary>SP-02: Chatbot aksiyon butonuna tıklandığında aksiyonu işle.</summary>
+    [HttpPost("action")]
+    public async Task<IActionResult> ProcessAction([FromBody] ProcessChatActionBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var result = await _mediator.Send(new ProcessChatActionCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            MessageId = body.MessageId,
+            ActionType = body.ActionType,
+            TaskId = body.TaskId,
+            Payload = body.Payload
+        });
+
+        if (!result.Success) return BadRequest(result);
+        return Ok(result);
+    }
+
+    /// <summary>SP-02: Konuşma geçmişi (son 50 mesaj).</summary>
+    [HttpGet("history")]
+    public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
+    {
+        // Basit implementasyon — gelecekte paged query eklenebilir
+        return Ok(new { message = "Coming soon — SP-03" });
     }
 }
 
 public class ChatMessageBody
 {
     public string Message { get; set; } = string.Empty;
+}
+
+public class ProcessChatActionBody
+{
+    public Guid? MessageId { get; set; }
+    public string ActionType { get; set; } = string.Empty;
+    public Guid? TaskId { get; set; }
+    public Dictionary<string, string>? Payload { get; set; }
 }

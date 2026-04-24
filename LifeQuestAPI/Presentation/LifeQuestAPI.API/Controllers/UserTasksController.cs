@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using LifeQuestAPI.Application.Features.UserTasks.Queries.GetUserTasks;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.CompleteUserTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.RequestNewQuests;
+using LifeQuestAPI.Application.Features.UserTasks.Queries.GetDailyTaskPool;
+using LifeQuestAPI.Application.Features.UserTasks.Commands.SelectTask;
+using LifeQuestAPI.Application.Features.UserTasks.Commands.PostponeTask;
+using LifeQuestAPI.Application.Features.UserTasks.Commands.PauseResumeTask;
 
 namespace LifeQuestAPI.API.Controllers;
 
@@ -90,4 +94,110 @@ public class UserTasksController : ControllerBase
 
         return Ok(response);
     }
+
+    // ─── SP-01: Yeni Endpoint'ler ─────────────────────────────────────────
+
+    /// <summary>Bugünkü görev havuzunu getir (6 öneri, mood-duyarlı)</summary>
+    [HttpGet("daily-pool")]
+    public async Task<IActionResult> GetDailyPool([FromQuery] int count = 6)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new GetDailyTaskPoolQueryRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            Count = count
+        });
+        return Ok(response);
+    }
+
+    /// <summary>Havuzdan görev seç (Suggested → Selected)</summary>
+    [HttpPost("{id}/select")]
+    public async Task<IActionResult> SelectTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new SelectTaskCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id
+        });
+        return Ok(response);
+    }
+
+    /// <summary>Görevi ertele</summary>
+    [HttpPost("{id}/postpone")]
+    public async Task<IActionResult> PostponeTask([FromRoute] Guid id, [FromBody] PostponeTaskBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        try
+        {
+            var response = await _mediator.Send(new PostponeTaskCommandRequest
+            {
+                UserId = Guid.Parse(userIdString),
+                UserTaskId = id,
+                PostponeTo = body.PostponeTo ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+                SkipReason = body.SkipReason
+            });
+            return Ok(response);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>Görevi duraklat</summary>
+    [HttpPost("{id}/pause")]
+    public async Task<IActionResult> PauseTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new PauseTaskCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id
+        });
+        return Ok(response);
+    }
+
+    /// <summary>Görevi devam ettir</summary>
+    [HttpPost("{id}/resume")]
+    public async Task<IActionResult> ResumeTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new ResumeTaskCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id
+        });
+        return Ok(response);
+    }
+
+    /// <summary>Görevden vazgeç</summary>
+    [HttpPost("{id}/abandon")]
+    public async Task<IActionResult> AbandonTask([FromRoute] Guid id, [FromBody] AbandonTaskBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new AbandonTaskCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id,
+            Reason = body.Reason
+        });
+        return Ok(new { success = response });
+    }
 }
+
+// Request body record'ları
+public record PostponeTaskBody(DateOnly? PostponeTo, string? SkipReason);
+public record AbandonTaskBody(string? Reason);

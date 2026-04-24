@@ -53,5 +53,9 @@ public static class ServiceRegistration
         services.AddScoped<IChallengeWriteRepository, ChallengeWriteRepository>();
         services.AddScoped<IUserTaskInteractionReadRepository, UserTaskInteractionReadRepository>();
         services.AddScoped<IUserTaskInteractionWriteRepository, UserTaskInteractionWriteRepository>();
+        services.AddScoped<IUserDailyMoodReadRepository, UserDailyMoodReadRepository>();
+        services.AddScoped<IUserDailyMoodWriteRepository, UserDailyMoodWriteRepository>();
+        services.AddScoped<IChatBotMessageReadRepository, ChatBotMessageReadRepository>();
+        services.AddScoped<IChatBotMessageWriteRepository, ChatBotMessageWriteRepository>();
     }
 }

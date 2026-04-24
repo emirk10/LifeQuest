@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace LifeQuestAPI.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial_Migration : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -103,11 +103,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     Difficulty = table.Column<int>(type: "integer", nullable: false),
                     IsDaily = table.Column<bool>(type: "boolean", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    VerificationType = table.Column<int>(type: "integer", nullable: false),
-                    MinReflectionWords = table.Column<int>(type: "integer", nullable: false),
-                    MinTimerMinutes = table.Column<int>(type: "integer", nullable: false),
-                    VerificationHint = table.Column<string>(type: "text", nullable: true),
-                    ExpectedImageCategory = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
@@ -491,42 +486,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "TaskVerifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserTaskId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    PhotoPath = table.Column<string>(type: "text", nullable: true),
-                    AIConfidenceScore = table.Column<float>(type: "real", nullable: true),
-                    AIAnalysisResult = table.Column<string>(type: "text", nullable: true),
-                    ReflectionText = table.Column<string>(type: "text", nullable: true),
-                    ReflectionWordCount = table.Column<int>(type: "integer", nullable: true),
-                    SentimentScore = table.Column<float>(type: "real", nullable: true),
-                    IsReflectionRelevant = table.Column<bool>(type: "boolean", nullable: true),
-                    TimerStartedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    TimerEndedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    MinimumMinutesRequired = table.Column<int>(type: "integer", nullable: true),
-                    QuizScore = table.Column<int>(type: "integer", nullable: true),
-                    QuizTotalQuestions = table.Column<int>(type: "integer", nullable: true),
-                    SubmittedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ReviewNotes = table.Column<string>(type: "text", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TaskVerifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TaskVerifications_UserTasks_UserTaskId",
-                        column: x => x.UserTaskId,
-                        principalTable: "UserTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_AppTasks_CategoryId",
                 table: "AppTasks",
@@ -577,11 +536,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                 name: "IX_Notifications_AppUserId_IsRead",
                 table: "Notifications",
                 columns: new[] { "AppUserId", "IsRead" });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_TaskVerifications_UserTaskId",
-                table: "TaskVerifications",
-                column: "UserTaskId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserAchievements_AchievementId",
@@ -673,9 +627,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                 name: "Notifications");
 
             migrationBuilder.DropTable(
-                name: "TaskVerifications");
-
-            migrationBuilder.DropTable(
                 name: "UserAchievements");
 
             migrationBuilder.DropTable(
@@ -691,10 +642,10 @@ namespace LifeQuestAPI.Persistence.Migrations
                 name: "UserTaskInteractions");
 
             migrationBuilder.DropTable(
-                name: "WeeklyReports");
+                name: "UserTasks");
 
             migrationBuilder.DropTable(
-                name: "UserTasks");
+                name: "WeeklyReports");
 
             migrationBuilder.DropTable(
                 name: "Achievements");

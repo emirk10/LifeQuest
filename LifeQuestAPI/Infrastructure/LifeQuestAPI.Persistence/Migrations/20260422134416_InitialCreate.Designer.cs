@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LifeQuestAPI.Persistence.Migrations
 {
     [DbContext(typeof(LifeQuestDbContext))]
-    [Migration("20260422122505_RemoveVerificationSystem")]
-    partial class RemoveVerificationSystem
+    [Migration("20260422134416_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

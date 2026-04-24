@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.Abstractions.AI;
 using LifeQuestAPI.Application.Abstractions.DailyQuest;
 using LifeQuestAPI.Application.Abstractions.Gamification;
@@ -24,6 +25,10 @@ public static class ServiceRegistration
         services.AddScoped<IDailyQuestService, DailyQuestService>();
         services.AddScoped<IChallengeService, ChallengeService>();
 
+        // SP-01: Bağlam-duyarlı görev öneri servisi (explicit namespace - isim çakışması önleme)
+        services.AddScoped<LifeQuestAPI.Application.Abstractions.ITaskRecommendationService,
+            LifeQuestAPI.Infrastructure.Services.DailyQuest.TaskRecommendationService>();
+
         // AI Chat servisi — Python mikro servise bağlanır
         var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "http://localhost:5001";
 
@@ -35,8 +40,5 @@ public static class ServiceRegistration
         {
             ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
         });
-
-        // ML.NET Öneri servisi (Singleton - MLContext thread-safe)
-        services.AddSingleton<ITaskRecommendationService, TaskRecommendationService>();
     }
-}
+}

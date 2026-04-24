@@ -1,6 +1,8 @@
 using LifeQuestAPI.Domain.Entities.Identity;
 using LifeQuestAPI.Domain.Entities;
+using LifeQuestAPI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace LifeQuestAPI.Persistence.Contexts;
 
@@ -27,6 +29,7 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<Friendship> Friendships { get; set; }
     public DbSet<Challenge> Challenges { get; set; }
     public DbSet<UserTaskInteraction> UserTaskInteractions { get; set; }
+    public DbSet<UserDailyMood> UserDailyMoods { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,6 +92,55 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<WeeklyReport>()
             .HasIndex(wr => new { wr.AppUserId, wr.WeekStartDate })
             .IsUnique();
+
+        // UserDailyMood — UNIQUE(AppUserId, Date) + indexes
+        modelBuilder.Entity<UserDailyMood>()
+            .HasIndex(m => new { m.AppUserId, m.Date })
+            .IsUnique();
+
+        modelBuilder.Entity<UserDailyMood>()
+            .HasIndex(m => m.Date);
+
+        // AppUser jsonb kolonları
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.UserGoals)
+            .HasColumnType("jsonb")
+            .HasColumnName("UserGoals");
+
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.Strengths)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.Weaknesses)
+            .HasColumnType("jsonb");
+
+        // AppUser.Goals → UserGoalsList navigation
+        modelBuilder.Entity<AppUser>()
+            .HasMany(u => u.UserGoalsList)
+            .WithOne(g => g.AppUser)
+            .HasForeignKey(g => g.AppUserId);
+
+        // AppTask jsonb kolonları
+        modelBuilder.Entity<AppTask>()
+            .Property(t => t.RecommendedTimeSlots)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppTask>()
+            .Property(t => t.TargetedWeaknesses)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppTask>()
+            .Property(t => t.TargetedGoals)
+            .HasColumnType("jsonb");
+
+        // ChatBotMessage — SP-02 index
+        modelBuilder.Entity<ChatBotMessage>()
+            .HasIndex(m => m.AppUserId);
+
+        modelBuilder.Entity<ChatBotMessage>()
+            .Property(m => m.ActionsOfferedJson)
+            .HasColumnType("jsonb");
 
         base.OnModelCreating(modelBuilder);
     }

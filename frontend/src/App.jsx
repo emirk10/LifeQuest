@@ -14,6 +14,7 @@ import GoalsPage from './pages/GoalsPage';
 import ReportsPage from './pages/ReportsPage';
 import SocialPage from './pages/SocialPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import DailyTaskPage from './pages/DailyTaskPage';
 
 import PrivateRoute from './components/PrivateRoute';
 import ChatBot from './components/ChatBot';
@@ -37,6 +38,7 @@ function App() {
             <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
             <Route path="/social" element={<PrivateRoute><SocialPage /></PrivateRoute>} />
             <Route path="/leaderboard" element={<PrivateRoute><LeaderboardPage /></PrivateRoute>} />
+            <Route path="/daily" element={<PrivateRoute><DailyTaskPage /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
           </Routes>
           <ChatBot />

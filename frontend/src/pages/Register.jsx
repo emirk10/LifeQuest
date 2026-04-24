@@ -13,16 +13,25 @@ const Register = () => {
     password: "",
     passwordConfirm: "",
   });
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: null });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({});
+    setServerError("");
+    setSuccessMsg("");
 
     if (formData.password !== formData.passwordConfirm) {
-      alert("Şifreler uyuşmuyor!");
+      setErrors({ passwordConfirm: "Şifreler uyuşmuyor!" });
       return;
     }
 
@@ -37,11 +46,20 @@ const Register = () => {
         passwordConfirm: formData.passwordConfirm,
       });
 
-      alert("🎉 Kayıt başarılı! Giriş sayfasına yönlendiriliyorsun.");
-      navigate("/login");
+      setSuccessMsg("🎉 Kayıt başarılı! Giriş sayfasına yönlendiriliyorsun.");
+      setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
       console.error(err);
-      alert("Hata: " + (err.response?.data?.message || "Kayıt olunamadı."));
+      if (err.response?.data?.errors) {
+        const newErrors = {};
+        err.response.data.errors.forEach((errItem) => {
+          const field = errItem.property.charAt(0).toLowerCase() + errItem.property.slice(1);
+          newErrors[field] = errItem.error;
+        });
+        setErrors(newErrors);
+      } else {
+        setServerError(err.response?.data?.message || "Kayıt olunamadı.");
+      }
     } finally {
       setLoading(false);
     }
@@ -69,60 +87,89 @@ const Register = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {serverError && (
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 text-xs font-bold text-center mb-4">
+              {serverError}
+            </div>
+          )}
+          {successMsg && (
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-500 text-xs font-bold text-center mb-4">
+              {successMsg}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              name="name"
-              placeholder="Ad"
-              required
-              className={inputClass}
-              onChange={handleChange}
-            />
-            <input
-              type="text"
-              name="surname"
-              placeholder="Soyad"
-              required
-              className={inputClass}
-              onChange={handleChange}
-            />
+            <div>
+              <input
+                type="text"
+                name="name"
+                placeholder="Ad"
+                required
+                className={`${inputClass} ${errors.name ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+                onChange={handleChange}
+              />
+              {errors.name && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.name}</p>}
+            </div>
+            <div>
+              <input
+                type="text"
+                name="surname"
+                placeholder="Soyad"
+                required
+                className={`${inputClass} ${errors.surname ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+                onChange={handleChange}
+              />
+              {errors.surname && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.surname}</p>}
+            </div>
           </div>
 
-          <input
-            type="text"
-            name="username"
-            placeholder="Kullanıcı Adı"
-            required
-            className={inputClass}
-            onChange={handleChange}
-          />
+          <div>
+            <input
+              type="text"
+              name="username"
+              placeholder="Kullanıcı Adı"
+              required
+              className={`${inputClass} ${errors.username ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+              onChange={handleChange}
+            />
+            {errors.username && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.username}</p>}
+          </div>
 
-          <input
-            type="email"
-            name="email"
-            placeholder="E-Posta Adresi"
-            required
-            className={inputClass}
-            onChange={handleChange}
-          />
+          <div>
+            <input
+              type="email"
+              name="email"
+              placeholder="E-Posta Adresi"
+              required
+              className={`${inputClass} ${errors.email ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+              onChange={handleChange}
+            />
+            {errors.email && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.email}</p>}
+          </div>
 
-          <input
-            type="password"
-            name="password"
-            placeholder="Şifre"
-            required
-            className={inputClass}
-            onChange={handleChange}
-          />
+          <div>
+            <input
+              type="password"
+              name="password"
+              placeholder="Şifre"
+              required
+              className={`${inputClass} ${errors.password ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+              onChange={handleChange}
+            />
+            {errors.password && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.password}</p>}
+          </div>
 
-          <input
-            type="password"
-            name="passwordConfirm"
-            placeholder="Şifre Tekrar"
-            required
-            className={inputClass}
-            onChange={handleChange}
-          />
+          <div>
+            <input
+              type="password"
+              name="passwordConfirm"
+              placeholder="Şifre Tekrar"
+              required
+              className={`${inputClass} ${errors.passwordConfirm ? "border-rose-500 focus:border-rose-500 focus:ring-rose-500/50" : ""}`}
+              onChange={handleChange}
+            />
+            {errors.passwordConfirm && <p className="text-rose-500 text-xs mt-1 ml-1">{errors.passwordConfirm}</p>}
+          </div>
 
           <button
             disabled={loading}

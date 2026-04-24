@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.Json;
 
 namespace LifeQuestAPI.API.Middlewares;
@@ -32,16 +32,34 @@ public class GlobalExceptionMiddleware
     {
         context.Response.ContentType = "application/json";
 
+        if (exception is FluentValidation.ValidationException validationException)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            var validationResponse = new
+            {
+                IsSuccess = false,
+                Message = "Doğrulama hataları oluştu.",
+                Errors = validationException.Errors.Select(e => new
+                {
+                    Property = e.PropertyName,
+                    Error = e.ErrorMessage
+                })
+            };
+
+            var validationJsonResponse = JsonSerializer.Serialize(validationResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            return context.Response.WriteAsync(validationJsonResponse);
+        }
+
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
         var response = new
         {
             IsSuccess = false,
-            Message = $"Bir hata oluştu: {exception.Message}"
+            Message = $"Sunucuda beklenmeyen bir hata oluştu." // Avoid exposing raw exception messages to the client
         };
 
-        var jsonResponse = JsonSerializer.Serialize(response);
-
+        var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         return context.Response.WriteAsync(jsonResponse);
     }
 }

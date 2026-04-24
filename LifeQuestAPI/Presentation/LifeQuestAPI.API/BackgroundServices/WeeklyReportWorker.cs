@@ -71,7 +71,9 @@ public class WeeklyReportWorker : BackgroundService
             if (!thisWeekTasks.Any()) continue;
 
             var completedTasks = thisWeekTasks.Where(t => t.Status == Domain.Enums.AppTaskStatus.Completed).ToList();
-            var failedTasks = thisWeekTasks.Where(t => t.Status == Domain.Enums.AppTaskStatus.Failed || t.DueDate < DateTime.UtcNow && t.Status != Domain.Enums.AppTaskStatus.Completed).ToList();
+            var failedTasks = thisWeekTasks.Where(t => t.Status == Domain.Enums.AppTaskStatus.Abandoned
+                || t.Status == Domain.Enums.AppTaskStatus.Expired
+                || (t.DueDate < DateTime.UtcNow && t.Status != Domain.Enums.AppTaskStatus.Completed)).ToList();
 
             var totalXpEarned = completedTasks.Sum(t => t.EarnedXp);
 

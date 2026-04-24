@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using LifeQuestAPI.Application.Abstractions.Gamification;
 using LifeQuestAPI.Application.Repositories;
@@ -41,22 +40,39 @@ public sealed class GamificationService : IGamificationService
 
     public async Task<AppUser> AddExperienceAsync(Guid userId, int xpAmount, Guid? categoryId = null)
     {
-        var user = await _userReadRepository.GetByIdAsync(userId.ToString(), tracking: true);
+        return await AddExperienceWithTaskAsync(userId, xpAmount, null, categoryId);
+    }
 
+    /// <summary>
+    /// SP-01: XpCompensationRate ve IsCompensated bonus destekli XP ekleme.
+    /// Ertelenen görevlerde rate=0.70, normal tamamlamada rate=1.0, telafi tamamlamada +%10 bonus.
+    /// </summary>
+    public async Task<AppUser> AddExperienceWithTaskAsync(Guid userId, int baseXpAmount, UserTask? userTask, Guid? categoryId = null)
+    {
+        var user = await _userReadRepository.GetByIdAsync(userId.ToString(), tracking: true);
         if (user == null) throw new Exception("Kullanıcı bulunamadı!");
 
-        user.TotalXP += xpAmount;
+        // XP hesabı: CompensationRate uygula
+        decimal compensationRate = userTask?.XpCompensationRate ?? 1.0m;
+        // Telafi bonusu: Postponed görev tamamlanıyorsa +%10
+        if (userTask?.IsCompensated == true)
+            compensationRate = Math.Min(compensationRate + 0.10m, 1.0m);
+
+        int finalXp = (int)(baseXpAmount * compensationRate);
+
+        if (userTask != null)
+            userTask.EarnedXp = finalXp;
+
+        user.TotalXP += finalXp;
         user.GeneralLevel = 1 + (user.TotalXP / 1000.0);
+        user.LastActiveAt = DateTime.UtcNow;
 
         _userWriteRepository.Update(user);
 
         if (categoryId.HasValue)
-        {
-            await HandleCategoryProgression(userId, categoryId.Value, xpAmount);
-        }
+            await HandleCategoryProgression(userId, categoryId.Value, finalXp);
 
         await _userWriteRepository.SaveAsync();
-
         await CheckAndAwardBadges(user.Id, (int)user.GeneralLevel);
 
         return user;
@@ -113,7 +129,6 @@ public sealed class GamificationService : IGamificationService
                     BadgeId = badge.Id,
                     EarnedAt = DateTime.UtcNow
                 };
-
                 await _userBadgeWriteRepository.AddAsync(newUserBadge);
             }
         }

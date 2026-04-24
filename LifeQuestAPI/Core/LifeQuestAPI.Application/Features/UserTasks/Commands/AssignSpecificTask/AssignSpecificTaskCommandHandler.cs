@@ -34,7 +34,8 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
         }
 
         var alreadyAssigned = await _userTaskReadRepository.Table
-            .AnyAsync(ut => ut.AppUserId == request.UserId && ut.AppTaskId == request.AppTaskId && ut.Status != AppTaskStatus.Failed, cancellationToken);
+            .AnyAsync(ut => ut.AppUserId == request.UserId && ut.AppTaskId == request.AppTaskId
+                && ut.Status != AppTaskStatus.Expired && ut.Status != AppTaskStatus.Abandoned, cancellationToken);
             
         if (alreadyAssigned)
         {
@@ -46,7 +47,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             Id = Guid.NewGuid(),
             AppUserId = request.UserId,
             AppTaskId = request.AppTaskId,
-            Status = AppTaskStatus.Assigned,
+            Status = AppTaskStatus.Selected,
             AssignedAt = DateTime.UtcNow,
             DueDate = DateTime.UtcNow.AddHours(24),
             EarnedXp = 0
