@@ -1,0 +1,1657 @@
+================================================================================
+                    LifeQuest - KAPSAMLI PROJE DOKÜMANTASYONU
+          Yapay Zeka Destekli Kişisel Gelişim ve Oyunlaştırma Platformu
+================================================================================
+
+PROJE OLUŞTURMA TARİHİ: 22 Nisan 2026
+SÜRÜm: 2.0 (Geliştirme Aşamasında)
+DİL: Türkçe
+
+
+================================================================================
+ 1. PROJE ÖZETİ
+================================================================================
+
+LifeQuest, kullanıcıların kişisel gelişim hedeflerini başarmalarına yardımcı
+olan, yapay zeka ve oyunlaştırma mekanizmalarından yararlanan modern bir
+platformdur.
+
+📌 Temel Amaçlar:
+  • Kullanıcıları günlük görevler tamamlamaya motive etmek
+  • Kategori bazlı (Eğitim, Sağlık, Kariyer, Sosyal) seviye sistemi
+  • XP (Deneyim Puanı) kazanarak seviye atlama
+  • Rozetler ve başarılar açma
+  • Sosyal özellikler (arkadaşlık, yarışma)
+  • AI asistanı ile kişiselleştirilmiş görev önerileri
+
+💡 Kişiye Özgü Yaklaşım:
+  • Kayıt sırasında "Seni Tanıyalım" anketi
+  • Kullanıcı profiline göre akıllı görev atama
+  • Timer ve basit doğrulama ile gerçekçi görev tamamlama
+
+
+================================================================================
+ 2. SİSTEM MİMARİSİ
+================================================================================
+
+2.1 GENEL YAPI (Microservices)
+
+    ┌─────────────────────────────────────────────┐
+    │    Frontend (React + Vite + TailwindCSS)    │
+    │  Port: 3000/HTTPS (Docker)                  │
+    └────────────────┬────────────────────────────┘
+                     │ HTTP REST + WebSocket
+        ┌────────────┴──────────────┐
+        │                           │
+    ┌───▼─────────────────┐  ┌──────▼──────────────────┐
+    │  .NET API Backend   │  │ Python AI Mikro Servis  │
+    │  Port: 5020         │  │ Port: 5001              │
+    │  (ASP.NET Core 9)   │  │ (FastAPI)               │
+    └────────┬────────────┘  └──────────────────────────┘
+             │
+    ┌────────▼──────────────┐
+    │  PostgreSQL Database  │
+    │  Port: 5432           │
+    │  (Version 15)         │
+    └───────────────────────┘
+
+2.2 TEKNOLOJI YIĞINI
+
+┌─ PRESENTATION LAYER (Frontend)
+│  ├─ React 19.2.0
+│  ├─ Vite 7.2.4 (Build Tool)
+│  ├─ React Router 7.11.0
+│  ├─ TailwindCSS 3.4.17
+│  ├─ Axios 1.13.2 (HTTP Client)
+│  ├─ SignalR 10.0.0 (WebSocket)
+│  ├─ Formik + Yup (Form Validation)
+│  ├─ Recharts 3.8.1 (Grafikler)
+│  └─ React-Toastify (Notifications)
+│
+├─ API LAYER (Backend)
+│  ├─ .NET 9.0
+│  ├─ ASP.NET Core 9.0
+│  ├─ Entity Framework Core 9.0.1
+│  ├─ MediatR 14.0.0 (CQRS Pattern)
+│  ├─ FluentValidation (Validation)
+│  ├─ JWT Authentication
+│  ├─ SignalR (Real-time)
+│  ├─ Rate Limiting (500 req/min)
+│  └─ Background Services (DailyQuestWorker, WeeklyReportWorker)
+│
+├─ AI SERVICE (Microservice)
+│  ├─ Python 3.11
+│  ├─ FastAPI 0.115.6
+│  ├─ scikit-learn 1.6.1
+│  ├─ TensorFlow 2.18.0
+│  ├─ Pydantic 2.10.4
+│  └─ Joblib (Model Serialization)
+│
+├─ DATABASE
+│  ├─ PostgreSQL 15
+│  ├─ 18 Tables
+│  ├─ Relationships & Constraints
+│  └─ pgAdmin 4 (Web UI - Port 5050)
+│
+└─ DEVOPS
+   ├─ Docker + Docker Compose
+   ├─ Multi-stage Builds
+   ├─ Health Checks
+   └─ Volume Mounts
+
+
+================================================================================
+ 3. FRONTEND (React)
+================================================================================
+
+3.1 PROJE YAPISI
+
+frontend/
+├── src/
+│   ├── main.jsx                 # React Entry Point
+│   ├── App.jsx                  # Root Component
+│   ├── index.css                # Global Styles
+│   ├── App.css
+│   │
+│   ├── pages/                   # Sayfalar (Route-based)
+│   │   ├── DashBoard.jsx        # Ana sayfa (istatistikler, aktiviteler)
+│   │   ├── LoginPage.jsx        # Giriş
+│   │   ├── Register.jsx         # Kayıt (ANKET İLE GÜNCELLENECEK)
+│   │   ├── TaskList.jsx         # Görev listesi + Timer
+│   │   ├── AdminPage.jsx        # Admin paneli (görev oluşturma)
+│   │   ├── GoalsPage.jsx        # Hedefler
+│   │   ├── ProfilePage.jsx      # Profil sayfası
+│   │   ├── BadgeGallery.jsx     # Rozetler
+│   │   ├── ReportsPage.jsx      # Haftalık raporlar
+│   │   ├── SocialPage.jsx       # Arkadaşlar, yarışmalar
+│   │   └── LeaderboardPage.jsx  # Sıralama
+│   │
+│   ├── components/              # Reusable Components
+│   │   ├── ChatBot.jsx          # AI Chatbot
+│   │   ├── TaskItem.jsx         # Görev kartı
+│   │   ├── BadgeCard.jsx        # Rozetler
+│   │   ├── CategoryCard.jsx     # Kategori kartı
+│   │   ├── NotificationBell.jsx # Bildirimler
+│   │   ├── ErrorBoundary.jsx    # Error Handler
+│   │   └── PrivateRoute.jsx     # Korunan rotalar
+│   │
+│   ├── services/                # API Servisleri
+│   │   ├── authService.js       # Auth (login, register)
+│   │   ├── taskService.js       # Task CRUD + Complete
+│   │   ├── userService.js       # Profil & İstatistikler
+│   │   ├── categoryService.js   # Kategori operasyonları
+│   │   ├── badgeService.js      # Rozetler
+│   │   ├── goalService.js       # Hedefler
+│   │   ├── reportService.js     # Raporlar
+│   │   ├── socialService.js     # Arkadaşlık & Yarışma
+│   │   ├── leaderboardService.js # Sıralama
+│   │   ├── aiService.js         # AI Chatbot
+│   │   ├── chatService.js       # Chat History
+│   │   └── recommendationService.js # (YENİ) Görev Önerileri
+│   │
+│   ├── context/                 # State Management
+│   │   └── authContext.jsx      # Global Auth State
+│   │
+│   ├── api/                     # HTTP Client Config
+│   │   └── axiosClient.js       # Axios Instance + JWT Interceptors
+│   │
+│   ├── layouts/                 # Layout Components
+│   │   └── MainLayout.jsx       # Header + Navigation
+│   │
+│   ├── styles/                  # CSS Modules
+│   └── utils/                   # Utilities
+│       └── authUtils.js         # Token Management
+│
+├── package.json                 # Bağımlılıklar
+├── vite.config.js              # Vite Config
+├── tailwind.config.js          # TailwindCSS Config
+├── postcss.config.js           # PostCSS Config
+├── eslint.config.js            # ESLint Rules
+└── Dockerfile                  # Docker Image
+
+
+3.2 ANA SAYFALAR VE ÖZELLIKLERI
+
+┌─ DashBoard
+│  ├─ Kullanıcı İstatistikleri (Total XP, Level, Streak)
+│  ├─ Kategori Bazlı İlerleme Çubukları
+│  ├─ Son Görevler (Recent Activities)
+│  ├─ Sonraki Hedef (Next Goal)
+│  └─ AI Tarafından Gelen Motivasyon Mesajı
+│
+├─ TaskList (TIMER İLE GÜNCELLENECEK)
+│  ├─ Filtreleme (Kategori, Durum)
+│  ├─ Görev Kartları
+│  ├─ Timer Başlat Butonu
+│  ├─ Tamamla Butonu (Timer ≥ required)
+│  └─ Yeni Görev Talep Et
+│
+├─ Register → ANKET (YENİ)
+│  ├─ 1. Hedeflerin nelerdir? (Multi-select)
+│  ├─ 2. Günde ne kadar zaman var? (Single-select)
+│  ├─ 3. Güçlü alanların? (Multi-select)
+│  ├─ 4. Geliştirilecek alanlar? (Multi-select)
+│  ├─ 5. Motivasyon faktörü? (Single-select)
+│  ├─ 6. Haftada kaç görev? (Single-select)
+│  └─ 7. Zorluk seviyesi? (Single-select)
+│
+├─ AdminPage
+│  ├─ Tekli Görev Oluşturma
+│  ├─ Toplu Görev Yükleme (CSV/JSON)
+│  ├─ Görev Doğrulama
+│  └─ Yayınlama
+│
+├─ BadgeGallery
+│  ├─ Tüm Rozetler
+│  ├─ Kazanılmış / Kazanılmamış
+│  ├─ İlerleme Çubukları
+│  └─ Gereksinimler
+│
+├─ ProfilePage
+│  ├─ Kullanıcı Bilgileri
+│  ├─ Kategori Seviyeleri
+│  ├─ Kazanılan Rozetler
+│  ├─ Başarılar
+│  └─ Ayarlar
+│
+├─ GoalsPage
+│  ├─ Hedefleri Oluştur/Düzenle
+│  ├─ Kategori Bazlı Hedefler
+│  ├─ İlerleme İzleme
+│  └─ Tamamlanan Hedefler
+│
+├─ ReportsPage
+│  ├─ Haftalık Özet (7 gün)
+│  ├─ Kategori Bazlı Performans
+│  ├─ XP Kazanç Grafiği
+│  ├─ Tamamlanan Görev Sayısı
+│  └─ Ortalama Tamamlama Süresi
+│
+├─ SocialPage
+│  ├─ Arkadaş Listesi
+│  ├─ Arkadaş İstekleri
+│  ├─ Profil Ziyaret
+│  ├─ Yarışmalar
+│  └─ Challenge Başlat
+│
+└─ LeaderboardPage
+   ├─ Global Sıralama
+   ├─ Kategori Bazlı Sıralamalar
+   ├─ Top 10 / Top 100
+   └─ Kullanıcı Derecelendirmesi
+
+
+3.3 REACTİON FLOW
+
+Kayıt Akışı:
+  Register.jsx → Anket Soruları Göster
+             → Anket Cevapları Topla
+             → POST /api/auth/register (+ questionnaire data)
+             → Backend: AppUser.Goals, DailyAvailableMinutes vb. kaydet
+             → Token al → Login sayfasına yönlendir
+
+Dashboard Akışı:
+  DashBoard.jsx → Yükleniyor...
+             → GET /api/users/{userId} (İstatistikler)
+             → GET /api/user-tasks/get-recommendations (YENİ - 3 görev öner)
+             → Önerilen görevleri göster
+             → Kullanıcı "Seç" tıklayınca
+             → POST /api/user-tasks/request-task
+             → TaskList.jsx'e yönlendir
+
+
+3.4 YENİ KOMPONENTLERİ (EKLEME GEREKLI)
+
+YENİ: QuestionnaireForm.jsx
+──────────────────────────
+Props:
+  - onComplete: function (cevapları parent'a döndür)
+  - initialData: object (opsiyonel)
+
+State:
+  - currentQuestion: number
+  - answers: object
+  - isLoading: boolean
+
+Features:
+  - Soru soru ilerle
+  - Geri dön butonu
+  - İlerleme göstergesi (7 soru, %20-%100)
+  - Cevapları validate et
+
+
+YENİ: TaskRecommendations.jsx
+──────────────────────────────
+Props:
+  - recommendations: Array<{taskId, title, description, matchScore, reason}>
+  - onSelectTask: function(taskId)
+  - loading: boolean
+
+Features:
+  - 3 görev kartı göster
+  - Her kartında: Başlık, Açıklama, XP, Zorluk, Match Score (%)
+  - "Seç" butonu
+
+
+UPDATED: TaskTimer.jsx
+──────────────────────
+Props:
+  - requiredMinutes: number
+  - taskTitle: string
+  - onComplete: function
+
+Features:
+  - Countdown timer
+  - Start/Pause/Reset butonları
+  - Tamamla butonu (Min süre geçtiyse aktif)
+
+
+================================================================================
+ 4. BACKEND (.NET)
+================================================================================
+
+4.1 PROJE YAPISI
+
+LifeQuestAPI/
+├── Core/
+│   ├── LifeQuestAPI.Domain/
+│   │   ├── Entities/
+│   │   │   ├── Identity/
+│   │   │   │   ├── AppUser.cs          (Kullanıcı - ANKET ALANLARI EKLE)
+│   │   │   │   └── AppRole.cs          (Roller)
+│   │   │   ├── AppTask.cs              (Görev Şablonu)
+│   │   │   ├── UserTask.cs             (Kullanıcı-Görev Ataması)
+│   │   │   ├── TaskVerification.cs     (Doğrulama - GÜNCELLENECEK)
+│   │   │   ├── Category.cs             (Kategoriler)
+│   │   │   ├── Badge.cs                (Rozetler)
+│   │   │   ├── UserBadge.cs            (Kullanıcı Rozeti)
+│   │   │   ├── UserGoal.cs             (Hedefler)
+│   │   │   ├── UserCategoryProgress.cs (Kategori Seviyeleri)
+│   │   │   ├── Achievement.cs          (Başarılar)
+│   │   │   ├── UserAchievement.cs
+│   │   │   ├── Friendship.cs           (Arkadaşlık)
+│   │   │   ├── Challenge.cs            (Yarışma)
+│   │   │   ├── ChatBotMessage.cs       (Chat History)
+│   │   │   ├── Notification.cs         (Bildirimler)
+│   │   │   ├── WeeklyReport.cs         (Haftalık Raporlar)
+│   │   │   ├── UserTaskInteraction.cs  (ML Eğitim Verisi)
+│   │   │   └── Common/BaseEntity.cs    (Id, CreatedAt, UpdatedAt)
+│   │   │
+│   │   └── Enums/
+│   │       ├── DifficultyLevel.cs      (Easy, Medium, Hard)
+│   │       ├── AppTaskStatus.cs        (Pending, InProgress, Completed, etc)
+│   │       ├── VerificationType.cs     (Timer, Photo, Reflection, Quiz)
+│   │       ├── FriendshipStatus.cs     (Pending, Accepted, Blocked)
+│   │       ├── GoalType.cs             (Daily, Weekly, Monthly)
+│   │       ├── NotificationType.cs     (11 bildirim türü)
+│   │       └── SenderType.cs           (User, System, Admin)
+│   │
+│   └── LifeQuestAPI.Application/
+│       ├── ServiceRegistration.cs      (DI Registration)
+│       ├── Features/                   (CQRS Commands & Queries)
+│       │   ├── Auth/
+│       │   │   ├── Commands/
+│       │   │   │   ├── Register/
+│       │   │   │   │   ├── RegisterUserCommandRequest.cs (+ Questionnaire)
+│       │   │   │   │   └── RegisterUserCommandHandler.cs (+ Save Profile)
+│       │   │   │   └── Login/
+│       │   │   └── Queries/
+│       │   ├── UserTasks/
+│       │   │   ├── Commands/
+│       │   │   │   ├── CompleteUserTask/
+│       │   │   │   ├── RequestNewQuests/
+│       │   │   │   └── AssignSpecificTask/
+│       │   │   └── Queries/
+│       │   │       ├── GetUserTasks/
+│       │   │       └── GetRecommendations/ (YENİ)
+│       │   ├── Users/
+│       │   ├── Tasks/
+│       │   ├── Badges/
+│       │   ├── Categories/
+│       │   ├── Goals/
+│       │   ├── Reports/
+│       │   └── ... (14 Feature)
+│       │
+│       ├── Abstractions/
+│       │   ├── Notifications/ → IAppNotificationService
+│       │   └── AI/ → IAIChatService
+│       │
+│       ├── Repositories/
+│       │   ├── IReadRepository<T>
+│       │   └── IWriteRepository<T>
+│       │
+│       └── DTOs/
+│           ├── UserProfileDto.cs           (+ Anket Alanları)
+│           ├── TaskRecommendationDto.cs    (YENİ)
+│           └── ... (40+ DTOs)
+│
+├── Infrastructure/
+│   ├── LifeQuestAPI.Infrastructure/
+│   │   ├── ServiceRegistration.cs
+│   │   └── Services/
+│   │       ├── GamificationService.cs      (XP, Level)
+│   │       ├── DailyQuestService.cs        (Günlük dağıtım)
+│   │       ├── JwtTokenService.cs          (JWT)
+│   │       ├── TaskRecommendationService.cs (YENİ - ML.NET veya Kural Tabanlı)
+│   │       ├── AchievementService.cs       (Rozetler)
+│   │       ├── ChallengeService.cs         (Yarışmalar)
+│   │       ├── AIChatService.cs            (Python AI'ye HTTP çağrı)
+│   │       └── NotificationService.cs      (Bildirimler)
+│   │
+│   └── LifeQuestAPI.Persistence/
+│       ├── ServiceRegistration.cs
+│       ├── Contexts/
+│       │   ├── LifeQuestDbContext.cs       (DbSets, OnModelCreating)
+│       │   └── SeedData/
+│       │       └── SeedData.cs             (İlk veri)
+│       │
+│       ├── Repositories/                   (Generic + Specific)
+│       │   ├── ReadRepository.cs
+│       │   ├── WriteRepository.cs
+│       │   ├── AppUser/
+│       │   ├── AppTask/
+│       │   ├── UserTask/
+│       │   └── ... (18 Repository)
+│       │
+│       └── Migrations/
+│           ├── 20240101_InitialCreate.cs
+│           ├── 20240115_AddQuestionnaireFields.cs (YENİ)
+│           └── ...
+│
+└── Presentation/
+    └── LifeQuestAPI.API/
+        ├── Program.cs                      (Startup, DI, Middleware)
+        ├── Controllers/ (14 Controller)
+        │   ├── AuthController.cs           (Register, Login)
+        │   ├── UserTasksController.cs      (Get, Complete, Recommend)
+        │   ├── UsersController.cs          (Profile, Stats)
+        │   ├── TasksController.cs          (Admin: Create, Bulk)
+        │   ├── CategoriesController.cs
+        │   ├── BadgesController.cs
+        │   ├── UserBadgesController.cs
+        │   ├── ChatController.cs           (AI Chat)
+        │   ├── GoalsController.cs
+        │   ├── SocialController.cs
+        │   ├── NotificationsController.cs
+        │   ├── ReportsController.cs
+        │   ├── RecommendationController.cs (YENİ - Alternatif endpoint)
+        │   └── RolesController.cs
+        │
+        ├── BackgroundServices/
+        │   ├── DailyQuestWorker.cs         (Günlük 3 görev)
+        │   └── WeeklyReportWorker.cs       (Haftalık raporlar)
+        │
+        ├── Hubs/
+        │   └── NotificationHub.cs          (SignalR)
+        │
+        ├── Middlewares/
+        │   └── GlobalExceptionMiddleware.cs
+        │
+        ├── Services/
+        │   └── AppNotificationService.cs
+        │
+        ├── appsettings.json                (Config)
+        ├── launchSettings.json
+        └── Dockerfile
+
+
+4.2 KEY ENTITIES (Detaylı)
+
+AppUser (GÜNCELLENECEK)
+───────────────────────
+public sealed class AppUser : BaseEntity
+{
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public string UserName { get; set; }
+    public string Email { get; set; }
+    public byte[] PasswordHash { get; set; }
+    public byte[] PasswordSalt { get; set; }
+    public Guid AppRoleId { get; set; }
+    public int TotalXP { get; set; } = 0;
+    public double GeneralLevel { get; set; } = 1.0;
+    
+    // YENİ ALANLAR: Anket Soruları
+    public List<string>? Goals { get; set; }                    // ["fitness", "reading"]
+    public int? DailyAvailableMinutes { get; set; }            // 15, 30, 60, 120
+    public List<string>? Strengths { get; set; }               // ["technology", "writing"]
+    public List<string>? Weaknesses { get; set; }              // ["discipline", "focus"]
+    public string? MotivationFactor { get; set; }              // "leveling", "badges", etc
+    public int? PreferredTasksPerWeek { get; set; }            // 3, 5, 7, 10, 15
+    public string? DifficultyPreference { get; set; }          // "easy", "medium", "hard", "mixed"
+    public bool ProfileCompleted { get; set; } = false;
+    public DateTime? ProfileCompletedAt { get; set; }
+    
+    // Navigation Properties
+    public ICollection<UserCategoryProgress> CategoryProgresses { get; set; }
+    public ICollection<UserTask> UserTasks { get; set; }
+    public ICollection<UserBadge> UserBadges { get; set; }
+    public ICollection<UserGoal> Goals { get; set; }
+    public ICollection<Notification> Notifications { get; set; }
+}
+
+
+UserTask
+────────
+public sealed class UserTask : BaseEntity
+{
+    public Guid UserId { get; set; }
+    public AppUser User { get; set; }
+    
+    public Guid AppTaskId { get; set; }
+    public AppTask AppTask { get; set; }
+    
+    public AppTaskStatus Status { get; set; }  // Pending, InProgress, Completed
+    public int XpGained { get; set; }
+    public DateTime AssignedAt { get; set; }
+    public DateTime? DueDate { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    
+    // Timer Tracking
+    public int? RequiredMinutes { get; set; }
+    public int? ActualMinutesSpent { get; set; }
+    
+    // Navigation
+    public TaskVerification? Verification { get; set; }
+}
+
+
+TaskVerification (BASIT GÜNCELLENECEK)
+──────────────────────────────────────
+public sealed class TaskVerification : BaseEntity
+{
+    public Guid UserTaskId { get; set; }
+    public UserTask UserTask { get; set; }
+    
+    // Timer Verification
+    public int? TimerMinutesSpent { get; set; }
+    public int? MinimumTimerMinutesRequired { get; set; }
+    
+    // Status
+    public VerificationStatus Status { get; set; }  // Approved, Pending
+    public DateTime VerifiedAt { get; set; }
+}
+
+
+AppTask
+───────
+public sealed class AppTask : BaseEntity
+{
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public Guid CategoryId { get; set; }
+    public Category Category { get; set; }
+    
+    public int MinLevel { get; set; }
+    public int MaxLevel { get; set; }
+    public int BaseXP { get; set; }
+    
+    public DifficultyLevel Difficulty { get; set; }  // Easy, Medium, Hard
+    public bool IsDaily { get; set; }
+    public bool IsActive { get; set; } = true;
+    
+    // YENİ: Tahmini Süre
+    public int? EstimatedMinutes { get; set; }
+    
+    // YENİ: Teknik Alanlar
+    public List<string>? TargetedWeaknesses { get; set; }  // ["discipline"]
+}
+
+
+Badge & UserBadge
+─────────────────
+public sealed class Badge : BaseEntity
+{
+    public string Name { get; set; }
+    public string Description { get; set; }
+    public int RequiredLevel { get; set; }
+    public string IconUrl { get; set; }
+    
+    public ICollection<UserBadge> UserBadges { get; set; }
+}
+
+public sealed class UserBadge : BaseEntity
+{
+    public Guid UserId { get; set; }
+    public AppUser User { get; set; }
+    
+    public Guid BadgeId { get; set; }
+    public Badge Badge { get; set; }
+    
+    public DateTime EarnedAt { get; set; }
+}
+
+
+Notification
+─────────────
+public sealed class Notification : BaseEntity
+{
+    public Guid UserId { get; set; }
+    public AppUser User { get; set; }
+    
+    public NotificationType Type { get; set; }  // TaskAssigned, LevelUp, BadgeEarned, etc
+    public string Title { get; set; }
+    public string Message { get; set; }
+    public string? RelatedEntityId { get; set; }  // Task ID, Badge ID, etc
+    
+    public bool IsRead { get; set; } = false;
+    public DateTime CreatedAt { get; set; }
+}
+
+
+4.3 ENUM TÜRLERI
+
+public enum DifficultyLevel { Easy = 1, Medium = 2, Hard = 3 }
+public enum AppTaskStatus { Pending, InProgress, Completed, Failed, Expired }
+public enum VerificationType { None, Photo, Reflection, Timer, Quiz }
+public enum VerificationStatus { Pending, Approved, Rejected, NeedsReview }
+public enum FriendshipStatus { Pending, Accepted, Rejected, Blocked }
+public enum GoalType { Daily, Weekly, Monthly, Custom }
+public enum NotificationType 
+{ 
+    TaskAssigned, TaskCompleted, TaskExpired, 
+    LevelUp, BadgeEarned, AchievementUnlocked,
+    FriendRequestReceived, FriendRequestAccepted,
+    ChallengeInvitation, ChallengeAccepted, ChallengeCompleted
+}
+
+
+4.4 CONTROLLERS - KEY ENDPOINTS
+
+✓ AuthController
+  POST /api/auth/register       → RegisterUserCommandRequest (+ questionnaire)
+  POST /api/auth/login          → LoginUserCommandRequest
+
+✓ UserTasksController
+  GET  /api/user-tasks          → GetUserTasksQueryRequest
+  GET  /api/user-tasks?categoryId=X
+  PATCH /api/user-tasks/{id}/complete → CompleteUserTaskCommandRequest
+  POST /api/user-tasks/request-new    → RequestNewQuestsCommandRequest
+  POST /api/user-tasks/assign/{appTaskId} → AssignSpecificTaskCommandRequest
+  POST /api/user-tasks/get-recommendations → GetRecommendationsQueryRequest (YENİ)
+
+✓ UsersController
+  GET  /api/users/{id}          → User Profile
+  GET  /api/users/{id}/stats    → User Statistics
+  GET  /api/users/{id}/activities
+
+✓ TasksController (Admin)
+  POST /api/Tasks/create-task
+  POST /api/Tasks/create-bulk-tasks
+  GET  /api/Tasks
+
+✓ CategoriesController
+  GET  /api/Categories
+  POST /api/Categories
+
+✓ BadgesController
+  GET  /api/Badges
+  GET  /api/Badges/{id}
+
+✓ UserBadgesController
+  GET  /api/UserBadges
+  GET  /api/UserBadges/{userId}
+
+✓ ChatController
+  POST /api/Chat/send        → Call Python AI Service
+
+✓ GoalsController
+  GET  /api/Goals
+  POST /api/Goals/create
+  PATCH /api/Goals/{id}
+
+✓ SocialController
+  GET  /api/Social/friends
+  POST /api/Social/friend-request
+  PATCH /api/Social/accept-friend
+
+✓ NotificationsController
+  GET  /api/Notifications
+  PATCH /api/Notifications/{id}/read
+
+✓ ReportsController
+  GET  /api/Reports/weekly/{userId}
+
+✓ RecommendationController (Alternative)
+  POST /api/Recommendation/get-tasks
+
+
+4.5 SERVICES
+
+GamificationService
+───────────────────
+// XP ve Level Hesaplaması
+public int CalculateXP(UserTask completedTask)
+{
+    int baseXP = completedTask.AppTask.BaseXP;
+    double difficultyMultiplier = completedTask.AppTask.Difficulty == DifficultyLevel.Hard ? 1.5 :
+                                  completedTask.AppTask.Difficulty == DifficultyLevel.Medium ? 1.2 : 1.0;
+    return (int)(baseXP * difficultyMultiplier);
+}
+
+public void GrantXP(AppUser user, int xp)
+{
+    user.TotalXP += xp;
+    
+    // Seviye Sistemi: Her 1000 XP'de 1 seviye
+    double newLevel = Math.Floor(user.TotalXP / 1000.0) + 1;
+    if (newLevel > user.GeneralLevel)
+    {
+        user.GeneralLevel = newLevel;
+        // LevelUp bildirim gönder
+        _notificationService.SendLevelUpNotification(user);
+    }
+}
+
+
+TaskRecommendationService (YENİ)
+────────────────────────────────
+// ML.NET model kullanarak görev önerme
+public async Task<List<Guid>> GetRecommendedTasksAsync(Guid userId, int count = 3)
+{
+    var user = await _userRepository.GetByIdAsync(userId);
+    var userProfile = MapToUserProfile(user); // Questionnaire verileri
+    var availableTasks = await _taskRepository.GetAvailableTasksAsync();
+    
+    // ML Model'i kullan veya Kural Tabanlı Algoritma
+    var scoredTasks = availableTasks.Select(task => new {
+        TaskId = task.Id,
+        Score = CalculateMatchScore(userProfile, task)
+    })
+    .OrderByDescending(x => x.Score)
+    .Take(count)
+    .Select(x => x.TaskId)
+    .ToList();
+    
+    return scoredTasks;
+}
+
+private float CalculateMatchScore(UserProfile profile, AppTask task)
+{
+    float score = 0;
+    
+    // 1. Goal Match (0.4 weight)
+    if (profile.Goals.Contains(task.CategoryName.ToLower()))
+        score += 0.4f;
+    
+    // 2. Strength Match (0.25 weight)
+    if (profile.Strengths.Any(s => task.Description.Contains(s)))
+        score += 0.25f;
+    
+    // 3. Time Match (0.2 weight)
+    if (task.EstimatedMinutes <= profile.DailyAvailableMinutes)
+        score += 0.2f;
+    
+    // 4. Difficulty Match (0.15 weight)
+    if (IsMatchingDifficulty(task, profile.DifficultyPreference))
+        score += 0.15f;
+    
+    return score;
+}
+
+
+DailyQuestWorker (Background Service)
+──────────────────────────────────────
+// Her gün 00:00'de çalışır, her kullanıcıya 3 görev atar
+public class DailyQuestWorker : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var nextRun = DateTime.Today.AddDays(1); // Yarın 00:00
+            var delay = nextRun - DateTime.Now;
+            
+            await Task.Delay(delay, stoppingToken);
+            
+            // Tüm aktif kullanıcılara görev ata
+            var users = await _userRepository.GetAllActiveUsersAsync();
+            foreach (var user in users)
+            {
+                await _dailyQuestService.AssignDailyQuestsAsync(user.Id, 3);
+            }
+        }
+    }
+}
+
+
+========================================================================================
+ 5. AI SERVICE (Python)
+================================================================================
+
+5.1 GENEL AÇIKLAMA
+
+FastAPI tabanlı mikro servis. Backend tarafından HTTP POST istekleri ile çağrılır.
+
+Modeller:
+  • Intent Classifier: Türkçe mesajları 7 niyet kategorisine sınıflandırır
+  • Sentiment Analyzer: Duygusal ton analizi (olumlu, olumsuz, nötr)
+
+Veri: Türkçe eğitim veri setleri (JSON dosyaları)
+Modeller: scikit-learn (TF-IDF + Naive Bayes/SVM)
+
+
+5.2 PROJE YAPISI
+
+ai_service/
+├── main.py                          # FastAPI App
+├── requirements.txt                 # Dependencies
+├── services/
+│   ├── __init__.py
+│   ├── intent_classifier.py         # Intent Detection
+│   ├── sentiment_analyzer.py        # Sentiment Analysis
+│   ├── reflection_verifier.py       # Text Quality Check (Planned)
+│   └── image_verifier.py            # Image Classification (Planned)
+├── training/
+│   ├── __init__.py
+│   ├── generate_training_data.py    # Create Training Sets
+│   └── evaluate_models.py           # Model Metrics
+├── data/
+│   ├── intents_tr.json              # Intent Examples
+│   └── sentiments_tr.json           # Sentiment Examples
+├── models/                          # Serialized Models (.pkl, .h5)
+├── Dockerfile
+├── .dockerignore
+└── README.md
+
+
+5.3 API ENDPOINTS
+
+1. POST /api/chat
+   ────────────────
+   Request:
+   {
+     "user_id": "uuid-123",
+     "message": "Motivasyon istiyorum"
+   }
+   
+   Response:
+   {
+     "intent": "motivasyon",
+     "confidence": 0.95,
+     "response": "Harika! Hızlı bir koşu yapabilir misin? ...",
+     "sentiment": "positive",
+     "sentiment_confidence": 0.88,
+     "suggestions": ["Koş", "Meditasyon", "Okuma"]
+   }
+
+
+2. POST /api/train
+   ────────────────
+   Admin endpoint: Modelleri yeniden eğit
+   
+   Request: {}
+   Response: { "status": "training_complete", "accuracy": 0.92 }
+
+
+3. GET /health
+   ────────────
+   Health check (Docker healthcheck için)
+   
+   Response: { "status": "ok" }
+
+
+5.4 MODELS DETAYLI
+
+IntentClassifier
+────────────────
+Algoritmasi:
+  • Feature: TF-IDF (char n-gram, 2-5 grams)
+  • Classifier: Multinomial Naive Bayes
+  • Language: Turkish
+  • Accuracy: ~92%
+
+Niyetler (7 class):
+  1. motivasyon       - "Motivasyon ver", "Cesaret istiyorum"
+  2. gorev_sorgula    - "Bana görev ver", "Ne yapmalıyım?"
+  3. istatistik       - "Benim XP'im ne?", "Kaç rozet kazandım?"
+  4. oneri            - "Ne yapabilirim?", "Tavsiye ver"
+  5. selamlama        - "Merhaba", "Nasılsın?"
+  6. saglik           - "Sağlık nedir?", "Koşu iyi mi?"
+  7. rozet            - "Rozetler ne?", "Nasıl rozet kazanırım?"
+
+
+SentimentAnalyzer
+─────────────────
+Algoritmasi:
+  • Feature: TF-IDF (char n-gram, 2-4 grams)
+  • Classifier: Linear SVM
+  • Classes: positive, negative, neutral
+  • Accuracy: ~89%
+
+Kullanım:
+  • Kullanıcı moodunun adaptif mesajlar gönder
+  • "Negatif" duygusunda hevesli bir mesaj gönder
+
+
+5.5 MAİN.PY YAPISI
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from services.intent_classifier import IntentClassifier
+from services.sentiment_analyzer import SentimentAnalyzer
+
+# Modelleri başlangıçta eğit
+intent_clf = IntentClassifier()
+sentiment_analyzer = SentimentAnalyzer()
+
+app = FastAPI(
+    title="LifeQuest AI Service",
+    version="2.0.0"
+)
+
+# CORS
+app.add_middleware(CORSMiddleware, allow_origins=["*"], ...)
+
+# Schemas
+class ChatRequest(BaseModel):
+    user_id: str
+    message: str
+
+class ChatResponse(BaseModel):
+    intent: str
+    confidence: float
+    response: str
+    sentiment: str
+    sentiment_confidence: float
+    suggestions: List[str]
+
+# Endpoints
+@app.post("/api/chat")
+async def chat(request: ChatRequest):
+    intent, confidence = intent_clf.predict(request.message)
+    sentiment, sent_conf = sentiment_analyzer.predict(request.message)
+    
+    # Tarafından cevap oluştur (örneğin template'ler)
+    response = generate_response(intent, sentiment)
+    suggestions = get_suggestions(intent)
+    
+    return ChatResponse(
+        intent=intent,
+        confidence=confidence,
+        response=response,
+        sentiment=sentiment,
+        sentiment_confidence=sent_conf,
+        suggestions=suggestions
+    )
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+5.6 TRAINING DATA FORMAT
+
+intents_tr.json:
+────────────────
+{
+  "motivasyon": [
+    {"text": "Motivasyon ver bana", "intent": "motivasyon"},
+    {"text": "İlham istiyorum", "intent": "motivasyon"},
+    ...
+  ],
+  "gorev_sorgula": [
+    {"text": "Bana görev ver", "intent": "gorev_sorgula"},
+    ...
+  ],
+  ...
+}
+
+
+sentiments_tr.json:
+───────────────────
+{
+  "positive": [
+    {"text": "Harika hissediyorum", "sentiment": "positive"},
+    ...
+  ],
+  "negative": [
+    {"text": "Çok kötü oldum", "sentiment": "negative"},
+    ...
+  ],
+  "neutral": [
+    {"text": "Bugün hava güzel", "sentiment": "neutral"},
+    ...
+  ]
+}
+
+
+================================================================================
+ 6. VERİTABANI (PostgreSQL)
+================================================================================
+
+6.1 BAĞLANTI AYARLARI
+
+Host: db (Docker) / localhost (Local)
+Port: 5432
+Database: LifeQuestDB
+Username: ${DB_USER}
+Password: ${DB_PASSWORD}
+Pooling: Min 0, Max 100
+Timeout: 60 seconds
+
+
+6.2 TABLO YAPISI (18 Tables)
+
+Identity:
+  ├─ aspnetusers                      (AppUser)
+  └─ aspnetroles                      (AppRole)
+
+Task Management:
+  ├─ apptask                          (Görev Şablonu)
+  ├─ usertask                         (Kullanıcı-Görev Ataması)
+  └─ taskverification                 (Doğrulama)
+
+Progression:
+  ├─ category                         (Kategoriler)
+  ├─ usercategoryprogress             (Kategori Seviyeleri)
+  ├─ badge                            (Rozetler)
+  ├─ userbadge                        (Kullanıcı Rozeti)
+  ├─ achievement                      (Başarılar)
+  └─ userachievement                  (Kullanıcı Başarısı)
+
+Social & Gamification:
+  ├─ friendship                       (Arkadaşlık İlişkileri)
+  ├─ challenge                        (Yarışmalar)
+  └─ chatbotmessage                   (Chat History)
+
+Analytics:
+  ├─ usergoal                         (Hedefler)
+  ├─ usertaskinteraction              (ML Eğitim Verisi)
+  ├─ weeklyreport                     (Haftalık Raporlar)
+  └─ notification                     (Bildirimler)
+
+
+6.3 MIGRATION STRATEJISI
+
+Başlangıç:
+  1. Initial Migration: Tüm tabloları oluştur
+  2. SeedData: 25+ görev, 5 rozetler, kategoriler
+
+Gelecek:
+  3. AddQuestionnaireFields: AppUser'a anket alanları ekle
+  4. UpdateTaskVerification: Timer alanları ekle
+  5. ... (İhtiyaç doğru)
+
+
+6.4 KEY İNDEXES & CONSTRAINTS
+
+Unique:
+  ├─ aspnetusers(email)
+  ├─ aspnetusers(username)
+  ├─ (usertask.usertaskid, usertask.apptaskid)
+  └─ (friendship.requesterid, friendship.addresseeid)
+
+Foreign Keys (Cascade Delete):
+  ├─ usertask → aspnetusers, apptask
+  ├─ userbadge → aspnetusers, badge
+  ├─ taskverification → usertask
+  ├─ challenge → aspnetusers (requester & addressee)
+  └─ ... (other relationships)
+
+
+================================================================================
+ 7. DOCKER & DEVOPS
+================================================================================
+
+7.1 DOCKER-COMPOSE YAPISI
+
+Services:
+
+1. PostgreSQL Database
+   ─────────────────────
+   Image: postgres:15
+   Container: lifequest-db
+   Port: 5432
+   Health Check: pg_isready
+   Volume: pgdata:/var/lib/postgresql/data
+   
+   Environment:
+     POSTGRES_DB=LifeQuestDB
+     POSTGRES_USER=${DB_USER}
+     POSTGRES_PASSWORD=${DB_PASSWORD}
+
+
+2. pgAdmin (Database UI)
+   ─────────────────────
+   Image: dpage/pgadmin4
+   Container: lifequest-pgadmin
+   Port: 5050
+   URL: http://localhost:5050
+   
+   Credentials:
+     Email: ${PGADMIN_DEFAULT_EMAIL}
+     Password: ${PGADMIN_DEFAULT_PASSWORD}
+
+
+3. Python AI Service
+   ──────────────────
+   Build: ./ai_service/Dockerfile
+   Container: lifequest-ai
+   Port: 5001
+   Health Check: HTTP /health
+   Environment: PYTHONUNBUFFERED=1
+   Volume: ai_models:/app/models (model dosyaları)
+
+
+4. .NET Backend API
+   ─────────────────
+   Build: ./LifeQuestAPI/Dockerfile
+   Container: lifequest-api
+   Port: 5020 (HTTP)
+   Environment:
+     ASPNETCORE_ENVIRONMENT=Development
+     ConnectionStrings__DefaultConnection=...
+     AIService__BaseUrl=http://ai_service:5001
+   Depends On: db, ai_service (healthy)
+
+
+5. React Frontend
+   ───────────────
+   Build: ./frontend/Dockerfile
+   Container: lifequest-frontend
+   Port: 443 (HTTPS), 80 (HTTP)
+   Environment: VITE_API_BASE_URL=http://lifequest-api:5020/api
+
+
+7.2 BUILD STRATEGIES
+
+Backend (.NET):
+───────────────
+Stage 1: Build (SDK Image)
+  - .NET SDK 9.0 ile projeyi compile
+  - Dependencies restore
+  - Publish to output
+
+Stage 2: Runtime (Minimal Image)
+  - ASP.NET Core Runtime 9.0
+  - Output'tan copy et
+  - HTTPS certificate oluştur (cert.pfx)
+  - Expose 5020 port
+  - ENTRYPOINT: LifeQuestAPI.API.dll
+
+
+Frontend (React):
+─────────────────
+Stage 1: Build (Node)
+  - node:20-alpine image
+  - npm install
+  - npm run build (Vite production build)
+
+Stage 2: Runtime (Nginx)
+  - nginx:alpine image
+  - Build output'u /usr/share/nginx/html'e copy
+  - nginx.conf (SPA routing)
+  - Expose 443 port
+  - HTTPS setup
+
+
+AI Service (Python):
+────────────────────
+  - python:3.11-slim
+  - System deps: libglib2.0, libsm6, libxext6
+  - pip install -r requirements.txt
+  - Expose 5001 port
+  - ENTRYPOINT: uvicorn main:app --host 0.0.0.0 --port 5001
+
+
+7.3 .ENV DOSYASI
+
+# Database
+DB_NAME=LifeQuestDB
+DB_USER=postgres
+DB_PASSWORD=SecurePassword123!
+DB_PORT=5432
+
+# pgAdmin
+PGADMIN_DEFAULT_EMAIL=admin@example.com
+PGADMIN_DEFAULT_PASSWORD=AdminPass123!
+
+# AI Service
+AI_SERVICE_PORT=5001
+
+# API
+API_PORT=5020
+ASPNETCORE_ENVIRONMENT=Development
+
+
+7.4 BAŞLAMA KOMUTLARI
+
+Development (Local):
+  docker-compose up -d
+  
+Rebuild:
+  docker-compose up -d --build
+  
+Logs:
+  docker-compose logs -f api
+  docker-compose logs -f ai_service
+  
+Stop:
+  docker-compose down
+  
+Database Temizle:
+  docker volume rm lifequest_pgdata
+  docker-compose up -d
+
+
+================================================================================
+ 8. PROJE CONFIGURATION FILES
+================================================================================
+
+8.1 appsettings.json (.NET)
+
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AppSettings": {
+    "Token": "bu_proje_icin_cok_gizli_ve_cok_uzun_bir_anahtar..."
+  },
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=LifeQuestDB;..."
+  },
+  "AIService": {
+    "BaseUrl": "http://localhost:5001"
+  }
+}
+
+
+8.2 package.json (Frontend)
+
+{
+  "name": "frontend",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-router-dom": "^7.11.0",
+    "axios": "^1.13.2",
+    "tailwindcss": "^3.4.17",
+    "@microsoft/signalr": "^10.0.0",
+    ...
+  }
+}
+
+
+8.3 requirements.txt (Python)
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+scikit-learn==1.6.1
+tensorflow==2.18.0
+pydantic==2.10.4
+pillow==11.1.0
+joblib==1.4.2
+numpy==1.26.4
+python-multipart==0.0.20
+
+
+================================================================================
+ 9. DOKÜMANTASYON
+================================================================================
+
+9.1 Mevcut Dokümantasyon
+
+/docs/
+├── README.md                        # Proje Özeti
+├── implementation_plan.md           # Detaylı Geliştirme Yol Haritası
+├── sprint2_plan.md                  # Sprint 2 Planı (AI Servis)
+├── walkthrough.md                   # Sprint 1 Tamamlama Özeti
+├── task.md                          # Orijinal Proje Gereksinimleri
+└── Enhancing AI-Driven Personal Development.md  # İyileştirme Stratejileri
+
+
+================================================================================
+ 10. YENİ ÖZELLIK: ANKET TABANI GÖREV ATAMA
+================================================================================
+
+10.1 ÖZET
+
+Kullanıcı kayıt olurken "Seni Tanıyalım" anketi doldurur. Cevaplarına göre:
+  1. AppUser'a anket verilerini kaydet (Goals, Strengths, vb)
+  2. Dashboard'da 3 önerilen görev göster
+  3. Kullanıcı seçtiğinde görev at
+  4. Görev tamamlama: Timer + Bitir (Simple)
+
+
+10.2 KAYIT AKIŞI (UPDATED)
+
+1. User http://localhost:3000/register gitsin
+2. QuestionnaireForm.jsx göster
+   ├─ 1. Hedeflerim? (Multi-select)
+   ├─ 2. Günlük zaman? (Single-select)
+   ├─ 3. Güçlü alanlar? (Multi-select)
+   ├─ 4. Geliştirilecek alanlar? (Multi-select)
+   ├─ 5. Motivasyon? (Single-select)
+   ├─ 6. Haftada kaç görev? (Single-select)
+   └─ 7. Zorluk seviyesi? (Single-select)
+3. POST /api/auth/register (+ questionnaire data)
+4. Backend kaydetsin
+5. Token al → Dashboard'a yönlendir
+
+
+10.3 DASHBOARD AKIŞI (UPDATED)
+
+1. DashBoard.jsx sayfası açılsın
+2. İstatistikleri yükle (XP, Level, vb)
+3. GET /api/user-tasks/get-recommendations (3 görev öner)
+4. TaskRecommendations.jsx ile göster
+5. User "Seç" basınca:
+   POST /api/user-tasks/assign/{taskId}
+6. Task atanır → TaskList.jsx'e yönlendir
+
+
+10.4 BACKEND CHANGES
+
+AppUser Entity:
+───────────────
+public List<string>? Goals { get; set; }
+public int? DailyAvailableMinutes { get; set; }
+public List<string>? Strengths { get; set; }
+public List<string>? Weaknesses { get; set; }
+public string? MotivationFactor { get; set; }
+public int? PreferredTasksPerWeek { get; set; }
+public string? DifficultyPreference { get; set; }
+public bool ProfileCompleted { get; set; }
+public DateTime? ProfileCompletedAt { get; set; }
+
+
+RegisterUserCommandRequest (UPDATED):
+──────────────────────────────────────
+public class RegisterUserCommandRequest
+{
+    public string Name { get; set; }
+    public string Surname { get; set; }
+    public string UserName { get; set; }
+    public string Email { get; set; }
+    public string Password { get; set; }
+    
+    // YENİ: Questionnaire
+    public QuestionnaireRequest? Questionnaire { get; set; }
+}
+
+public class QuestionnaireRequest
+{
+    public List<string> Goals { get; set; }
+    public int DailyAvailableMinutes { get; set; }
+    public List<string> Strengths { get; set; }
+    public List<string> Weaknesses { get; set; }
+    public string MotivationFactor { get; set; }
+    public int PreferredTasksPerWeek { get; set; }
+    public string DifficultyPreference { get; set; }
+}
+
+
+GetRecommendationsQuery (YENİ):
+───────────────────────────────
+public class GetRecommendationsQueryRequest : IRequest<ApiResponse<List<TaskRecommendationDto>>>
+{
+    public Guid UserId { get; set; }
+    public int Count { get; set; } = 3;
+}
+
+public class TaskRecommendationDto
+{
+    public Guid TaskId { get; set; }
+    public string Title { get; set; }
+    public string Description { get; set; }
+    public string CategoryName { get; set; }
+    public int BaseXP { get; set; }
+    public string Difficulty { get; set; }
+    public int? EstimatedMinutes { get; set; }
+    public float MatchScore { get; set; }
+    public string Reason { get; set; }
+}
+
+
+TaskRecommendationService:
+──────────────────────────
+public class TaskRecommendationService : ITaskRecommendationService
+{
+    public async Task<List<Guid>> GetRecommendedTasksAsync(
+        Guid userId, 
+        int count = 3)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        var availableTasks = await _taskRepository.GetActiveTasksAsync();
+        
+        var scored = availableTasks.Select(task => new {
+            TaskId = task.Id,
+            Score = CalculateScore(user, task)
+        })
+        .OrderByDescending(x => x.Score)
+        .Take(count)
+        .Select(x => x.TaskId)
+        .ToList();
+        
+        return scored;
+    }
+    
+    private float CalculateScore(AppUser user, AppTask task)
+    {
+        float score = 0;
+        
+        // Goal Match (40%)
+        if (user.Goals?.Contains(task.Category.Name.ToLower()) == true)
+            score += 0.4f;
+        
+        // Strength Match (25%)
+        if (user.Strengths?.Any(s => task.Description.Contains(s)) == true)
+            score += 0.25f;
+        
+        // Time Match (20%)
+        if (task.EstimatedMinutes <= user.DailyAvailableMinutes)
+            score += 0.2f;
+        
+        // Difficulty Match (15%)
+        bool difficultyMatch = user.DifficultyPreference == "mixed" ||
+                               (user.DifficultyPreference == "easy" && task.Difficulty == DifficultyLevel.Easy) ||
+                               (user.DifficultyPreference == "medium" && task.Difficulty == DifficultyLevel.Medium) ||
+                               (user.DifficultyPreference == "hard" && task.Difficulty == DifficultyLevel.Hard);
+        if (difficultyMatch)
+            score += 0.15f;
+        
+        return score;
+    }
+}
+
+
+10.5 FRONTEND COMPONENTS (YENİ)
+
+QuestionnaireForm.jsx
+──────────────────────
+- 7 soruyu sıra ile göster
+- Multi/Single select desteği
+- Geri dön, İleri git butonları
+- İlerleme göstergesi
+
+
+TaskRecommendations.jsx
+───────────────────────
+- 3 görev kartı
+- MatchScore (%)
+- "Seç" butonu
+
+
+TaskTimer.jsx (UPDATE)
+──────────────────────
+- Timer başlat / duraklat / sıfırla
+- Tamamla butonu (Min sürü geçtiyse aktif)
+
+
+================================================================================
+ 11. API RESPONSE STANDARDS
+================================================================================
+
+Success Response:
+─────────────────
+{
+  "success": true,
+  "message": "İşlem başarılı",
+  "data": { /* actual data */ }
+}
+
+Error Response:
+───────────────
+{
+  "success": false,
+  "message": "Hata açıklaması",
+  "errors": [
+    {
+      "code": "VALIDATION_ERROR",
+      "message": "Email gereklidir"
+    }
+  ]
+}
+
+Paginated Response:
+───────────────────
+{
+  "success": true,
+  "data": [...],
+  "pageNumber": 1,
+  "pageSize": 10,
+  "totalCount": 150,
+  "totalPages": 15
+}
+
+
+================================================================================
+ 12. AUTHENTICATION & SECURITY
+================================================================================
+
+JWT Token:
+──────────
+- Algorithm: HS256 (SHA-256)
+- Secret Key: 64+ karakterli key (appsettings.json)
+- Expiration: Configurable (default: 24 saat)
+- Claims: userId, role
+
+Token Storage (Frontend):
+─────────────────────────
+- localStorage'da sakla
+- Her request'te Authorization header'a ekle
+- 401 response'da yeni token al (refresh)
+
+Rate Limiting:
+──────────────
+- 500 requests / 1 minute
+- Per user (userId) + IP basis
+- 429 (Too Many Requests) response
+
+
+CORS:
+─────
+- AllowedOrigins: localhost (dev), production domain (prod)
+- AllowedMethods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+- AllowedHeaders: *, Authorization, Content-Type
+- AllowCredentials: true (SignalR için)
+
+
+================================================================================
+ 13. DEVAM EDEN GÖREVLER & TODO
+================================================================================
+
+⚠️ MUST HAVE (Hemen Yapılması Gereken)
+
+  1. ☐ AppUser entity'sine anket alanları ekle
+  2. ☐ Register sayfasını anket formuna çevir (Frontend)
+  3. ☐ RegisterUserCommandHandler'ı anket datası kaydetmesi için güncelle
+  4. ☐ TaskRecommendationService oluştur
+  5. ☐ GetRecommendationsQuery implement et
+  6. ☐ TaskRecommendations.jsx component'i yaz
+  7. ☐ QuestionnaireForm.jsx component'i yaz
+  8. ☐ Database migration: AddQuestionnaireFields
+  9. ☐ TaskTimer.jsx güncelle (Timer + Bitir)
+  10. ☐ UserTasksController'ın /get-recommendations endpoint'ini ekle
+
+
+⏳ SHOULD HAVE (Kısa Vadede Yapılması Gereken)
+
+  11. ☐ AI Service'i çalıştır (main.py debug)
+  12. ☐ ChatBot.jsx'i gerçek API'ye bağla
+  13. ☐ Yazı kalitesi kontrolü (min kelime, spam)
+  14. ☐ Bildirim sistemi (SignalR ile real-time)
+  15. ☐ Sosyal özellikler (arkadaş, yarışma)
+  16. ☐ Responsive UI (mobil optimize)
+  17. ☐ Error handling ve validation
+
+
+🚀 NICE TO HAVE (İleride Yapılabilecek)
+
+  18. ☐ Advanced ML (Transfer learning, BERT)
+  19. ☐ Fotoğraf doğrulama (MobileNetV2)
+  20. ☐ Sosyal ranking
+  21. ☐ Push notifications
+  22. ☐ Offline mode (ServiceWorker)
+  23. ☐ Analytics dashboard
+  24. ☐ Admin dashboard (advanced)
+
+
+================================================================================
+ 14. TESTING STRATEJİSİ
+================================================================================
+
+Unit Tests:
+───────────
+- LifeQuestAPI.Application/Features/.../Tests/
+- GamificationService.Tests.cs
+- TaskRecommendationService.Tests.cs
+- Entity validation tests
+
+
+Integration Tests:
+──────────────────
+- API endpoints testing (xUnit + FluentAssertions)
+- Database operations testing
+- End-to-end workflows
+
+
+Frontend Tests:
+───────────────
+- Component tests (Vitest + @testing-library/react)
+- Service tests (mocking axios)
+- Integration tests
+
+
+Manual Testing Checklist:
+─────────────────────────
+  ☐ Register + Anket
+  ☐ Login
+  ☐ Dashboard + Görev önerileri
+  ☐ Görev seç
+  ☐ Timer başlat/duraklat
+  ☐ Görev tamamla
+  ☐ XP & Level up
+  ☐ Admin: Görev oluştur
+  ☐ ChatBot: Mesaj gönder
+  ☐ Notifications
+
+
+================================================================================
+ 15. DEPLOYMENT & CI/CD
+================================================================================
+
+Development:
+────────────
+docker-compose up -d
+Access:
+  Frontend: http://localhost:3000
+  API: http://localhost:5020
+  pgAdmin: http://localhost:5050
+
+
+Production (Planned):
+─────────────────────
+- Kubernetes clusters
+- Container registry (Docker Hub, ACR)
+- CI/CD pipeline (GitHub Actions)
+- SSL/TLS certificates
+- Environment-based configuration
+- Log aggregation (ELK, Datadog)
+- Monitoring & Alerting
+
+
+================================================================================
+ 16. ILETIŞIM VE DESTEK
+================================================================================
+
+Project Lead: [İsim]
+Frontend Developer: [İsim]
+Backend Developer: [İsim]
+AI Developer: [İsim]
+
+Repository: GitHub
+Issue Tracking: GitHub Issues
+Documentation: This file + /docs/ folder
+
+Meeting Schedule:
+  - Daily Standup: 10:00 AM (15 mins)
+  - Sprint Review: Friday 4:00 PM
+  - Sprint Planning: Monday 2:00 PM
+
+
+================================================================================
+                              PROJE SONLANDIRMA
+================================================================================
+
+Yazarı: GitHub Copilot
+Tarih: 22 Nisan 2026
+Versiyon: 2.0
+Durum: Aktif Geliştirme
+
+Bu dokümantasyon sürekli güncellenmektedir.
+Son Güncelleme: 22 Nisan 2026
+
+================================================================================

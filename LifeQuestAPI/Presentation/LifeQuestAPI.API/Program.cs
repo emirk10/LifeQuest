@@ -18,6 +18,34 @@ builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyRepo
 builder.Services.AddHostedService<NudgeWorker>(); // SP-03
 builder.Services.AddHostedService<GoalRevisionWorker>(); // SP-04
 builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "LifeQuest API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\""
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.IAppNotificationService, LifeQuestAPI.API.Services.AppNotificationService>();
 
@@ -70,6 +98,9 @@ builder.Services.AddAuthentication(options =>
 
 var app = builder.Build();
 app.UseMiddleware<LifeQuestAPI.API.Middlewares.GlobalExceptionMiddleware>();
+
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LifeQuest API v1"));
 
 // app.UseHttpsRedirection(); // Dev ortamında (Docker) localhost mixed-content ve sertifika sorunlarını önlemek için kapatıldı
 app.UseCors("AllowFrontend");

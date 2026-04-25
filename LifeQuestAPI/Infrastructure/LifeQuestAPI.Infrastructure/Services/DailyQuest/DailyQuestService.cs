@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.Abstractions.DailyQuest;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
@@ -18,19 +19,25 @@ public class DailyQuestService : IDailyQuestService
     private readonly IUserTaskReadRepository _userTaskReadRepository;
     private readonly IUserTaskWriteRepository _userTaskWriteRepository;
     private readonly ILogger<DailyQuestService> _logger;
+    private readonly ITaskRecommendationService _taskRecommendationService;
+    private readonly IUserDailyMoodReadRepository _moodReadRepository;
 
     public DailyQuestService(
         ILogger<DailyQuestService> logger,
         IUserTaskWriteRepository userTaskWriteRepository,
         IUserTaskReadRepository userTaskReadRepository,
         IAppTaskReadRepository taskReadRepository,
-        IAppUserReadRepository userReadRepository)
+        IAppUserReadRepository userReadRepository,
+        IUserDailyMoodReadRepository moodReadRepository,
+        ITaskRecommendationService taskRecommendationService)
     {
         _userReadRepository = userReadRepository;
         _taskReadRepository = taskReadRepository;
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
         _logger = logger;
+        _moodReadRepository = moodReadRepository;
+        _taskRecommendationService = taskRecommendationService;
     }
 
     public async Task DistributeDailyQuestsAsync()
@@ -82,71 +89,23 @@ public class DailyQuestService : IDailyQuestService
 
     private async Task<List<Guid>> AssignTasksToSpecificUser(AppUser user)
     {
-        var completedTaskIds = await _userTaskReadRepository.Table
-            .Where(ut => ut.AppUserId == user.Id && ut.Status == AppTaskStatus.Completed)
-            .Select(ut => ut.AppTaskId)
-            .ToListAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var todayMood = await _moodReadRepository
+            .GetWhere(m => m.AppUserId == user.Id && m.Date == today, tracking: false)
+            .FirstOrDefaultAsync();
 
-        var allTasks = await _taskReadRepository.GetAll(false)
-            .Where(t => t.IsActive)
-            .ToListAsync();
+        // SP-01: Akıllı öneri motorunu (ML.NET tabanlı) kullanarak en uygun 6 görevi seç
+        // Bu servis kendi içinde UserTask kayıtlarını Suggested olarak oluşturur ve kaydeder.
+        var recommendations = await _taskRecommendationService.GetContextualRecommendationsAsync(
+            user.Id,
+            todayMood?.MoodMode ?? MoodMode.Normal,
+            DayTimeSlot.Morning, // Default değer, gerekirse saate göre hesaplanabilir
+            todayMood?.EnergyLevel ?? 3,
+            todayMood?.AvailableMinutes ?? 30,
+            6);
 
-        var suitableTasks = allTasks.Where(task =>
-        {
-            if (completedTaskIds.Contains(task.Id)) return false;
+        _logger.LogInformation($"✅ {user.UserName} kullanıcısına {recommendations.Count} akıllı görev önerildi.");
 
-            if (task.MinLevel > user.GeneralLevel) return false;
-
-            if (task.CategoryId != Guid.Empty)
-            {
-                var userCatProgress = user.CategoryProgresses
-                    .FirstOrDefault(cp => cp.CategoryId == task.CategoryId);
-
-                int userCatLevel = userCatProgress?.Level ?? 1;
-
-                switch (task.Difficulty)
-                {
-                    case DifficultyLevel.Medium:
-                        if (userCatLevel < 2) return false;
-                        break;
-                    case DifficultyLevel.Hard:
-                        if (userCatLevel < 4) return false;
-                        break;
-                }
-            }
-
-            return true;
-        }).ToList();
-
-        // Eski ML tabanlı öneri kaldırıldı — SP-01 TaskRecommendationService kullanılacak
-        // Basit random seçim (eski davranış korunuyor)
-        var selectedTasks = suitableTasks.OrderBy(_ => Guid.NewGuid()).Take(6).ToList();
-
-        if (!suitableTasks.Any()) return new List<Guid>();
-
-        var newTasks = new List<UserTask>();
-
-        foreach (var task in selectedTasks)
-        {
-            newTasks.Add(new UserTask
-            {
-                Id = Guid.NewGuid(),
-                AppUserId = user.Id,
-                AppTaskId = task.Id,
-                Status = AppTaskStatus.Suggested,
-                EarnedXp = 0,
-                AssignedAt = DateTime.UtcNow,
-                DueDate = DateTime.UtcNow.AddHours(24)
-            });
-        }
-
-        if (newTasks.Count > 0)
-        {
-            await _userTaskWriteRepository.AddRangeAsync(newTasks);
-            await _userTaskWriteRepository.SaveAsync();
-            _logger.LogInformation($"✅ {user.UserName} kullanıcısına {newTasks.Count} yeni görev atandı.");
-        }
-
-        return newTasks.Select(t => t.Id).ToList();
+        return recommendations.Select(r => r.UserTaskId).ToList();
     }
 }

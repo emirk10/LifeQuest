@@ -12,8 +12,12 @@ public static class ServiceRegistration
 {
     public static void AddPersistenceServices(this IServiceCollection services, IConfiguration configuration)
     {
+        var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(configuration.GetConnectionString("DefaultConnection"));
+        dataSourceBuilder.EnableDynamicJson();
+        var dataSource = dataSourceBuilder.Build();
+
         services.AddDbContext<LifeQuestDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"), npgsqlOptions => 
+            options.UseNpgsql(dataSource, npgsqlOptions => 
             {
                 npgsqlOptions.EnableRetryOnFailure(
                     maxRetryCount: 5,
