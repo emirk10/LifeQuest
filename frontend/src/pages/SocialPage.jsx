@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import socialService from '../services/socialService';
+import ChallengeCard from '../components/ChallengeCard';
+import { challengeService } from '../services/challengeService';
 
 const tabs = ['Arkadaşlarım', 'İstekler', 'Mücadeleler', 'Kullanıcı Ara'];
+const CHALLENGE_STATUS_TABS = ['active', 'invited', 'completed'];
 
 const SocialPage = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const [challengeStatus, setChallengeStatus] = useState('active');
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [challenges, setChallenges] = useState([]);
@@ -18,11 +22,13 @@ const SocialPage = () => {
   const [challengeTarget, setChallengeTarget] = useState(null);
   const [challengeForm, setChallengeForm] = useState({
     title: '',
-    targetTaskCount: 10,
-    bonusXP: 200,
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    challengeType: 'TaskCount',
+    targetValue: 10,
+    durationDays: 7,
+    winnerXPBonus: 200,
+    challengerMessage: '',
   });
+
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -32,14 +38,12 @@ const SocialPage = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [friendsData, requestsData, challengesData] = await Promise.all([
+      const [friendsData, requestsData] = await Promise.all([
         socialService.getFriends(),
         socialService.getFriendRequests(),
-        socialService.getChallenges(),
       ]);
       setFriends(friendsData);
       setRequests(requestsData);
-      setChallenges(challengesData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -47,9 +51,22 @@ const SocialPage = () => {
     }
   }, []);
 
+  const fetchChallenges = useCallback(async () => {
+    try {
+      const result = await challengeService.getActiveChallenges(challengeStatus);
+      setChallenges(result?.challenges || result || []);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [challengeStatus]);
+
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    if (activeTab === 2) fetchChallenges();
+  }, [fetchChallenges, activeTab, challengeStatus]);
 
   const handleSearch = async () => {
     if (searchQuery.length < 2) return;
@@ -113,17 +130,18 @@ const SocialPage = () => {
   const handleCreateChallenge = async (e) => {
     e.preventDefault();
     try {
-      await socialService.createChallenge({
+      await challengeService.sendInvite({
         opponentId: challengeTarget.friendId,
         title: challengeForm.title,
-        targetTaskCount: challengeForm.targetTaskCount,
-        bonusXP: challengeForm.bonusXP,
-        startDate: new Date(challengeForm.startDate).toISOString(),
-        endDate: new Date(challengeForm.endDate).toISOString(),
+        challengeType: challengeForm.challengeType,
+        targetValue: challengeForm.targetValue,
+        durationDays: challengeForm.durationDays,
+        winnerXPBonus: challengeForm.winnerXPBonus,
+        challengerMessage: challengeForm.challengerMessage,
       });
       showToast(`${challengeTarget.name}'e mücadele daveti gönderildi! ⚔️`);
       setShowChallengeModal(false);
-      fetchData();
+      fetchChallenges();
     } catch (err) {
       showToast(err.response?.data?.message || 'Mücadele oluşturulamadı.', 'error');
     }
@@ -156,7 +174,7 @@ const SocialPage = () => {
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Bekleyen İstek</p>
             </div>
             <div className="bg-slate-900/60 px-4 py-2 rounded-xl border border-rose-500/20 text-center">
-              <p className="text-2xl font-black text-rose-400">{challenges.filter(c => c.isActive).length}</p>
+              <p className="text-2xl font-black text-rose-400">{challenges.filter(c => c.status === 'Active').length}</p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">Aktif Mücadele</p>
             </div>
           </div>
@@ -279,60 +297,36 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* MÜCADELELER */}
+            {/* SP-05: MÜCADELELER */}
             {activeTab === 2 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* Status filter */}
+                <div className="flex gap-2">
+                  {[['active','Aktif'],['invited','Davetler'],['completed','Tamamlanan']].map(([s, l]) => (
+                    <button key={s}
+                      onClick={() => { setChallengeStatus(s); }}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                        challengeStatus === s
+                          ? 'bg-rose-600 text-white shadow-lg'
+                          : 'bg-slate-900/60 text-slate-400 border border-slate-800 hover:text-white'
+                      }`}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+
                 {challenges.length === 0 ? (
-                  <div className="col-span-2 bg-slate-900/40 rounded-2xl border border-dashed border-slate-700 p-12 text-center">
+                  <div className="bg-slate-900/40 rounded-2xl border border-dashed border-slate-700 p-12 text-center">
                     <p className="text-4xl mb-4">⚔️</p>
-                    <p className="text-slate-400 font-bold">Henüz aktif mücadelen yok.</p>
-                    <p className="text-slate-600 text-sm mt-1">Arkadaşlarına mücadele daveti gönder!</p>
+                    <p className="text-slate-400 font-bold">Henüz {challengeStatus === 'invited' ? 'bekleyen davet' : challengeStatus === 'completed' ? 'tamamlanan mücadele' : 'aktif mücadele'} yok.</p>
+                    {challengeStatus === 'active' && <p className="text-slate-600 text-sm mt-1">Arkadaşlarına mücadele daveti gönder!</p>}
                   </div>
                 ) : (
-                  challenges.map((c) => {
-                    const challengerPct = Math.min(100, (c.challengerProgress / c.targetTaskCount) * 100);
-                    const opponentPct = Math.min(100, (c.opponentProgress / c.targetTaskCount) * 100);
-                    return (
-                      <div key={c.id} className={`bg-slate-900/60 p-5 rounded-2xl border transition-colors ${c.isActive ? 'border-rose-500/30 hover:border-rose-500/50' : 'border-slate-800'}`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="text-white font-bold">{c.title}</h3>
-                            {c.categoryName && <p className="text-slate-500 text-xs mt-0.5">{c.categoryName}</p>}
-                          </div>
-                          <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${
-                            c.winnerId ? 'bg-amber-500/20 text-amber-400' : c.isActive ? 'bg-rose-500/20 text-rose-400' : 'bg-slate-700 text-slate-500'
-                          }`}>
-                            {c.winnerId ? '🏆 Bitti' : c.isActive ? '⚔️ Aktif' : 'Sona Erdi'}
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-slate-400 font-bold">{c.challengerName}</span>
-                              <span className="text-indigo-400 font-black">{c.challengerProgress}/{c.targetTaskCount}</span>
-                            </div>
-                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${challengerPct}%` }}></div>
-                            </div>
-                          </div>
-                          <div>
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-slate-400 font-bold">{c.opponentName}</span>
-                              <span className="text-rose-400 font-black">{c.opponentProgress}/{c.targetTaskCount}</span>
-                            </div>
-                            <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                              <div className="h-full bg-rose-500 rounded-full transition-all" style={{ width: `${opponentPct}%` }}></div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex justify-between text-[10px] text-slate-600 mt-3 font-bold">
-                          <span>{new Date(c.startDate).toLocaleDateString('tr-TR')}</span>
-                          <span className="text-amber-500">+{c.winnerBonusXP} XP Ödül</span>
-                          <span>{new Date(c.endDate).toLocaleDateString('tr-TR')}</span>
-                        </div>
-                      </div>
-                    );
-                  })
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {challenges.map(c => (
+                      <ChallengeCard key={c.id} challenge={c} onUpdate={fetchChallenges} />
+                    ))}
+                  </div>
                 )}
               </div>
             )}
@@ -389,7 +383,7 @@ const SocialPage = () => {
         )}
       </div>
 
-      {/* Mücadele Modal */}
+      {/* SP-05: Mücadele Modal */}
       {showChallengeModal && challengeTarget && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 w-full max-w-md shadow-2xl">
@@ -399,28 +393,48 @@ const SocialPage = () => {
             </p>
             <form onSubmit={handleCreateChallenge} className="space-y-4">
               <div>
-                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Mücadele Adı</label>
-                <input required type="text" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value={challengeForm.title} onChange={e => setChallengeForm({ ...challengeForm, title: e.target.value })} placeholder="Örn: Haftalık Spor Mücadelesi" />
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Mücadele Adı *</label>
+                <input required type="text" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  value={challengeForm.title} onChange={e => setChallengeForm({ ...challengeForm, title: e.target.value })}
+                  placeholder="Örn: Haftalık Görev Mücadelesi" />
+              </div>
+              <div>
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Mücadele Tipi</label>
+                <select className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  value={challengeForm.challengeType}
+                  onChange={e => setChallengeForm({ ...challengeForm, challengeType: e.target.value })}>
+                  <option value="TaskCount">📋 Görev Sayısı</option>
+                  <option value="XPRace">⭐ XP Yarışı</option>
+                  <option value="StreakBattle">🔥 Seri Mücadelesi</option>
+                  <option value="CategoryFocus">🎯 Kategori Odağı</option>
+                </select>
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Hedef Görev Sayısı</label>
-                  <input type="number" min="1" max="100" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value={challengeForm.targetTaskCount} onChange={e => setChallengeForm({ ...challengeForm, targetTaskCount: parseInt(e.target.value) })} />
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Hedef Sayı</label>
+                  <input type="number" min="1" max="500" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    value={challengeForm.targetValue}
+                    onChange={e => setChallengeForm({ ...challengeForm, targetValue: parseInt(e.target.value) })} />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Süre (Gün)</label>
+                  <input type="number" min="1" max="90" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    value={challengeForm.durationDays}
+                    onChange={e => setChallengeForm({ ...challengeForm, durationDays: parseInt(e.target.value) })} />
                 </div>
                 <div className="flex-1">
                   <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Ödül XP</label>
-                  <input type="number" min="50" max="1000" step="50" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value={challengeForm.bonusXP} onChange={e => setChallengeForm({ ...challengeForm, bonusXP: parseInt(e.target.value) })} />
+                  <input type="number" min="50" max="1000" step="50" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    value={challengeForm.winnerXPBonus}
+                    onChange={e => setChallengeForm({ ...challengeForm, winnerXPBonus: parseInt(e.target.value) })} />
                 </div>
               </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Başlangıç</label>
-                  <input type="date" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value={challengeForm.startDate} onChange={e => setChallengeForm({ ...challengeForm, startDate: e.target.value })} />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Bitiş</label>
-                  <input type="date" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" value={challengeForm.endDate} onChange={e => setChallengeForm({ ...challengeForm, endDate: e.target.value })} />
-                </div>
+              <div>
+                <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Mesaj (opsiyonel)</label>
+                <input type="text" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                  placeholder="Rakibe mesaj..."
+                  value={challengeForm.challengerMessage}
+                  onChange={e => setChallengeForm({ ...challengeForm, challengerMessage: e.target.value })} />
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowChallengeModal(false)} className="px-5 py-2.5 rounded-xl font-bold text-slate-400 hover:text-white transition-colors text-sm">İptal</button>

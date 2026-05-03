@@ -15,6 +15,7 @@ import ReportsPage from './pages/ReportsPage';
 import SocialPage from './pages/SocialPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import DailyTaskPage from './pages/DailyTaskPage';
+import OnboardingPage from './pages/OnboardingPage';
 
 import PrivateRoute from './components/PrivateRoute';
 import ChatBot from './components/ChatBot';
@@ -40,6 +41,7 @@ function App() {
             <Route path="/leaderboard" element={<PrivateRoute><LeaderboardPage /></PrivateRoute>} />
             <Route path="/daily" element={<PrivateRoute><DailyTaskPage /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
+            <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />
           </Routes>
           <ChatBot />
         </AuthProvider>

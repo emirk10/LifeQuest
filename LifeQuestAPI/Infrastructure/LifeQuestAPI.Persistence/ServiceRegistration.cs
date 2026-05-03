@@ -61,5 +61,13 @@ public static class ServiceRegistration
         services.AddScoped<IUserDailyMoodWriteRepository, UserDailyMoodWriteRepository>();
         services.AddScoped<IChatBotMessageReadRepository, ChatBotMessageReadRepository>();
         services.AddScoped<IChatBotMessageWriteRepository, ChatBotMessageWriteRepository>();
+
+        // SP-05 Yeni Repository'ler
+        services.AddScoped<IOnboardingResponseReadRepository, OnboardingResponseReadRepository>();
+        services.AddScoped<IOnboardingResponseWriteRepository, OnboardingResponseWriteRepository>();
+        services.AddScoped<IGoalMilestoneReadRepository, GoalMilestoneReadRepository>();
+        services.AddScoped<IGoalMilestoneWriteRepository, GoalMilestoneWriteRepository>();
+        services.AddScoped<IChallengeParticipantReadRepository, ChallengeParticipantReadRepository>();
+        services.AddScoped<IChallengeParticipantWriteRepository, ChallengeParticipantWriteRepository>();
     }
 }

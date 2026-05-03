@@ -15,6 +15,17 @@ public class CreateUserGoalCommandRequest : IRequest<CreateUserGoalCommandRespon
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int BonusXP { get; set; }
+    
+    // SP-05
+    public string? Icon { get; set; }
+    public string? Color { get; set; }
+    public string? Why { get; set; }
+    public string? ProgressUnit { get; set; }
+    public int DifficultyLevel { get; set; } = 2;
+    public bool AutoTrackByCategory { get; set; }
+    public bool AutoTrackByXP { get; set; }
+    public bool ReminderEnabled { get; set; } = true;
+    public string? ReminderFrequency { get; set; }
 }
 
 public class CreateUserGoalCommandResponse

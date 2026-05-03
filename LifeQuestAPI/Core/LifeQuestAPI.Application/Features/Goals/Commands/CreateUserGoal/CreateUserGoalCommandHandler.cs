@@ -32,7 +32,17 @@ public class CreateUserGoalCommandHandler : IRequestHandler<CreateUserGoalComman
             EndDate = request.EndDate,
             BonusXP = request.BonusXP,
             IsCompleted = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            // SP-05
+            Icon = request.Icon,
+            Color = request.Color,
+            Why = request.Why,
+            ProgressUnit = request.ProgressUnit ?? "görev",
+            AutoTrackByCategory = request.AutoTrackByCategory,
+            AutoTrackByXP = request.AutoTrackByXP,
+            ReminderEnabled = request.ReminderEnabled,
+            ReminderFrequency = request.ReminderFrequency ?? "daily",
+            LinkedCategoryIds = request.CategoryId.HasValue ? new List<Guid> { request.CategoryId.Value } : null
         };
 
         await _goalWriteRepository.AddAsync(goal);

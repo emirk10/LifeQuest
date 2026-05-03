@@ -17,6 +17,9 @@ builder.Services.AddHostedService<DailyQuestWorker>();
 builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyReportWorker>();
 builder.Services.AddHostedService<NudgeWorker>(); // SP-03
 builder.Services.AddHostedService<GoalRevisionWorker>(); // SP-04
+builder.Services.AddHostedService<GoalReminderWorker>(); // SP-05
+builder.Services.AddHostedService<ChallengeExpiryWorker>(); // SP-05
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

@@ -31,6 +31,11 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<UserTaskInteraction> UserTaskInteractions { get; set; }
     public DbSet<UserDailyMood> UserDailyMoods { get; set; }
 
+    // SP-05 Yeni Entity'ler
+    public DbSet<OnboardingResponse> OnboardingResponses { get; set; }
+    public DbSet<GoalMilestone> GoalMilestones { get; set; }
+    public DbSet<ChallengeParticipant> ChallengeParticipants { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserCategoryProgress>()
@@ -70,6 +75,19 @@ public sealed class LifeQuestDbContext : DbContext
             .HasOne(c => c.Opponent)
             .WithMany()
             .HasForeignKey(c => c.OpponentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // SP-05: ChallengeParticipants
+        modelBuilder.Entity<ChallengeParticipant>()
+            .HasOne(cp => cp.Challenge)
+            .WithMany(c => c.Participants)
+            .HasForeignKey(cp => cp.ChallengeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ChallengeParticipant>()
+            .HasOne(cp => cp.User)
+            .WithMany()
+            .HasForeignKey(cp => cp.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // UserAchievement unique constraint
@@ -134,12 +152,63 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(t => t.TargetedGoals)
             .HasColumnType("jsonb");
 
-        // ChatBotMessage — SP-02 index
         modelBuilder.Entity<ChatBotMessage>()
             .HasIndex(m => m.AppUserId);
 
         modelBuilder.Entity<ChatBotMessage>()
             .Property(m => m.ActionsOfferedJson)
+            .HasColumnType("jsonb");
+
+        // Migration Fix: Defaults
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.NudgeEnabled)
+            .HasDefaultValue(true);
+
+        modelBuilder.Entity<UserTask>()
+            .Property(ut => ut.XpCompensationRate)
+            .HasDefaultValue(1.0m);
+
+        // SP-05: Task Limit defaults
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.DailyTaskLimit)
+            .HasDefaultValue(3);
+
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.WeeklyTaskLimit)
+            .HasDefaultValue(7);
+
+        // SP-05: AppUser yeni jsonb kolonlari
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.WorkDays)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.MotivationKillers)
+            .HasColumnType("jsonb");
+
+        // SP-05: OnboardingResponse
+        modelBuilder.Entity<OnboardingResponse>()
+            .HasOne(o => o.AppUser)
+            .WithMany(u => u.OnboardingResponses)
+            .HasForeignKey(o => o.AppUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<OnboardingResponse>()
+            .HasIndex(o => new { o.AppUserId, o.QuestionKey });
+
+        // SP-05: GoalMilestone
+        modelBuilder.Entity<GoalMilestone>()
+            .HasOne(gm => gm.UserGoal)
+            .WithMany(g => g.Milestones)
+            .HasForeignKey(gm => gm.UserGoalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<GoalMilestone>()
+            .HasIndex(gm => new { gm.UserGoalId, gm.OrderIndex });
+
+        // SP-05: UserGoal jsonb
+        modelBuilder.Entity<UserGoal>()
+            .Property(g => g.LinkedCategoryIds)
             .HasColumnType("jsonb");
 
         base.OnModelCreating(modelBuilder);

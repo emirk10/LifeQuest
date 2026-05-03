@@ -1,6 +1,10 @@
+using LifeQuestAPI.Application.Features.Social.Commands.SendChallengeInvite;
+using LifeQuestAPI.Application.Features.Social.Commands.RespondToChallenge;
+using LifeQuestAPI.Application.Features.Social.Queries.GetActiveChallenges;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
 using LifeQuestAPI.Domain.Enums;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +23,7 @@ public class SocialController : ControllerBase
     private readonly IChallengeWriteRepository _challengeWrite;
     private readonly IAppUserReadRepository _userRead;
     private readonly IAppUserWriteRepository _userWrite;
+    private readonly IMediator _mediator;
 
     public SocialController(
         IFriendshipReadRepository friendshipRead,
@@ -26,7 +31,8 @@ public class SocialController : ControllerBase
         IChallengeReadRepository challengeRead,
         IChallengeWriteRepository challengeWrite,
         IAppUserReadRepository userRead,
-        IAppUserWriteRepository userWrite)
+        IAppUserWriteRepository userWrite,
+        IMediator mediator)
     {
         _friendshipRead = friendshipRead;
         _friendshipWrite = friendshipWrite;
@@ -34,6 +40,7 @@ public class SocialController : ControllerBase
         _challengeWrite = challengeWrite;
         _userRead = userRead;
         _userWrite = userWrite;
+        _mediator = mediator;
     }
 
     // ================================================================
@@ -61,9 +68,11 @@ public class SocialController : ControllerBase
                 friendId = friend.Id,
                 name = friend.Name,
                 surname = friend.Surname,
+                fullName = friend.FullName,
                 userName = friend.UserName,
                 level = friend.GeneralLevel,
                 totalXP = friend.TotalXP,
+                avatarId = friend.AvatarId,
                 acceptedAt = f.AcceptedAt
             };
         });
@@ -105,12 +114,10 @@ public class SocialController : ControllerBase
         if (userId == targetUserId)
             return BadRequest(new { success = false, message = "Kendinize istek gönderemezsiniz." });
 
-        // Hedef kullanıcı var mı?
         var targetUser = await _userRead.GetByIdAsync(targetUserId.ToString());
         if (targetUser == null)
             return NotFound(new { success = false, message = "Kullanıcı bulunamadı." });
 
-        // Zaten arkadaş veya istek var mı?
         var existing = await _friendshipRead.GetAll(false)
             .FirstOrDefaultAsync(f =>
                 (f.RequesterId == userId && f.AddresseeId == targetUserId) ||
@@ -218,7 +225,8 @@ public class SocialController : ControllerBase
                 surname = u.Surname,
                 userName = u.UserName,
                 level = u.GeneralLevel,
-                totalXP = u.TotalXP
+                totalXP = u.TotalXP,
+                avatarId = u.AvatarId
             })
             .ToListAsync();
 
@@ -226,82 +234,91 @@ public class SocialController : ControllerBase
     }
 
     // ================================================================
-    // MÜCADELELER
+    // SP-05: MÜCADELELER — MediatR Handler'lar
     // ================================================================
 
+    /// <summary>SP-05: Mücadele listesi (status: active | invited | completed | all)</summary>
     [HttpGet("challenges")]
-    public async Task<IActionResult> GetChallenges()
+    public async Task<IActionResult> GetChallenges([FromQuery] string status = "active")
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var challenges = await _challengeRead.GetAll(false)
-            .Where(c => c.ChallengerId == userId || c.OpponentId == userId)
-            .Include(c => c.Challenger)
-            .Include(c => c.Opponent)
-            .Include(c => c.Category)
-            .OrderByDescending(c => c.StartDate)
-            .Select(c => new
-            {
-                id = c.Id,
-                title = c.Title,
-                challengerName = c.Challenger.Name + " " + c.Challenger.Surname,
-                opponentName = c.Opponent.Name + " " + c.Opponent.Surname,
-                challengerId = c.ChallengerId,
-                opponentId = c.OpponentId,
-                categoryName = c.Category != null ? c.Category.Name : null,
-                targetTaskCount = c.TargetTaskCount,
-                challengerProgress = c.ChallengerProgress,
-                opponentProgress = c.OpponentProgress,
-                startDate = c.StartDate,
-                endDate = c.EndDate,
-                isActive = c.IsActive,
-                winnerId = c.WinnerId,
-                winnerBonusXP = c.WinnerBonusXP
-            })
-            .ToListAsync();
+        var challenges = await _mediator.Send(new GetActiveChallengesQueryRequest
+        {
+            UserId = userId.Value,
+            StatusFilter = status
+        });
 
         return Ok(new { success = true, challenges });
     }
 
-    [HttpPost("challenges")]
-    public async Task<IActionResult> CreateChallenge([FromBody] CreateChallengeBody body)
+    /// <summary>SP-05: Mücadele daveti gönder</summary>
+    [HttpPost("challenges/invite")]
+    public async Task<IActionResult> SendChallengeInvite([FromBody] SendChallengeInviteCommandRequest request)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        // Rakip kullanıcı var mı?
-        var opponent = await _userRead.GetByIdAsync(body.OpponentId.ToString());
-        if (opponent == null)
-            return NotFound(new { success = false, message = "Rakip kullanıcı bulunamadı." });
+        request.ChallengerId = userId.Value;
 
-        // Arkadaş mı?
-        var areFriends = await _friendshipRead.GetAll(false)
-            .AnyAsync(f =>
-                ((f.RequesterId == userId && f.AddresseeId == body.OpponentId) ||
-                 (f.RequesterId == body.OpponentId && f.AddresseeId == userId)) &&
-                f.Status == FriendshipStatus.Accepted);
-
-        if (!areFriends)
-            return BadRequest(new { success = false, message = "Sadece arkadaşlarınıza mücadele daveti gönderebilirsiniz." });
-
-        var challenge = new Challenge
+        try
         {
-            ChallengerId = userId.Value,
-            OpponentId = body.OpponentId,
-            CategoryId = body.CategoryId,
-            Title = body.Title,
-            TargetTaskCount = body.TargetTaskCount,
-            StartDate = body.StartDate,
-            EndDate = body.EndDate,
-            WinnerBonusXP = body.BonusXP > 0 ? body.BonusXP : 200,
-            IsActive = true
-        };
+            var result = await _mediator.Send(request);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
 
-        await _challengeWrite.AddAsync(challenge);
+    /// <summary>SP-05: Mücadele davetine cevap ver (kabul/red)</summary>
+    [HttpPatch("challenges/{challengeId}/respond")]
+    public async Task<IActionResult> RespondToChallenge(Guid challengeId, [FromBody] ChallengeRespondBody body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        try
+        {
+            var result = await _mediator.Send(new RespondToChallengeCommandRequest
+            {
+                UserId = userId.Value,
+                ChallengeId = challengeId,
+                Accept = body.Accept,
+                Message = body.Message
+            });
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    /// <summary>SP-05: Mücadeleyi iptal et</summary>
+    [HttpDelete("challenges/{challengeId}")]
+    public async Task<IActionResult> CancelChallenge(Guid challengeId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var challenge = await _challengeRead
+            .GetWhere(c => c.Id == challengeId && c.ChallengerId == userId, tracking: true)
+            .FirstOrDefaultAsync();
+
+        if (challenge == null)
+            return NotFound(new { success = false, message = "Mücadele bulunamadı." });
+
+        if (challenge.Status == ChallengeStatus.Completed)
+            return BadRequest(new { success = false, message = "Tamamlanmış mücadele iptal edilemez." });
+
+        challenge.Status = ChallengeStatus.Cancelled;
+        _challengeWrite.Update(challenge);
         await _challengeWrite.SaveAsync();
 
-        return Ok(new { success = true, message = "Mücadele daveti gönderildi! ⚔️", challengeId = challenge.Id });
+        return Ok(new { success = true, message = "Mücadele iptal edildi." });
     }
 
     // ================================================================
@@ -325,4 +342,10 @@ public class CreateChallengeBody
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int BonusXP { get; set; } = 200;
+}
+
+public class ChallengeRespondBody
+{
+    public bool Accept { get; set; }
+    public string? Message { get; set; }
 }

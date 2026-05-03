@@ -7,13 +7,15 @@ namespace LifeQuestAPI.Domain.Enums;
 /// </summary>
 public enum AppTaskStatus
 {
-    Suggested = 0,    // Sistem tarafından önerildi, kullanıcı henüz seçmedi
-    Selected = 1,     // Kullanıcı seçti, henüz başlamadı
-    InProgress = 2,   // Timer çalışıyor
-    Paused = 3,       // Duraklat
-    Completed = 4,    // Tamamlandı
-    Postponed = 5,    // Ertelendi
-    Compensated = 6,  // Ertelenmiş görev telafi edildi
-    Abandoned = 7,    // Vazgeçildi
-    Expired = 8       // Süresi doldu
+    Pending = 0,      // Bekliyor
+    InProgress = 1,   // Timer çalışıyor
+    Completed = 2,    // Tamamlandı
+    Failed = 3,       // Başarısız
+    Expired = 4,      // Süresi doldu
+    Suggested = 5,    // Sistem tarafından önerildi, kullanıcı henüz seçmedi
+    Selected = 6,     // Kullanıcı seçti, henüz başlamadı
+    Paused = 7,       // Duraklat
+    Postponed = 8,    // Ertelendi
+    Compensated = 9,  // Ertelenmiş görev telafi edildi
+    Abandoned = 10    // Vazgeçildi
 }

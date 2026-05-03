@@ -114,18 +114,27 @@ public class UserTasksController : ControllerBase
 
     /// <summary>Havuzdan görev seç (Suggested → Selected)</summary>
     [HttpPost("{id}/select")]
-    public async Task<IActionResult> SelectTask([FromRoute] Guid id)
+    public async Task<IActionResult> SelectTask([FromRoute] Guid id, [FromQuery] bool forceOverLimit = false)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
-        var response = await _mediator.Send(new SelectTaskCommandRequest
+        try
         {
-            UserId = Guid.Parse(userIdString),
-            UserTaskId = id
-        });
-        return Ok(response);
+            var response = await _mediator.Send(new SelectTaskCommandRequest
+            {
+                UserId = Guid.Parse(userIdString),
+                UserTaskId = id,
+                ForceOverLimit = forceOverLimit
+            });
+            return Ok(response);
+        }
+        catch (Exception ex) when (ex.Message.Contains("limite"))
+        {
+            return BadRequest(new { success = false, message = ex.Message, limitReached = true });
+        }
     }
+
 
     /// <summary>Görevi ertele</summary>
     [HttpPost("{id}/postpone")]

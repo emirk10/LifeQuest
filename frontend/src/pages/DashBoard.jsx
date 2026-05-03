@@ -3,6 +3,7 @@ import MainLayout from '../layouts/MainLayout';
 import CategoryCard from '../components/CategoryCard';
 import categoryService from '../services/categoryService';
 import userService from '../services/userService';
+import { moodApi } from '../api/moodApi';
 import axiosClient from '../api/axiosClient';
 import { getUserIdFromToken } from '../utils/authUtils';
 import { toast, ToastContainer } from 'react-toastify';
@@ -20,6 +21,8 @@ const DashBoard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [motivation, setMotivation] = useState("Günlük motivasyon yükleniyor...");
+  const [todayMood, setTodayMood] = useState(null);
+  const [showMoodModal, setShowMoodModal] = useState(false);
   const connectionRef = useRef(null);
 
   // SP-03: SignalR proaktif nudge bağlantısı
@@ -98,8 +101,20 @@ const DashBoard = () => {
           } else {
              setMotivation("Bugün hedeflerine ulaşmak için harika bir gün! Küçük adımlar büyük sonuçlar getirir.");
           }
-        } catch(err) {
-          setMotivation("Hedeflerine bir adım daha yaklaşmak için bugün harika bir fırsat!");
+        } catch (err) {
+          setMotivation("Bugün hedeflerine ulaşmak için harika bir gün! Küçük adımlar büyük sonuçlar getirir.");
+        }
+
+        // Mood Check
+        try {
+          const moodRes = await moodApi.getTodayMood();
+          if (moodRes.data?.data) {
+            setTodayMood(moodRes.data.data);
+          } else {
+            setShowMoodModal(true);
+          }
+        } catch (err) {
+          setShowMoodModal(true);
         }
 
       } catch (error) {
@@ -132,6 +147,29 @@ const DashBoard = () => {
             </div>
           </div>
         </section>
+
+        {/* Günlük Özet Bar */}
+        {todayMood && (
+          <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{todayMood.moodMode === 0 ? '⚡' : todayMood.moodMode === 1 ? '😊' : todayMood.moodMode === 2 ? '😴' : todayMood.moodMode === 3 ? '😰' : '⏰'}</span>
+              <div>
+                <p className="text-xs text-slate-400">Bugünkü Enerjin</p>
+                <p className="text-sm font-bold text-white">{todayMood.energyLevel}/5 Seviye</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 border-l border-slate-700 pl-4">
+              <span className="text-xl">⏱️</span>
+              <div>
+                <p className="text-xs text-slate-400">Müsait Süren</p>
+                <p className="text-sm font-bold text-white">{todayMood.availableMinutes} dk</p>
+              </div>
+            </div>
+            <button onClick={() => window.location.href='/daily'} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition-colors">
+              Görev Havuzuna Git
+            </button>
+          </div>
+        )}
 
         <section>
           <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4 ml-1">Görev Kategorileri</h3>
@@ -217,6 +255,24 @@ const DashBoard = () => {
         toastClassName="!rounded-2xl !shadow-2xl"
         progressClassName="!bg-indigo-500"
       />
+
+      {/* Mood Modal */}
+      {showMoodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-6">
+              <h2 className="text-2xl font-black text-white mb-2">Güne Hazır Mısın?</h2>
+              <p className="text-slate-400 text-sm mb-6">Sana en uygun görevleri önerebilmemiz için bugünkü durumunu paylaş.</p>
+              <button 
+                onClick={() => window.location.href='/daily'}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold transition-colors"
+              >
+                Durumunu Belirle & Görevleri Al
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 };

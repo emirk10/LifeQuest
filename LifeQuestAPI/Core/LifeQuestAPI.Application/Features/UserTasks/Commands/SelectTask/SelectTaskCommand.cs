@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions.Notifications;
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Enums;
@@ -10,6 +11,8 @@ public class SelectTaskCommandRequest : IRequest<UserTaskDto>
 {
     public Guid UserId { get; set; }
     public Guid UserTaskId { get; set; }
+    /// <summary>SP-05: Kullanıcı limit uyarısını onaylayıp aşmak istiyorsa true.</summary>
+    public bool ForceOverLimit { get; set; } = false;
 }
 
 public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest, UserTaskDto>
@@ -17,19 +20,46 @@ public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest
     private readonly IUserTaskReadRepository _userTaskReadRepository;
     private readonly IUserTaskWriteRepository _userTaskWriteRepository;
     private readonly IUserDailyMoodReadRepository _moodReadRepository;
+    private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IAppUserWriteRepository _userWriteRepository;
+    private readonly IAppNotificationService _notificationService;
 
     public SelectTaskCommandHandler(
         IUserTaskReadRepository userTaskReadRepository,
         IUserTaskWriteRepository userTaskWriteRepository,
-        IUserDailyMoodReadRepository moodReadRepository)
+        IUserDailyMoodReadRepository moodReadRepository,
+        IAppUserReadRepository userReadRepository,
+        IAppUserWriteRepository userWriteRepository,
+        IAppNotificationService notificationService)
     {
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
         _moodReadRepository = moodReadRepository;
+        _userReadRepository = userReadRepository;
+        _userWriteRepository = userWriteRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<UserTaskDto> Handle(SelectTaskCommandRequest request, CancellationToken cancellationToken)
     {
+        // Kullanıcıyı çek
+        var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true)
+            ?? throw new Exception("Kullanıcı bulunamadı.");
+
+        // ─── SP-05: DailyLimitRule ─────────────────────────────────────────
+        if (user.TodayTaskCount >= user.DailyTaskLimit)
+        {
+            if (!request.ForceOverLimit || user.OverLimitWarningShown)
+                throw new Exception($"Bugün için görev limitine ({user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin.");
+
+            // İlk kez aşıyor, uyarı flag'ini set et
+            user.OverLimitWarningShown = true;
+        }
+
+        // ─── SP-05: ActiveLimitRule ────────────────────────────────────────
+        if (user.ActiveTaskCount >= user.DailyTaskLimit * 2)
+            throw new Exception($"Henüz tamamlanmamış {user.ActiveTaskCount} görevin var. Önce mevcut görevlerini tamamla veya ertele.");
+
         var userTask = await _userTaskReadRepository
             .GetWhere(ut => ut.Id == request.UserTaskId && ut.AppUserId == request.UserId, tracking: true)
             .Include(ut => ut.AppTask)
@@ -49,8 +79,20 @@ public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest
         userTask.UserEnergyAtStart = todayMood?.EnergyLevel;
         userTask.UserMoodAtStart = todayMood?.MoodMode;
 
+        // SP-05: Sayaçları güncelle
+        user.TodayTaskCount++;
+        user.ActiveTaskCount++;
+        user.UpdatedAt = DateTime.UtcNow;
+
         _userTaskWriteRepository.Update(userTask);
+        _userWriteRepository.Update(user);
         await _userTaskWriteRepository.SaveAsync();
+
+        await _notificationService.SendNotificationAsync(
+            request.UserId,
+            "Görev seçildi!",
+            $"'{userTask.AppTask?.Title}' görevini seçtin. Hadi başlayalım!",
+            "TaskSelected");
 
         return new UserTaskDto
         {

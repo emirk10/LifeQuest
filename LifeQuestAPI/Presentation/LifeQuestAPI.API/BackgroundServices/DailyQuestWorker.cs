@@ -1,4 +1,6 @@
-﻿using LifeQuestAPI.Application.Abstractions.DailyQuest;
+using LifeQuestAPI.Application.Abstractions.DailyQuest;
+using LifeQuestAPI.Application.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.API.BackgroundServices;
 
@@ -27,8 +29,10 @@ public class DailyQuestWorker : BackgroundService
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var dailyQuestService = scope.ServiceProvider.GetRequiredService<IDailyQuestService>();
-
                     await dailyQuestService.DistributeDailyQuestsAsync();
+
+                    // SP-05: Günlük sayaçları sıfırla
+                    await ResetDailyCountersAsync(scope.ServiceProvider, stoppingToken);
                 }
             }
             catch (Exception ex)
@@ -37,4 +41,25 @@ public class DailyQuestWorker : BackgroundService
             }
         }
     }
-}
+
+    /// <summary>SP-05: Her gece TodayTaskCount ve OverLimitWarningShown sıfırla, Pazartesi WeeklyCompletedCount sıfırla.</summary>
+    private async Task ResetDailyCountersAsync(IServiceProvider services, CancellationToken ct)
+    {
+        var userReadRepo = services.GetRequiredService<IAppUserReadRepository>();
+        var userWriteRepo = services.GetRequiredService<IAppUserWriteRepository>();
+
+        var users = await userReadRepo.GetAll(tracking: true).ToListAsync(ct);
+        var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
+
+        foreach (var user in users)
+        {
+            user.TodayTaskCount = 0;
+            user.OverLimitWarningShown = false;
+            if (isMonday) user.WeeklyCompletedCount = 0;
+            userWriteRepo.Update(user);
+        }
+
+        await userWriteRepo.SaveAsync();
+        _logger.LogInformation("SP-05: {Count} kullanıcının günlük sayaçları sıfırlandı.", users.Count);
+    }
+}

@@ -90,6 +90,66 @@ public sealed class AppUser : BaseEntity
     /// <summary>Tatile girmeden önceki streak değeri (tatil sonrası geri yüklenir)</summary>
     public int FrozenStreak { get; set; } = 0;
 
+    // ─── SP-05: Kontrollü Görev Alma Sistemi ──────────────────────────────
+    /// <summary>Günde alabileceği maksimum görev sayısı. Varsayılan 3, kullanıcı 1-10 arası değiştirebilir.</summary>
+    public int DailyTaskLimit { get; set; } = 3;
+
+    /// <summary>Haftada alabileceği maksimum görev. PreferredTasksPerWeek'ten hesaplanır.</summary>
+    public int WeeklyTaskLimit { get; set; } = 7;
+
+    /// <summary>Şu an Selected + InProgress + Paused durumundaki görev sayısı. Her alım/tamamlamada güncellenir.</summary>
+    public int ActiveTaskCount { get; set; } = 0;
+
+    /// <summary>Bugün seçilen görev sayısı. Gece 00:00'de DailyQuestWorker tarafından sıfırlanır.</summary>
+    public int TodayTaskCount { get; set; } = 0;
+
+    /// <summary>Bu hafta tamamlanan görev sayısı. Pazartesi sabahı sıfırlanır.</summary>
+    public int WeeklyCompletedCount { get; set; } = 0;
+
+    /// <summary>Günlük limit dolduğunda uyarının bugün gösterilip gösterilmediği. Gece sıfırlanır.</summary>
+    public bool OverLimitWarningShown { get; set; } = false;
+
+    // ─── SP-05: Onboarding Sistemi ────────────────────────────────────────
+    /// <summary>Onboarding tamamlandı mı?</summary>
+    public bool OnboardingCompleted { get; set; } = false;
+
+    public DateTime? OnboardingCompletedAt { get; set; }
+
+    /// <summary>Onboarding versiyonu — ileride re-onboard için.</summary>
+    public int OnboardingVersion { get; set; } = 1;
+
+    /// <summary>Uyanış saati — nudge zamanlaması için.</summary>
+    public TimeOnly? WakeUpTime { get; set; }
+
+    /// <summary>Uyku saati — gece mesajlarını engelle.</summary>
+    public TimeOnly? SleepTime { get; set; }
+
+    /// <summary>Çalışma günleri jsonb — [1,2,3,4,5] (0=Pazar, 6=Cumartesi).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "jsonb")]
+    public List<int>? WorkDays { get; set; }
+
+    /// <summary>Yaşam tarzı: student/professional/freelancer/homemaker/retired/other</summary>
+    public string? LifestyleType { get; set; }
+
+    /// <summary>Yaş aralığı: 18-24/25-34/35-44/45-54/55+</summary>
+    public string? AgeRange { get; set; }
+
+    /// <summary>En çok odaklanmak istediği alan: health/career/education/social/mindfulness/finance</summary>
+    public string? PrimaryFocusArea { get; set; }
+
+    /// <summary>Motivasyonu öldüren faktörler — jsonb: ["boring_tasks","too_long"]</summary>
+    [System.ComponentModel.DataAnnotations.Schema.Column(TypeName = "jsonb")]
+    public List<string>? MotivationKillers { get; set; }
+
+    /// <summary>Tercih edilen görev süresi: micro_5/short_15/medium_30/long_60/any</summary>
+    public string? PreferredTaskDuration { get; set; }
+
+    /// <summary>İlk görev tamamlama deneyimi yaşandı mı?</summary>
+    public bool HasCompletedFirstTask { get; set; } = false;
+
+    /// <summary>Seçilen avatar ID'si (1-20 predefined avatar).</summary>
+    public int? AvatarId { get; set; }
+
     // ─── Navigation Properties ─────────────────────────────────────────────
     public ICollection<UserCategoryProgress> CategoryProgresses { get; set; } = default!;
     public ICollection<UserTask> UserTasks { get; set; } = default!;
@@ -106,5 +166,8 @@ public sealed class AppUser : BaseEntity
 
     /// <summary>SP-01: Günlük mood kayıtları</summary>
     public ICollection<UserDailyMood> DailyMoods { get; set; } = default!;
+
+    /// <summary>SP-05: Onboarding ham cevapları</summary>
+    public ICollection<OnboardingResponse> OnboardingResponses { get; set; } = default!;
 }
 
