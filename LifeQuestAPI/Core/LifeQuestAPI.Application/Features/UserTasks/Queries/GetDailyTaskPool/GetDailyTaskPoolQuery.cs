@@ -36,7 +36,7 @@ public class GetDailyTaskPoolQueryHandler : IRequestHandler<GetDailyTaskPoolQuer
         // Bugün zaten önerilmiş görevler varsa onları döndür
         var existingSuggested = await _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId
-                && ut.Status == AppTaskStatus.Suggested
+                && (ut.Status == AppTaskStatus.Suggested || ut.Status == AppTaskStatus.Selected)
                 && ut.DueDate.HasValue
                 && DateOnly.FromDateTime(ut.DueDate.Value) == today, tracking: false)
             .Include(ut => ut.AppTask)

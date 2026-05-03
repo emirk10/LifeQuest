@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions.Email;
 using LifeQuestAPI.Application.Features.Social.Commands.SendChallengeInvite;
 using LifeQuestAPI.Application.Features.Social.Commands.RespondToChallenge;
 using LifeQuestAPI.Application.Features.Social.Queries.GetActiveChallenges;
@@ -23,6 +24,10 @@ public class SocialController : ControllerBase
     private readonly IChallengeWriteRepository _challengeWrite;
     private readonly IAppUserReadRepository _userRead;
     private readonly IAppUserWriteRepository _userWrite;
+    private readonly IAppTaskReadRepository _appTaskRead;
+    private readonly IUserTaskReadRepository _userTaskRead;
+    private readonly IUserTaskWriteRepository _userTaskWrite;
+    private readonly IEmailService _emailService;
     private readonly IMediator _mediator;
 
     public SocialController(
@@ -32,6 +37,10 @@ public class SocialController : ControllerBase
         IChallengeWriteRepository challengeWrite,
         IAppUserReadRepository userRead,
         IAppUserWriteRepository userWrite,
+        IAppTaskReadRepository appTaskRead,
+        IUserTaskReadRepository userTaskRead,
+        IUserTaskWriteRepository userTaskWrite,
+        IEmailService emailService,
         IMediator mediator)
     {
         _friendshipRead = friendshipRead;
@@ -40,6 +49,10 @@ public class SocialController : ControllerBase
         _challengeWrite = challengeWrite;
         _userRead = userRead;
         _userWrite = userWrite;
+        _appTaskRead = appTaskRead;
+        _userTaskRead = userTaskRead;
+        _userTaskWrite = userTaskWrite;
+        _emailService = emailService;
         _mediator = mediator;
     }
 
@@ -325,6 +338,84 @@ public class SocialController : ControllerBase
     // YARDIMCI
     // ================================================================
 
+    /// <summary>SP-05: Görevi e-posta ile arkadaşınla veya bir kullanıcıyla paylaş</summary>
+    [HttpPost("share-task")]
+    public async Task<IActionResult> ShareTask([FromBody] ShareTaskBody body)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var user = await _userRead.GetByIdAsync(userId.Value.ToString());
+        if (user == null) return NotFound(new { success = false, message = "Kullanıcı bulunamadı." });
+
+        if (string.IsNullOrWhiteSpace(body.RecipientEmail))
+            return BadRequest(new { success = false, message = "Geçerli bir e-posta adresi giriniz." });
+
+        var task = await _appTaskRead.GetSingleAsync(t => t.Id == body.TaskId || t.Title == body.TaskTitle);
+        if (task == null) return NotFound(new { success = false, message = "Paylaşılmak istenen görev sistemde bulunamadı." });
+
+        var recipientUser = await _userRead.GetAll(false).FirstOrDefaultAsync(u => u.Email.ToLower() == body.RecipientEmail.ToLower());
+
+        string frontendUrl = Request.Headers["Origin"].ToString();
+        if (string.IsNullOrWhiteSpace(frontendUrl))
+        {
+            frontendUrl = "http://localhost:5173";
+        }
+
+        string actionLink;
+        string inviteText;
+        if (recipientUser != null)
+        {
+            actionLink = $"{frontendUrl.TrimEnd('/')}/login?acceptTask={task.Id}";
+            inviteText = $@"<p>Bu görev <strong>{user.FullName}</strong> tarafından seninle paylaşıldı!</p>
+                            <p>Daha fazlası için <a href='{actionLink}'>LifeQuest'e giriş yapın</a> ve gelişiminize hemen başlayın!</p>";
+
+            // Gerçekten görevi paylaşıyoruz: Eğer kullanıcıda bu görev bugün yoksa, onlara atayalım.
+            var existingUserTask = await _userTaskRead.GetAll(false)
+                .AnyAsync(ut => ut.AppUserId == recipientUser.Id && ut.AppTaskId == task.Id && ut.AssignedAt.Date == DateTime.UtcNow.Date);
+
+            if (!existingUserTask)
+            {
+                var userTask = new UserTask
+                {
+                    AppUserId = recipientUser.Id,
+                    AppTaskId = task.Id,
+                    Status = AppTaskStatus.Suggested,
+                    AssignedAt = DateTime.UtcNow
+                };
+                await _userTaskWrite.AddAsync(userTask);
+                await _userTaskWrite.SaveAsync();
+            }
+        }
+        else
+        {
+            actionLink = $"{frontendUrl.TrimEnd('/')}/register?acceptTask={task.Id}";
+            inviteText = $@"<p>Bu heyecan verici görev <strong>{user.FullName}</strong> tarafından seninle paylaşıldı!</p>
+                            <p>Hemen <a href='{actionLink}'>LifeQuest'e kaydolun</a> ve gelişiminize hemen başlayın!</p>";
+        }
+
+        var subject = $"LifeQuest Görev Paylaşımı: {task.Title}";
+        var htmlMessage = $@"
+            <h2>Merhaba!</h2>
+            {inviteText}
+            <hr />
+            <h3>GÖREV DETAYI:</h3>
+            <p><strong>Başlık:</strong> {task.Title}</p>
+            <p><strong>Açıklama:</strong> {task.Description}</p>
+            <p><strong>Zorluk Seviyesi:</strong> {task.Difficulty}</p>
+            <p><strong>Kazanılacak XP:</strong> {task.BaseXP} XP</p>
+            {(!string.IsNullOrEmpty(body.Message) ? $"<p><strong>Kullanıcı Mesajı:</strong> {body.Message}</p>" : "")}
+        ";
+
+        await _emailService.SendEmailAsync(body.RecipientEmail, subject, htmlMessage);
+
+        return Ok(new
+        {
+            success = true,
+            message = $"{body.RecipientEmail} adresine '{task.Title}' görevi başarıyla e-posta ile paylaşıldı! ✉️"
+        });
+    }
+
     private Guid? GetUserId()
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -347,5 +438,13 @@ public class CreateChallengeBody
 public class ChallengeRespondBody
 {
     public bool Accept { get; set; }
+    public string? Message { get; set; }
+}
+
+public class ShareTaskBody
+{
+    public Guid? TaskId { get; set; }
+    public string RecipientEmail { get; set; } = string.Empty;
+    public string TaskTitle { get; set; } = string.Empty;
     public string? Message { get; set; }
 }

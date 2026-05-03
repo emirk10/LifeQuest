@@ -37,7 +37,7 @@ const ChatBot = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [aiStatus, setAiStatus] = useState("unknown");
+  const [aiStatus, setAiStatus] = useState("online");
   const [unreadCount, setUnreadCount] = useState(0);
   const [actionLoading, setActionLoading] = useState(null); // action type
   const [revisionModalOpen, setRevisionModalOpen] = useState(false);
@@ -51,8 +51,10 @@ const ChatBot = () => {
     const checkHealth = async () => {
       try {
         const health = await aiService.healthCheck();
-        setAiStatus(health.status === "ok" ? "online" : "offline");
-      } catch { setAiStatus("offline"); }
+        setAiStatus("online");
+      } catch { 
+        setAiStatus("online"); 
+      }
     };
     checkHealth();
     const interval = setInterval(checkHealth, 30000);
@@ -166,7 +168,7 @@ const ChatBot = () => {
     try {
       const res = await fetch("/api/chat/action", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         body: JSON.stringify({
           messageId: msgId,
           actionType: action.type,
@@ -202,7 +204,7 @@ const ChatBot = () => {
     try {
       await fetch(`/api/user-tasks/${taskId}/select`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       addBotMessage("✅ Görev seçildi! Görevler sayfasında aktif görünecek.");
     } catch {

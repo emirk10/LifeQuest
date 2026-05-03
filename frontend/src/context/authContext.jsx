@@ -5,13 +5,13 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(sessionStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user_data");
+    const storedToken = sessionStorage.getItem("token");
+    const storedUser = sessionStorage.getItem("user_data");
 
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -21,16 +21,16 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, userToken) => {
-    localStorage.setItem("token", userToken);
-    localStorage.setItem("user_data", JSON.stringify(userData));
+    sessionStorage.setItem("token", userToken);
+    sessionStorage.setItem("user_data", JSON.stringify(userData));
     setToken(userToken);
     setUser(userData);
     navigate("/dashboard");
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_data");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user_data");
     setToken(null);
     setUser(null);
     navigate("/login");

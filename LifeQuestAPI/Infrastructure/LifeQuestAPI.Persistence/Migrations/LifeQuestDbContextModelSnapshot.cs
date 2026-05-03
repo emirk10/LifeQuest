@@ -140,6 +140,9 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("IsActive", "CategoryId")
+                        .HasDatabaseName("IX_AppTask_IsActive_CategoryId");
+
                     b.ToTable("AppTasks");
                 });
 
@@ -397,6 +400,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AppUserId");
+
+                    b.HasIndex("AppUserId", "CreatedAt")
+                        .HasDatabaseName("IX_ChatBotMessage_UserId_CreatedAt");
 
                     b.ToTable("ChatBotMessages");
                 });
@@ -881,6 +887,9 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AppUserId")
+                        .HasDatabaseName("IX_UserCategoryProgress_UserId");
+
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("AppUserId", "CategoryId")
@@ -1107,7 +1116,11 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.HasIndex("AppTaskId");
 
-                    b.HasIndex("AppUserId");
+                    b.HasIndex("AppUserId", "DueDate")
+                        .HasDatabaseName("IX_UserTask_UserId_DueDate");
+
+                    b.HasIndex("AppUserId", "Status")
+                        .HasDatabaseName("IX_UserTask_UserId_Status");
 
                     b.ToTable("UserTasks");
                 });

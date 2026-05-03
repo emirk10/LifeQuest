@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import authService from "../services/authService";
 
 const Register = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -47,7 +48,13 @@ const Register = () => {
       });
 
       setSuccessMsg("🎉 Kayıt başarılı! Giriş sayfasına yönlendiriliyorsun.");
-      setTimeout(() => navigate("/login"), 2000);
+      const acceptTask = searchParams.get("acceptTask");
+      if (acceptTask) {
+        sessionStorage.setItem("acceptTask", acceptTask);
+        setTimeout(() => navigate(`/login?acceptTask=${acceptTask}`), 2000);
+      } else {
+        setTimeout(() => navigate("/login"), 2000);
+      }
     } catch (err) {
       console.error(err);
       if (err.response?.data?.errors) {

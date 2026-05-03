@@ -155,9 +155,44 @@ public class UsersController : ControllerBase
         });
         return response.Success ? Ok(response) : BadRequest(response);
     }
+
+    /// <summary>MISS-011: Kullanıcı tercihlerini/anketini güncelle.</summary>
+    [HttpPatch("{id}/preferences")]
+    public async Task<IActionResult> UpdatePreferences(Guid id, [FromBody] UpdatePreferencesBody body)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString) || Guid.Parse(userIdString) != id) return Unauthorized();
+
+        var user = await _userReadRepository.GetByIdAsync(id.ToString(), tracking: true);
+        if (user == null) return NotFound();
+
+        if (body.Goals != null) user.UserGoals = body.Goals;
+        if (body.DailyAvailableMinutes.HasValue) user.DailyAvailableMinutes = body.DailyAvailableMinutes;
+        if (body.Strengths != null) user.Strengths = body.Strengths;
+        if (body.Weaknesses != null) user.Weaknesses = body.Weaknesses;
+        if (body.MotivationFactor != null) user.MotivationFactor = body.MotivationFactor;
+        if (body.PreferredTasksPerWeek.HasValue) user.PreferredTasksPerWeek = body.PreferredTasksPerWeek;
+        if (body.DifficultyPreference != null) user.DifficultyPreference = body.DifficultyPreference;
+
+        user.UpdatedAt = DateTime.UtcNow;
+        _userWriteRepository.Update(user);
+        await _userWriteRepository.SaveAsync();
+
+        return Ok(new { success = true, message = "Tercihleriniz başarıyla güncellendi." });
+    }
 }
 
 public class ChatPersonalityBody { public string ChatPersonality { get; set; } = "friendly"; }
 public class NudgeSettingsBody { public bool NudgeEnabled { get; set; } = true; }
 public class StartVacationBody { public DateOnly? EndDate { get; set; } public string? Reason { get; set; } }
 public class UpdateGoalsBody { public List<string> NewGoals { get; set; } = new(); public List<string> RemovedGoals { get; set; } = new(); }
+public class UpdatePreferencesBody
+{
+    public List<string>? Goals { get; set; }
+    public int? DailyAvailableMinutes { get; set; }
+    public List<string>? Strengths { get; set; }
+    public List<string>? Weaknesses { get; set; }
+    public string? MotivationFactor { get; set; }
+    public int? PreferredTasksPerWeek { get; set; }
+    public string? DifficultyPreference { get; set; }
+}

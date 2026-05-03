@@ -14,14 +14,19 @@ const ReportsPage = () => {
   useEffect(() => {
     const fetchReports = async () => {
         try {
-            const data = await reportService.getReports();
+            const res = await axiosClient.get("/reports/daily-breakdown");
+            let formattedData = [];
             
-            // Recharts için veriyi ters çevirip formatla (eski → yeni)
-            const formattedData = [...data].reverse().map(r => ({
-                name: new Date(r.weekEndDate).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
-                XPKazanci: r.totalXPEarned,
-                Tamamlanan: r.tasksCompleted
-            }));
+            if (res.data && res.data.success && res.data.breakdown) {
+                formattedData = res.data.breakdown.map(b => {
+                    const d = new Date(b.date);
+                    return {
+                        name: d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' }),
+                        XPKazanci: b.xpKazanci ?? b.XPKazanci ?? b.XpKazanci ?? 0,
+                        Tamamlanan: b.tamamlanan ?? b.Tamamlanan ?? 0
+                    };
+                });
+            }
             
             setReports(formattedData);
         } catch (error) {
@@ -83,8 +88,8 @@ const ReportsPage = () => {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                                <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} interval={0} />
+                                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
                                     itemStyle={{ color: '#c026d3' }}
@@ -111,8 +116,8 @@ const ReportsPage = () => {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                                <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                                <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+                                <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} interval={0} />
+                                <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                                 <Tooltip 
                                     contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff' }}
                                     itemStyle={{ color: '#10b981' }}

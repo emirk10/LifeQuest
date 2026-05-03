@@ -61,6 +61,19 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
+        if (!await context.Badges.AnyAsync(b => b.Name == "Bilge"))
+        {
+            var extraBadges = new List<Badge>
+            {
+                new Badge { Name = "Bilge", Description = "Büyük bir zihinsel olgunluğa ulaştın (Level 12)", IconPath = "🧠", RequiredLevel = 12, CategoryId = null },
+                new Badge { Name = "Şampiyon", Description = "Kendi sınırlarını aştın (Level 15)", IconPath = "🏅", RequiredLevel = 15, CategoryId = null },
+                new Badge { Name = "Demir İrade", Description = "Eğilmez, bükülmez bir disiplin sahibisin (Level 25)", IconPath = "🛡️", RequiredLevel = 25, CategoryId = null },
+                new Badge { Name = "Vizyoner", Description = "Hayallerini gerçeğe dönüştürdün (Level 30)", IconPath = "👁️‍🗨️", RequiredLevel = 30, CategoryId = null }
+            };
+            await context.Badges.AddRangeAsync(extraBadges);
+            await context.SaveChangesAsync();
+        }
+
         // ---- GÖREVLER ----
         if (!await context.AppTasks.AnyAsync())
         {
@@ -94,7 +107,31 @@ public static class SeedData
                 new AppTask { Title = "Komşuna Yardım Et", Description = "Bir komşuna veya aile büyüğüne yardım et.", CategoryId = sosyal.Id, BaseXP = 100, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
                 new AppTask { Title = "Çevre Temizliği", Description = "Bulunduğun çevrenin temizliğine katkı sağla.", CategoryId = sosyal.Id, BaseXP = 120, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = false, IsActive = true },
             };
+
+            for (int i = 1; i <= 35; i++)
+            {
+                tasks.Add(new AppTask { Title = $"Eğitim Çalışması {i}", Description = $"Akademik/Kişisel gelişim eğitimi çalışması {i}.", CategoryId = egitim.Id, BaseXP = 40 + (i % 3) * 20, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
+                tasks.Add(new AppTask { Title = $"Sağlık Egzersizi {i}", Description = $"Fiziksel/Zihinsel sağlık ve zindelik egzersizi {i}.", CategoryId = saglik.Id, BaseXP = 40 + (i % 3) * 25, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
+                tasks.Add(new AppTask { Title = $"Kariyer Gelişimi {i}", Description = $"Profesyonel iş veya kariyer geliştirme çalışması {i}.", CategoryId = kariyer.Id, BaseXP = 50 + (i % 3) * 30, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
+                tasks.Add(new AppTask { Title = $"Sosyal Sorumluluk Adımı {i}", Description = $"Topluma fayda veya yardımlaşma görevi {i}.", CategoryId = sosyal.Id, BaseXP = 60 + (i % 3) * 35, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
+            }
+
             await context.AppTasks.AddRangeAsync(tasks);
+            await context.SaveChangesAsync();
+        }
+
+        // ---- EKSTRA PRODUCTION GÖREVLERİ ----
+        if (await context.AppTasks.CountAsync() < 200)
+        {
+            var productionTasks = new List<AppTask>();
+            for (int i = 1; i <= 40; i++)
+            {
+                productionTasks.Add(new AppTask { Title = $"Stratejik Okuma {i}", Description = $"Kişisel gelişim veya sektörel ilerleme için stratejik odaklı okuma {i}.", CategoryId = egitim.Id, BaseXP = 50 + (i % 4) * 15, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 15 + (i % 3) * 15 });
+                productionTasks.Add(new AppTask { Title = $"Fonksiyonel Antrenman {i}", Description = $"Zindeliği ve dayanıklılığı artıran fonksiyonel sağlık çalışması {i}.", CategoryId = saglik.Id, BaseXP = 60 + (i % 4) * 20, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 20 + (i % 4) * 10 });
+                productionTasks.Add(new AppTask { Title = $"Kariyer İlerlemesi {i}", Description = $"Profesyonel yetkinliklerini artıracak özel kariyer geliştirme çalışması {i}.", CategoryId = kariyer.Id, BaseXP = 70 + (i % 4) * 25, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 30 + (i % 3) * 15 });
+                productionTasks.Add(new AppTask { Title = $"Toplumsal Dayanışma {i}", Description = $"Çevrene ve topluma fayda sağlayacak gönüllülük adımı {i}.", CategoryId = sosyal.Id, BaseXP = 80 + (i % 4) * 30, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 45 + (i % 4) * 20 });
+            }
+            await context.AppTasks.AddRangeAsync(productionTasks);
             await context.SaveChangesAsync();
         }
 

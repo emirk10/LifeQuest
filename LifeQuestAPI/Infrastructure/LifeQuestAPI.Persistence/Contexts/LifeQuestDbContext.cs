@@ -221,7 +221,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasDatabaseName("IX_UserTask_UserId_DueDate");
 
         modelBuilder.Entity<ChatBotMessage>()
-            .HasIndex(m => new { m.AppUserId, m.CreatedDate })
+            .HasIndex(m => new { m.AppUserId, m.CreatedAt })
             .HasDatabaseName("IX_ChatBotMessage_UserId_CreatedAt");
 
         modelBuilder.Entity<UserCategoryProgress>()

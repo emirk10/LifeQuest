@@ -760,15 +760,15 @@
     "medium": [
       {
         "issue": "No rate limiting on auth endpoints (brute force)",
-        "fix": "Login ve register endpoint'lerine daha sıkı rate limit (örn. 5 req/dakika per IP)"
+        "fix": "Login ve register endpoint'lerine (örn. /api/auth/*) IP bazlı rate limiting (IpRateLimitMiddleware) uygulayarak saniyede en fazla 2-3 isteğe izin verilecek şekilde daha sıkı kurallar tanımlanmalı."
       },
       {
         "issue": "No refresh token — JWT revocation impossible",
-        "fix": "MISS-001'i implement et"
+        "fix": "Access Token'ın süresi 15-30 dakika gibi kısa tutulup, httpOnly cookie içerisinde güvenli bir şekilde saklanacak Refresh Token mekanizması (MISS-001) entegre edilmeli. Token revoke etme yeteneği sağlanmalı."
       },
       {
         "issue": "No email verification — fake account spam possible",
-        "fix": "MISS-002'yi implement et"
+        "fix": "Kayıt (Register) aşamasından sonra kullanıcının mail adresine bir doğrulama kodu (OTP) veya linki gönderilerek hesabın doğrulanması zorunlu hale getirilmeli. Doğrulanmamış hesapların API erişimleri sınırlandırılmalı (MISS-002)."
       }
     ]
   },
@@ -794,26 +794,38 @@
         "Serilog.AspNetCore — structured logging (IMP-008)",
         "Microsoft.AspNetCore.Mvc.Versioning — API versioning (IMP-007)"
       ],
-      "unnecessary": [
-        "TensorFlow — AI servis için (IMP-009)"
-      ]
+      "unnecessary": []
     },
     "ai_service": {
+      "missing_recommended": [
+        "FastAPI-Limiter — AI endpoint'lerine rate limit getirmek için",
+        "Pydantic v2 — Validation işlemlerinin hızlandırılması için"
+      ],
+      "unnecessary": [
+        "TensorFlow — Model şu an sadece scikit-learn kullanıyor, 2GB+ gereksiz bağımlılık yaratıyor (IMP-009)"
+      ],
       "version_concerns": [
-        "numpy==1.26.4 — tensorflow 2.18 ile uyumlu ama scikit-learn 1.6.1 numpy 2.x destekliyor, ileride güncellenebilir"
+        "numpy==1.26.4 — tensorflow 2.18 ile uyumlu ama scikit-learn 1.6.1 numpy 2.x destekliyor, ileride tensorflow çıkarılınca güncellenebilir"
       ]
     }
   },
 
   "database_review": {
-    "missing_indexes": "IMP-006'ya bkz.",
+    "missing_indexes": [
+      "IX_UserTask_UserId_Status (usertask tablosu)",
+      "IX_UserTask_UserId_DueDate (usertask tablosu - exclude completed)",
+      "IX_Notification_UserId_IsRead (notification tablosu)",
+      "IX_ChatBotMessage_UserId_CreatedAt (chatbotmessage tablosu)",
+      "IX_AppTask_IsActive_CategoryId (apptask tablosu)"
+    ],
     "cascade_delete_concerns": [
       {
         "issue": "usertask → aspnetusers Cascade Delete — kullanıcı silinince tüm task geçmişi gider",
         "recommendation": "Soft delete pattern kullan: AppUser.IsDeleted bool ekle, asla fiziksel silme yapma"
       },
       {
-        "issue": "chatbotmessage tablosunda Cascade Delete yok mu? — orphan kayıt riski"
+        "issue": "chatbotmessage tablosunda Cascade Delete yok mu? — orphan kayıt riski",
+        "recommendation": "Eğer kullanıcı fiziksel olarak silinirse (GDPR gibi durumlar için), bu mesajların UserId referansları null'a çekilmeli (SetNull) veya mesajlar da silinmeli (Cascade). Soft delete varsa problem yok."
       }
     ],
     "missing_constraints": [
@@ -863,7 +875,10 @@
       "Davranış analizi için UserTaskInteraction tablosu sprint 4'e bırakılmış ama sprint 3'te analiz yapılıyor — bağımlılık çakışması",
       "NudgeWorker timezone sorununa değinilmemiş (BUG-003 ile aynı sorun)"
     ],
-    "recommendation": "Sprint 0 (Bug Fix Sprint) ekle: BUG-001 ila BUG-007 bu sprint'te kapatılsın, sonra feature sprint'lere geçilsin"
+    "recommendation": [
+      "Sprint 0 (Bug Fix Sprint) ekle: BUG-001 ila BUG-007 bu sprint'te kapatılsın, sonra feature sprint'lere geçilsin.",
+      "Sprint 3'te yer alan davranış analizi görevi Sprint 4'e kaydırılmalı veya UserTaskInteraction tablosu Sprint 3'e çekilmeli."
+    ]
   },
 
   "priority_action_plan": {

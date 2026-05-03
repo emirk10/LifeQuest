@@ -28,14 +28,16 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) 
   const slot = SLOT_LABELS[poolData.timeSlot] || 'Gün';
 
   const filteredTasks = poolData.tasks?.filter((t) => {
-    if (filter === 'quick') return t.estimatedMinutes && t.estimatedMinutes <= 20;
-    if (filter === 'deep') return t.estimatedMinutes && t.estimatedMinutes > 20;
+    const mins = t.estimatedMinutes ?? t.EstimatedMinutes ?? 0;
+    if (filter === 'quick') return mins <= 20;
+    if (filter === 'deep') return mins > 20;
     return true;
   }) || [];
 
   const handleSelect = async (task) => {
-    if (selectedIds.has(task.userTaskId)) return;
-    setSelectedIds((prev) => new Set([...prev, task.userTaskId]));
+    const taskId = task.userTaskId ?? task.UserTaskId ?? task.id;
+    if (selectedIds.has(taskId)) return;
+    setSelectedIds((prev) => new Set([...prev, taskId]));
     await onTaskSelect?.(task);
   };
 
@@ -66,7 +68,7 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) 
           ))}
         </div>
 
-        <button className="pool-refresh-btn" onClick={onRefresh}>
+        <button className="pool-refresh-btn font-bold" onClick={onRefresh}>
           🔄 Yenile
         </button>
       </div>
@@ -79,14 +81,17 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) 
         </div>
       ) : (
         <div className="task-pool-grid">
-          {filteredTasks.map((task) => (
-            <EnhancedTaskCard
-              key={task.userTaskId}
-              task={task}
-              isSelected={selectedIds.has(task.userTaskId)}
-              onSelect={() => handleSelect(task)}
-            />
-          ))}
+          {filteredTasks.map((task) => {
+            const taskId = task.userTaskId ?? task.UserTaskId ?? task.id;
+            return (
+              <EnhancedTaskCard
+                key={taskId}
+                task={task}
+                isSelected={selectedIds.has(taskId)}
+                onSelect={() => handleSelect(task)}
+              />
+            );
+          })}
         </div>
       )}
 

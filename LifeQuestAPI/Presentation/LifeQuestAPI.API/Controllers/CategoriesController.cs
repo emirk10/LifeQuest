@@ -1,4 +1,4 @@
-﻿using LifeQuestAPI.Application.Features.Categories.Commands.CreateBulkCategories;
+using LifeQuestAPI.Application.Features.Categories.Commands.CreateBulkCategories;
 using LifeQuestAPI.Application.Features.Categories.Commands.CreateCategory;
 using LifeQuestAPI.Application.Features.Categories.Queries.GetAllCategories;
 using MediatR;
@@ -26,14 +26,14 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost("create-category")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> CreateCategory(CreateCategoryCommandRequest request)
     {
         var response = await _mediator.Send(request);
         return Ok(response);
     }
     [HttpPost("create-bulk-categories")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> CreateBulkCategories([FromBody] CreateBulkCategoriesCommandRequest request)
     {
         var response = await _mediator.Send(request);

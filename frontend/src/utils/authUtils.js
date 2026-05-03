@@ -1,5 +1,5 @@
 export const getUserIdFromToken = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (!token) return null;
 
   try {
@@ -21,7 +21,7 @@ export const getUserIdFromToken = () => {
 };
 
 export const getUserNameFromToken = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (!token) return null;
 
   try {
@@ -48,7 +48,7 @@ export const getUserNameFromToken = () => {
 };
 
 export const getUserRoleFromToken = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (!token) return null;
 
   try {

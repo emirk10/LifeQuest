@@ -25,7 +25,7 @@ const LeaderboardPage = () => {
         const list = Array.isArray(data) ? data : (data.leaderboard || []);
         setLeaderboard(list);
         // Find current user's rank
-        const myEntry = list.findIndex(u => u.userName === localStorage.getItem('username'));
+        const myEntry = list.findIndex(u => u.userName === JSON.parse(sessionStorage.getItem('user_data'))?.userName);
         if (myEntry >= 0) setMyRank(myEntry + 1);
       } catch (err) {
         console.error(err);

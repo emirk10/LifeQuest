@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axiosClient from "../api/axiosClient";
 
 const DIFFICULTY_COLORS = {
   Easy: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
@@ -19,6 +20,26 @@ const TaskItem = ({
   const [showDesc, setShowDesc] = useState(false);
 
   const safeDifficulty = DIFFICULTY_COLORS[difficulty] ? difficulty : "Medium";
+
+  const handleShare = async () => {
+    const email = window.prompt("Görevi e-posta ile paylaşmak istediğiniz adresi giriniz:");
+    if (!email || !email.includes("@")) {
+      alert("Lütfen geçerli bir e-posta adresi giriniz.");
+      return;
+    }
+
+    try {
+      const res = await axiosClient.post("/social/share-task", { recipientEmail: email, taskTitle: title, taskId: id });
+      if (res.data.success) {
+        alert(res.data.message);
+      } else {
+        alert(res.data.message || "Paylaşma başarısız.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Görev paylaşılırken bir hata oluştu.");
+    }
+  };
 
   const handleComplete = async () => {
     if (isSubmitting || isCompleted) return;
@@ -86,20 +107,29 @@ const TaskItem = ({
           </div>
         </div>
 
-        {/* Complete Button */}
-        <button
-          onClick={handleComplete}
-          disabled={isCompleted || isSubmitting}
-          className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0 shadow-lg active:scale-95 ${
-            isCompleted
-              ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
-              : isSubmitting
-              ? "bg-indigo-800 text-indigo-400 cursor-wait"
-              : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40"
-          }`}
-        >
-          {isCompleted ? "✓ Tamamlandı" : isSubmitting ? "..." : "Bitir"}
-        </button>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={handleShare}
+            className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 active:scale-95 shadow-lg"
+          >
+            ✉️ Paylaş
+          </button>
+
+          <button
+            onClick={handleComplete}
+            disabled={isCompleted || isSubmitting}
+            className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex-shrink-0 shadow-lg active:scale-95 ${
+              isCompleted
+                ? "bg-slate-800 text-slate-500 cursor-not-allowed shadow-none"
+                : isSubmitting
+                ? "bg-indigo-800 text-indigo-400 cursor-wait"
+                : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-500/25 hover:shadow-indigo-500/40"
+            }`}
+          >
+            {isCompleted ? "✓ Tamamlandı" : isSubmitting ? "..." : "Bitir"}
+          </button>
+        </div>
       </div>
 
       {/* Description Expandable */}

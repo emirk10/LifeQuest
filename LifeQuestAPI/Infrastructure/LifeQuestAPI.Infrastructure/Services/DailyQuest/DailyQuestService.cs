@@ -84,6 +84,15 @@ public class DailyQuestService : IDailyQuestService
             throw new Exception("Mevcut görevlerini tamamlamadan yeni görev alamazsın!");
         }
 
+        // SP-05: Kullanıcının günlük limit kontrolünü sağla
+        var tasksTakenToday = await _userTaskReadRepository.Table
+            .CountAsync(ut => ut.AppUserId == userId && ut.AssignedAt.Date == DateTime.UtcNow.Date);
+
+        if (tasksTakenToday >= user.DailyTaskLimit * 2)
+        {
+            throw new Exception($"Günlük görev alma limitine ulaştın. Yeni görevleri yarın talep edebilirsin!");
+        }
+
         return await AssignTasksToSpecificUser(user);
     }
 

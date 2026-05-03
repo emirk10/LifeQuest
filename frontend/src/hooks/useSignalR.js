@@ -4,7 +4,7 @@
  * Kullanım:
  *   useSignalR({ onNotification, onProactiveMessage })
  *
- * Token localStorage'dan alınır. Bağlantı kopması durumunda
+ * Token sessionStorage'dan alınır. Bağlantı kopması durumunda
  * withAutomaticReconnect() otomatik yeniden bağlanmayı sağlar.
  */
 import { useEffect, useRef } from "react";
@@ -22,7 +22,7 @@ export const useSignalR = ({ onNotification, onProactiveMessage } = {}) => {
     const connectionRef = useRef(null);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const token = sessionStorage.getItem("token");
         if (!token) return;
 
         const connection = new HubConnectionBuilder()

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import TaskItem from "../components/TaskItem";
 import taskService from "../services/taskService";
@@ -7,6 +7,7 @@ import categoryService from "../services/categoryService";
 
 const TaskList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentCategoryName = searchParams.get("category");
 
   const [tasks, setTasks] = useState([]);
@@ -79,19 +80,8 @@ const TaskList = () => {
     }
   };
 
-  const handleRequestNewQuests = async () => {
-    setRequesting(true);
-    try {
-      const response = await taskService.requestNewQuests();
-      if (response.success) {
-        showToast(`✨ ${response.assignedCount} yeni görev eklendi!`, "success");
-        fetchTasks();
-      }
-    } catch (err) {
-      showToast(err.response?.data?.message || "Yeni görev alınamadı.", "error");
-    } finally {
-      setRequesting(false);
-    }
+  const handleRequestNewQuests = () => {
+    navigate("/task-pool");
   };
 
   const completedCount = tasks.filter((t) => t.isCompleted).length;
@@ -125,18 +115,12 @@ const TaskList = () => {
                 : "TÜM GÖREVLERİN LİSTESİ"}
             </p>
           </div>
-
           <div className="flex gap-4">
             <button
               onClick={handleRequestNewQuests}
-              disabled={requesting}
               className="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white hover:bg-indigo-600 hover:border-indigo-500 px-4 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2"
             >
-              {requesting ? (
-                <span className="animate-spin inline-block">↻</span>
-              ) : (
-                <span>✨ Yeni Görev İste</span>
-              )}
+              <span>✨ Görev Havuzuna Git</span>
             </button>
 
             <div className="relative">
@@ -206,10 +190,9 @@ const TaskList = () => {
                 </div>
                 <button
                   onClick={handleRequestNewQuests}
-                  disabled={requesting}
                   className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
                 >
-                  {requesting ? "Yükleniyor..." : "YENİ GÖREVLER GETİR"}
+                  GÖREV HAVUZUNA GİT
                 </button>
               </div>
             )

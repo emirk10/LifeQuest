@@ -16,6 +16,11 @@ const MainLayout = ({ children }) => {
   const isAdmin = userRole === "Admin";
 
   useEffect(() => {
+    if (isAdmin && location.pathname !== "/admin") {
+      navigate("/admin");
+      return;
+    }
+
     const fetchLatestProfile = async () => {
       try {
         if (user) {
@@ -35,19 +40,20 @@ const MainLayout = ({ children }) => {
     fetchLatestProfile();
     window.addEventListener("userUpdated", fetchLatestProfile);
     return () => window.removeEventListener("userUpdated", fetchLatestProfile);
-  }, [location.pathname, user]);
+  }, [location.pathname, user, isAdmin]);
 
-  const menuItems = [
-    { name: "Dashboard", path: "/dashboard", icon: "🏠" },
-    { name: "Görevler", path: "/tasks", icon: "⚔️" },
-    { name: "Hedefler", path: "/goals", icon: "🎯" },
-    { name: "Sosyal", path: "/social", icon: "🤝" },
-    { name: "Sıralama", path: "/leaderboard", icon: "🏆" },
-    { name: "Raporlar", path: "/reports", icon: "📈" },
-    { name: "Rozetler", path: "/badges", icon: "🎖️" },
-    { name: "Profil", path: "/profile", icon: "👤" },
-    ...(isAdmin ? [{ name: "Admin", path: "/admin", icon: "⚙️" }] : []),
-  ];
+  const menuItems = isAdmin
+    ? [{ name: "Admin", path: "/admin", icon: "⚙️" }]
+    : [
+        { name: "Dashboard", path: "/dashboard", icon: "🏠" },
+        { name: "Görev Havuzu", path: "/task-pool", icon: "💎" },
+        { name: "Görevlerim", path: "/tasks", icon: "⚔️" },
+        { name: "Hedefler", path: "/goals", icon: "🎯" },
+        { name: "Sosyal", path: "/social", icon: "🤝" },
+        { name: "Raporlar", path: "/reports", icon: "📈" },
+        { name: "Rozetler", path: "/badges", icon: "🎖️" },
+        { name: "Profil", path: "/profile", icon: "👤" },
+      ];
 
   const totalXp = headerUser?.xp || 0;
   const levelBase = 1000;

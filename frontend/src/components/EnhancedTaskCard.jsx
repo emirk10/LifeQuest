@@ -14,13 +14,14 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
   const [showPostpone, setShowPostpone] = useState(false);
   const [postponeReason, setPostponeReason] = useState('');
 
+  const taskId = task.userTaskId ?? task.UserTaskId ?? task.id ?? task.Id;
   const diff = DIFFICULTY_CONFIG[task.difficulty] || DIFFICULTY_CONFIG.Easy;
   const matchPercent = Math.round((task.matchScore || 0) * 100);
 
   const handleSelect = async () => {
     setActionLoading('select');
     try {
-      await taskPoolApi.selectTask(task.userTaskId);
+      await taskPoolApi.selectTask(taskId);
       setStatus('selected');
       onSelect?.();
     } finally {
@@ -31,7 +32,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
   const handlePause = async () => {
     setActionLoading('pause');
     try {
-      await taskPoolApi.pauseTask(task.userTaskId);
+      await taskPoolApi.pauseTask(taskId);
       setStatus('paused');
     } finally {
       setActionLoading(null);
@@ -41,7 +42,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
   const handleResume = async () => {
     setActionLoading('resume');
     try {
-      await taskPoolApi.resumeTask(task.userTaskId);
+      await taskPoolApi.resumeTask(taskId);
       setStatus('inprogress');
     } finally {
       setActionLoading(null);
@@ -54,7 +55,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       const dateStr = tomorrow.toISOString().split('T')[0];
-      await taskPoolApi.postponeTask(task.userTaskId, dateStr, postponeReason);
+      await taskPoolApi.postponeTask(taskId, dateStr, postponeReason);
       setStatus('postponed');
       setShowPostpone(false);
     } finally {
@@ -66,7 +67,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
     if (!window.confirm('Bu görevden vazgeçmek istediğinden emin misin?')) return;
     setActionLoading('abandon');
     try {
-      await taskPoolApi.abandonTask(task.userTaskId, 'Kullanıcı vazgeçti');
+      await taskPoolApi.abandonTask(taskId, 'Kullanıcı vazgeçti');
       setStatus('abandoned');
     } finally {
       setActionLoading(null);

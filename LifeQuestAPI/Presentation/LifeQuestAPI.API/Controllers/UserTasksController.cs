@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using LifeQuestAPI.Application.Features.UserTasks.Queries.GetUserTasks;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.CompleteUserTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.RequestNewQuests;
@@ -22,6 +23,49 @@ public class UserTasksController : ControllerBase
     public UserTasksController(IMediator mediator)
     {
         _mediator = mediator;
+    }
+
+    [HttpGet("available-tasks")]
+    public async Task<IActionResult> GetAvailableTasks()
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var userReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IAppUserReadRepository>();
+        var taskReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IAppTaskReadRepository>();
+        var userTaskReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IUserTaskReadRepository>();
+
+        var userId = Guid.Parse(userIdString);
+        var user = await userReadRepo.Table.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null) return NotFound();
+
+        var assignedTaskIds = await userTaskReadRepo.Table
+            .Where(ut => ut.AppUserId == userId && ut.Status != Domain.Enums.AppTaskStatus.Expired && ut.Status != Domain.Enums.AppTaskStatus.Abandoned)
+            .Select(ut => ut.AppTaskId)
+            .ToListAsync();
+
+        var tasks = await taskReadRepo.Table
+            .Include(t => t.Category)
+            .Where(t => t.IsActive && t.MinLevel <= (int)Math.Floor(user.GeneralLevel) && !assignedTaskIds.Contains(t.Id))
+            .ToListAsync();
+
+        var result = tasks.Select(t => new
+        {
+            Id = t.Id,
+            Title = t.Title,
+            Description = t.Description,
+            BaseXP = t.BaseXP,
+            EstimatedMinutes = t.EstimatedMinutes.HasValue && t.EstimatedMinutes.Value > 0 
+                ? t.EstimatedMinutes.Value 
+                : (t.BaseXP > 0 ? (int)Math.Ceiling(t.BaseXP / 5.0) : 15),
+            CategoryName = t.Category?.Name ?? "Genel",
+            CategoryIcon = t.Category?.IconPath ?? "🎯",
+            Difficulty = t.Difficulty.ToString(),
+            MinLevel = t.MinLevel,
+            WhyThisTask = t.WhyThisTask
+        });
+
+        return Ok(result);
     }
 
     [HttpGet]
@@ -129,9 +173,9 @@ public class UserTasksController : ControllerBase
             });
             return Ok(response);
         }
-        catch (Exception ex) when (ex.Message.Contains("limite"))
+        catch (Exception ex)
         {
-            return BadRequest(new { success = false, message = ex.Message, limitReached = true });
+            return BadRequest(new { success = false, message = ex.Message, limitReached = ex.Message.Contains("limite") });
         }
     }
 
@@ -204,6 +248,23 @@ public class UserTasksController : ControllerBase
             Reason = body.Reason
         });
         return Ok(new { success = response });
+    }
+
+    /// <summary>Manuel olarak bugünün görev dağıtımını tetikle</summary>
+    [HttpPost("trigger-daily-quests")]
+    public async Task<IActionResult> TriggerDailyQuests()
+    {
+        var dailyQuestService = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Abstractions.DailyQuest.IDailyQuestService>();
+        await dailyQuestService.DistributeDailyQuestsAsync();
+        return Ok(new { success = true, message = "Günlük görev dağıtımı başarıyla manuel olarak tetiklendi." });
+    }
+
+    /// <summary>Ekstra görev ve rozet seed verilerini yükle</summary>
+    [HttpPost("seed")]
+    public async Task<IActionResult> TriggerSeed()
+    {
+        await LifeQuestAPI.Persistence.Contexts.SeedData.SeedData.Initialize(HttpContext.RequestServices);
+        return Ok(new { success = true, message = "Seed verileri başarıyla yüklendi!" });
     }
 }
 

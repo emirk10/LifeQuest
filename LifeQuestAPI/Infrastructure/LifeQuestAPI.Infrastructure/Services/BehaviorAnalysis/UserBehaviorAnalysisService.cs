@@ -137,14 +137,17 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
         // ── Streak hesaplama ───────────────────────────────────────────────
         var (current, longest) = CalculateStreaks(completed, today);
 
-        // ── Son 7 gün günlük özet ──────────────────────────────────────────
+         // ── Son 7 gün günlük özet ──────────────────────────────────────────
         var weeklyProgress = Enumerable.Range(0, 7)
             .Select(i =>
             {
                 var date = today.AddDays(-6 + i);
-                // AssignedAt her zaman non-nullable DateTime
+                var completedThatDay = tasks.Where(t =>
+                    t.Status == AppTaskStatus.Completed && t.CompletedAt.HasValue &&
+                    DateOnly.FromDateTime(t.CompletedAt.Value) == date).ToList();
                 var dayTasks = tasks.Where(t =>
                     DateOnly.FromDateTime(t.AssignedAt) == date).ToList();
+
                 return new DayProgressDto
                 {
                     Date = date,
@@ -159,12 +162,10 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
                         DayOfWeek.Sunday    => "Paz",
                         _                   => "?"
                     },
-                    CompletedCount  = dayTasks.Count(t => t.Status == AppTaskStatus.Completed),
+                    CompletedCount  = completedThatDay.Count,
                     PostponedCount  = dayTasks.Count(t => t.PostponeCount > 0),
                     AbandonedCount  = dayTasks.Count(t => t.Status == AppTaskStatus.Abandoned),
-                    TotalXpEarned   = dayTasks
-                        .Where(t => t.Status == AppTaskStatus.Completed)
-                        .Sum(t => (int)((t.AppTask?.BaseXP ?? 0) * (double)t.XpCompensationRate))
+                    TotalXpEarned   = completedThatDay.Sum(t => t.EarnedXp)
                 };
             })
             .ToList();

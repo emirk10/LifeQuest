@@ -1,13 +1,15 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import authService from "../services/authService";
 import { useAuth } from "../context/authContext";
 import { getUserNameFromToken } from "../utils/authUtils";
+import axiosClient from "../api/axiosClient";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [searchParams] = useSearchParams();
 
   const { login } = useAuth();
 
@@ -19,13 +21,18 @@ const LoginPage = () => {
       const response = await authService.login({ email, password });
 
       if (response && response.token) {
-        localStorage.setItem("token", response.token);
+        sessionStorage.setItem("token", response.token);
 
         const derivedName = getUserNameFromToken();
         const userData = {
           name: derivedName,
           ...response.user,
         };
+
+        const acceptTask = searchParams.get("acceptTask");
+        if (acceptTask) {
+          sessionStorage.setItem("acceptTask", acceptTask);
+        }
 
         login(userData, response.token);
       } else {
@@ -96,7 +103,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 text-center space-y-2">
             <p className="text-slate-500 text-sm">
               Hesabın yok mu?{" "}
               <Link
@@ -104,6 +111,14 @@ const LoginPage = () => {
                 className="text-indigo-400 font-bold hover:text-indigo-300 underline decoration-2 underline-offset-4"
               >
                 Hemen Kaydol
+              </Link>
+            </p>
+            <p className="text-slate-500 text-sm">
+              <Link
+                to="/forgot-password"
+                className="text-slate-400 font-semibold hover:text-indigo-300 underline decoration-2 underline-offset-4"
+              >
+                Şifremi Unuttum
               </Link>
             </p>
           </div>

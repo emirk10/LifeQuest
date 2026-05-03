@@ -1,6 +1,7 @@
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
+using LifeQuestAPI.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,7 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
     public async Task<GetUserTasksQueryResponse> Handle(GetUserTasksQueryRequest request, CancellationToken cancellationToken)
     {
         IQueryable<UserTask> query = _userTaskReadRepository
-            .GetWhere(ut => ut.AppUserId == request.UserId, tracking: false)
+            .GetWhere(ut => ut.AppUserId == request.UserId && ut.Status != AppTaskStatus.Suggested, tracking: false)
             .Include(ut => ut.AppTask)
                 .ThenInclude(t => t.Category);
 
