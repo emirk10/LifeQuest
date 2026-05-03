@@ -211,6 +211,27 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(g => g.LinkedCategoryIds)
             .HasColumnType("jsonb");
 
+        // IMP-006: Eksik performans indeksleri
+        modelBuilder.Entity<UserTask>()
+            .HasIndex(ut => new { ut.AppUserId, ut.Status })
+            .HasDatabaseName("IX_UserTask_UserId_Status");
+
+        modelBuilder.Entity<UserTask>()
+            .HasIndex(ut => new { ut.AppUserId, ut.DueDate })
+            .HasDatabaseName("IX_UserTask_UserId_DueDate");
+
+        modelBuilder.Entity<ChatBotMessage>()
+            .HasIndex(m => new { m.AppUserId, m.CreatedDate })
+            .HasDatabaseName("IX_ChatBotMessage_UserId_CreatedAt");
+
+        modelBuilder.Entity<UserCategoryProgress>()
+            .HasIndex(ucp => ucp.AppUserId)
+            .HasDatabaseName("IX_UserCategoryProgress_UserId");
+
+        modelBuilder.Entity<AppTask>()
+            .HasIndex(t => new { t.IsActive, t.CategoryId })
+            .HasDatabaseName("IX_AppTask_IsActive_CategoryId");
+
         base.OnModelCreating(modelBuilder);
     }
 }

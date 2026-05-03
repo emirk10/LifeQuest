@@ -9,10 +9,6 @@ uvicorn[standard]==0.34.0
 scikit-learn==1.6.1
 joblib==1.4.2
 
-# Deep Learning (Image Verification)
-tensorflow==2.18.0
-pillow==11.1.0
-
 # Data Validation
 pydantic==2.10.4
 
@@ -21,3 +17,7 @@ python-multipart==0.0.20
 
 # Utilities
 numpy==1.26.4
+
+# NOTE: TensorFlow (IMP-009) requirements-full.txt dosyasına taşındı.
+# Image Verification özelliği aktifleşince Dockerfile'ı -full versiyona geçirin.
+# Bu değişiklik Docker image'ını ~2GB küçültür.

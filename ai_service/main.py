@@ -56,12 +56,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+import os
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020").split(","),
+    allow_credentials=False,
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
 )
 
 

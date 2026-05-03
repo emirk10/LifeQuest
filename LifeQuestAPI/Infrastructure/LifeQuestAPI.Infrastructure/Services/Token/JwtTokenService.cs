@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -31,8 +31,12 @@ public class JwtTokenService : ITokenService
                 new Claim(ClaimTypes.Role, user.AppRole?.Name ?? "User")
             };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-            _configuration.GetSection("AppSettings:Token").Value!));
+        var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? _configuration["AppSettings:Token"];
+        if (string.IsNullOrEmpty(jwtSecret))
+        {
+            throw new InvalidOperationException("JWT_SECRET is not configured.");
+        }
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret));
 
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 
@@ -47,5 +51,13 @@ public class JwtTokenService : ITokenService
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
         return tokenHandler.WriteToken(token);
+    }
+
+    public string CreateRefreshToken()
+    {
+        var randomNumber = new byte[64];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(randomNumber);
+        return Convert.ToBase64String(randomNumber);
     }
 }

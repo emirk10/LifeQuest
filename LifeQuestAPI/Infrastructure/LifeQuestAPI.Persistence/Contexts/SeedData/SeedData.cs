@@ -13,7 +13,7 @@ public static class SeedData
     {
         using var context = serviceProvider.GetRequiredService<LifeQuestDbContext>();
 
-        context.Database.EnsureCreated();
+        context.Database.Migrate();
 
         // ---- KATEGORİLER ----
         var egitim = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Eğitim");

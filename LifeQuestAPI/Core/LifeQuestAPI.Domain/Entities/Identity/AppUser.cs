@@ -11,6 +11,15 @@ public sealed class AppUser : BaseEntity
     public string FullName => $"{Name} {Surname}";
     public string UserName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
+    public bool IsEmailVerified { get; set; } = false;
+    public string? EmailVerificationToken { get; set; }
+    public DateTime? EmailVerificationTokenExpiry { get; set; }
+
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiry { get; set; }
+
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 
     public byte[] PasswordHash { get; set; } = default!;
     public byte[] PasswordSalt { get; set; } = default!;
@@ -20,6 +29,11 @@ public sealed class AppUser : BaseEntity
     // ─── Gamification ─────────────────────────────────────────────────────
     public int TotalXP { get; set; } = 0;
     public double GeneralLevel { get; set; } = 1.0;
+
+    // MISS-004: Streak sistemi
+    public int CurrentStreak { get; set; } = 0;
+    public int LongestStreak { get; set; } = 0;
+    public DateOnly? LastTaskCompletedDate { get; set; }
 
     // ─── Anket / Profil Alanları (SP-01) ──────────────────────────────────
     /// <summary>Kullanıcının hedefleri — jsonb (ör: ["fitness","career"])</summary>

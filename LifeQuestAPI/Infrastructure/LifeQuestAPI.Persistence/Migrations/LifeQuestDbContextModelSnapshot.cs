@@ -525,6 +525,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("CurrentStreak")
+                        .HasColumnType("integer");
+
                     b.Property<int?>("DailyAvailableMinutes")
                         .HasColumnType("integer");
 
@@ -540,6 +543,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("EmailVerificationToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("EmailVerificationTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("FrozenStreak")
                         .HasColumnType("integer");
 
@@ -549,14 +558,23 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<bool>("HasCompletedFirstTask")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsEmailVerified")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsOnVacation")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastActiveAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("LastTaskCompletedDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("LifestyleType")
                         .HasColumnType("text");
+
+                    b.Property<int>("LongestStreak")
+                        .HasColumnType("integer");
 
                     b.Property<string>("MostSkippedCategory")
                         .HasColumnType("text");
@@ -592,6 +610,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("bytea");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("PasswordResetTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<byte[]>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("bytea");
@@ -612,6 +636,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("ProfileCompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<TimeOnly?>("SleepTime")

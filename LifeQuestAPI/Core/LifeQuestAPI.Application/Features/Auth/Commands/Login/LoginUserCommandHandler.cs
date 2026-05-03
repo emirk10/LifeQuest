@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,17 +14,19 @@ namespace LifeQuestAPI.Application.Features.Auth.Commands.Login;
 public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommandRequest, LoginUserCommandResponse>
 {
     private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IAppUserWriteRepository _userWriteRepository;
     private readonly ITokenService _tokenService;
 
-    public LoginUserCommandHandler(IAppUserReadRepository userReadRepository, ITokenService tokenService)
+    public LoginUserCommandHandler(IAppUserReadRepository userReadRepository, IAppUserWriteRepository userWriteRepository, ITokenService tokenService)
     {
         _userReadRepository = userReadRepository;
+        _userWriteRepository = userWriteRepository;
         _tokenService = tokenService;
     }
 
     public async Task<LoginUserCommandResponse> Handle(LoginUserCommandRequest request, CancellationToken cancellationToken)
     {
-        var user = await _userReadRepository.GetAll(tracking: false)
+        var user = await _userReadRepository.GetAll(tracking: true)
                                      .Include(u => u.AppRole)
                                      .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
 
@@ -35,10 +37,20 @@ public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommandRe
             throw new Exception("Kullanıcı adı veya şifre hatalı.");
 
         string token = _tokenService.CreateToken(user);
+        string refreshToken = _tokenService.CreateRefreshToken();
+        var expiry = DateTime.UtcNow.AddDays(7);
+
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpiryTime = expiry;
+
+        _userWriteRepository.Update(user);
+        await _userWriteRepository.SaveAsync();
 
         return new LoginUserCommandResponse
         {
-            Token = token
+            Token = token,
+            RefreshToken = refreshToken,
+            RefreshTokenExpiration = expiry
         };
     }
 }

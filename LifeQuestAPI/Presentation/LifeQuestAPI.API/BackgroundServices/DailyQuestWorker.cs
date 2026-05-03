@@ -20,12 +20,34 @@ public class DailyQuestWorker : BackgroundService
     {
         _logger.LogInformation("Worker Başlatıldı.");
 
-        using PeriodicTimer timer = new PeriodicTimer(_period);
-
-        while (!stoppingToken.IsCancellationRequested && await timer.WaitForNextTickAsync(stoppingToken))
+        var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+        var timeZoneId = configuration["AppTimezone"] ?? "Europe/Istanbul";
+        TimeZoneInfo tz;
+        try
         {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var nowUtc = DateTime.UtcNow;
+            var nowInTz = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, tz);
+            var nextMidnightInTz = nowInTz.Date.AddDays(1);
+            var nextMidnightUtc = TimeZoneInfo.ConvertTimeToUtc(nextMidnightInTz, tz);
+            var delay = nextMidnightUtc - nowUtc;
+
+            _logger.LogInformation("Bir sonraki görev dağıtımı {delay} sonra yapılacak. (TSİ: {time})", delay, nextMidnightInTz);
+
             try
             {
+                await Task.Delay(delay, stoppingToken);
+
+                if (stoppingToken.IsCancellationRequested) break;
+
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var dailyQuestService = scope.ServiceProvider.GetRequiredService<IDailyQuestService>();
@@ -35,14 +57,19 @@ public class DailyQuestWorker : BackgroundService
                     await ResetDailyCountersAsync(scope.ServiceProvider, stoppingToken);
                 }
             }
+            catch (TaskCanceledException)
+            {
+                break;
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Worker hata aldı!");
+                _logger.LogError(ex, "Worker hata aldı! 1 saat sonra tekrar denenecek.");
+                await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
             }
         }
     }
 
-    /// <summary>SP-05: Her gece TodayTaskCount ve OverLimitWarningShown sıfırla, Pazartesi WeeklyCompletedCount sıfırla.</summary>
+    /// <summary>SP-05 + MISS-004: Gece yarısı sayaçları sıfırla, streak'leri güncelle. BUG-008: Paralel batch işleme.</summary>
     private async Task ResetDailyCountersAsync(IServiceProvider services, CancellationToken ct)
     {
         var userReadRepo = services.GetRequiredService<IAppUserReadRepository>();
@@ -50,16 +77,36 @@ public class DailyQuestWorker : BackgroundService
 
         var users = await userReadRepo.GetAll(tracking: true).ToListAsync(ct);
         var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
+        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
 
-        foreach (var user in users)
+        // BUG-008: 500'lük batch'ler halinde paralel işleme (max 10 eş zamanlı)
+        var batches = users.Chunk(500);
+        foreach (var batch in batches)
         {
-            user.TodayTaskCount = 0;
-            user.OverLimitWarningShown = false;
-            if (isMonday) user.WeeklyCompletedCount = 0;
-            userWriteRepo.Update(user);
+            await Parallel.ForEachAsync(batch, new ParallelOptions { MaxDegreeOfParallelism = 10 },
+                (user, _) =>
+                {
+                    user.TodayTaskCount = 0;
+                    user.OverLimitWarningShown = false;
+                    if (isMonday) user.WeeklyCompletedCount = 0;
+
+                    // MISS-004: Dün görev tamamlamayan kullanıcının streak'ini sıfırla
+                    // Tatil modundaki kullanıcıları atla (IsOnVacation kontrolü)
+                    var isOnVacation = user.GetType().GetProperty("IsOnVacation")?.GetValue(user) as bool?;
+                    if (isOnVacation != true)
+                    {
+                        if (user.LastTaskCompletedDate.HasValue && user.LastTaskCompletedDate.Value < yesterday)
+                        {
+                            user.CurrentStreak = 0;
+                        }
+                    }
+
+                    userWriteRepo.Update(user);
+                    return ValueTask.CompletedTask;
+                });
         }
 
         await userWriteRepo.SaveAsync();
-        _logger.LogInformation("SP-05: {Count} kullanıcının günlük sayaçları sıfırlandı.", users.Count);
+        _logger.LogInformation("SP-05 + MISS-004: {Count} kullanıcının günlük sayaçları ve streak'leri güncellendi.", users.Count);
     }
 }

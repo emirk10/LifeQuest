@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,4 +10,5 @@ namespace LifeQuestAPI.Application.Abstractions.Token;
 public interface ITokenService
 {
     string CreateToken(AppUser user);
+    string CreateRefreshToken();
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +8,8 @@ using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities.Identity;
 using MediatR;
 
+using LifeQuestAPI.Application.Abstractions.Email;
+
 namespace LifeQuestAPI.Application.Features.Auth.Commands.Register;
 
 public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCommandRequest, RegisterUserCommandResponse>
@@ -15,12 +17,18 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
     private readonly IAppUserWriteRepository _userWriteRepository;
     private readonly IAppUserReadRepository _userReadRepository;
     private readonly IAppRoleReadRepository _roleReadRepository;
+    private readonly IEmailService _emailService;
 
-    public RegisterUserCommandHandler(IAppUserWriteRepository userWriteRepository, IAppUserReadRepository userReadRepository, IAppRoleReadRepository roleReadRepository)
+    public RegisterUserCommandHandler(
+        IAppUserWriteRepository userWriteRepository, 
+        IAppUserReadRepository userReadRepository, 
+        IAppRoleReadRepository roleReadRepository,
+        IEmailService emailService)
     {
         _userWriteRepository = userWriteRepository;
         _userReadRepository = userReadRepository;
         _roleReadRepository = roleReadRepository;
+        _emailService = emailService;
     }
 
     public async Task<RegisterUserCommandResponse> Handle(RegisterUserCommandRequest request, CancellationToken cancellationToken)
@@ -30,6 +38,8 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
             throw new Exception("Bu email adresi zaten kullanılıyor.");
 
         HashingHelper.CreatePasswordHash(request.Password, out byte[] passwordHash, out byte[] passwordSalt);
+
+        var verificationToken = Guid.NewGuid().ToString();
 
         var newUser = new AppUser
         {
@@ -41,7 +51,10 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
             PasswordSalt = passwordSalt,
             TotalXP = 0,
             GeneralLevel = 1,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            IsEmailVerified = false,
+            EmailVerificationToken = verificationToken,
+            EmailVerificationTokenExpiry = DateTime.UtcNow.AddHours(24)
         };
 
         var defaultRole = await _roleReadRepository.GetSingleAsync(r => r.Name == "User", tracking: false);
@@ -57,6 +70,17 @@ public sealed class RegisterUserCommandHandler : IRequestHandler<RegisterUserCom
 
         await _userWriteRepository.AddAsync(newUser);
         await _userWriteRepository.SaveAsync();
+
+        var verificationLink = $"http://localhost:5173/verify-email?token={verificationToken}";
+        var emailBody = $@"
+            <h2>LifeQuest'e Hoşgeldiniz!</h2>
+            <p>Merhaba {newUser.Name},</p>
+            <p>Hesabınızı doğrulamak için lütfen aşağıdaki bağlantıya tıklayın:</p>
+            <p><a href='{verificationLink}'>{verificationLink}</a></p>
+            <p>Bu bağlantı 24 saat geçerlidir.</p>
+        ";
+
+        await _emailService.SendEmailAsync(newUser.Email, "LifeQuest Email Doğrulama", emailBody);
 
         return new RegisterUserCommandResponse
         {

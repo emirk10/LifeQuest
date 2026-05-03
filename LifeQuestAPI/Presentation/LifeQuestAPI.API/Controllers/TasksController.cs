@@ -1,4 +1,4 @@
-﻿using LifeQuestAPI.Application.Features.Tasks.Commands.CreateBulkTasks;
+using LifeQuestAPI.Application.Features.Tasks.Commands.CreateBulkTasks;
 using LifeQuestAPI.Application.Features.Tasks.Commands.CreateTask;
 using LifeQuestAPI.Application.Features.Tasks.Queries.GetAll;
 using MediatR;
@@ -10,6 +10,7 @@ namespace LifeQuestAPI.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
+[Authorize]
 public class TasksController : ControllerBase
 {
     private readonly IMediator _mediator;

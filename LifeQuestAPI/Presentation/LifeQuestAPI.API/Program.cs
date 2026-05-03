@@ -88,10 +88,16 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
+    var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? builder.Configuration["AppSettings:Token"];
+    if (string.IsNullOrEmpty(jwtSecret))
+    {
+        throw new InvalidOperationException("JWT_SECRET is not configured.");
+    }
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"] ?? "bu_proje_icin_cok_gizli_ve_cok_uzun_bir_anahtar_olusturdum_en_az_64_karakter_olmali_ki_sha512_calissin_lifequest_2025")),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
         ValidateIssuer = false,
         ValidateAudience = false,
         ValidateLifetime = true,

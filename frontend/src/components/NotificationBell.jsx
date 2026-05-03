@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
-import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
+import React, { useState, useEffect } from "react";
 import axiosClient from "../api/axiosClient";
+import useSignalR from "../hooks/useSignalR";
 
 const NotificationBell = () => {
     const [notifications, setNotifications] = useState([]);
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
-    const connectionRef = useRef(null);
 
     // Fetch initial notifications
     useEffect(() => {
@@ -24,43 +23,13 @@ const NotificationBell = () => {
         fetchNotifications();
     }, []);
 
-    // Setup SignalR
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const baseUrl = (import.meta.env.VITE_API_BASE_URL || "https://localhost:7071/api").replace("/api", "");
-        const newConnection = new HubConnectionBuilder()
-            .withUrl(`${baseUrl}/hubs/notification`, { 
-                accessTokenFactory: () => token 
-            })
-            .withAutomaticReconnect()
-            .configureLogging(LogLevel.Information)
-            .build();
-
-        newConnection.start()
-            .then(() => {
-                console.log("SignalR Connected");
-                newConnection.on("ReceiveNotification", (notification) => {
-                    setNotifications(prev => [notification, ...prev]);
-                    setUnreadCount(prev => prev + 1);
-                    
-                    // İsteğe bağlı browser notification atılabilir
-                    /* if ("Notification" in window && Notification.permission === "granted") {
-                        new Notification(notification.title, { body: notification.message });
-                    } */
-                });
-            })
-            .catch(e => console.log("Connection failed: ", e));
-
-        connectionRef.current = newConnection;
-
-        return () => {
-            if (connectionRef.current) {
-                connectionRef.current.stop();
-            }
-        };
-    }, []);
+    // Setup SignalR — real-time notifications via useSignalR hook (MISS-007)
+    useSignalR({
+        onNotification: (notification) => {
+            setNotifications(prev => [notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+        },
+    });
 
     const toggleOpen = () => {
         if (!isOpen && unreadCount > 0) {

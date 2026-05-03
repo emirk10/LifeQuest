@@ -86,7 +86,7 @@ public sealed class CompleteUserTaskCommandHandler
         await _gamificationService.AddExperienceWithTaskAsync(request.UserId, xpToEarn, userTask, task.CategoryId);
         await _userTaskWriteRepository.SaveAsync();
 
-        // 3. Kullanıcı sayaçlarını güncelle (SP-05)
+        // 3. Kullanıcı sayaçları + Streak + XP Bonus hesapla (MISS-004 + IMP-001)
         var user = await _userReadRepository.Table
             .Include(u => u.CategoryProgresses)
             .Include(u => u.UserTasks)
@@ -97,6 +97,63 @@ public sealed class CompleteUserTaskCommandHandler
             // SP-05: ActiveTaskCount ve WeeklyCompletedCount güncelle
             if (user.ActiveTaskCount > 0) user.ActiveTaskCount--;
             user.WeeklyCompletedCount++;
+
+            // ── MISS-004: Streak hesaplama ──────────────────────────────
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var yesterday = today.AddDays(-1);
+
+            if (user.LastTaskCompletedDate == null)
+            {
+                // İlk görev tamamlama
+                user.CurrentStreak = 1;
+            }
+            else if (user.LastTaskCompletedDate == yesterday)
+            {
+                // Dün tamamlandı: seri devam ediyor
+                user.CurrentStreak++;
+            }
+            else if (user.LastTaskCompletedDate < yesterday)
+            {
+                // 2+ gün önce: seri sıfırla
+                user.CurrentStreak = 1;
+            }
+            // Bugün zaten tamamlandıysa streak değişmez
+
+            user.LongestStreak = Math.Max(user.LongestStreak, user.CurrentStreak);
+            user.LastTaskCompletedDate = today;
+
+            // ── IMP-001: XP Bonus Sistemi ───────────────────────────────
+            int bonusXp = 0;
+
+            // Günün ilk görevi: +20 XP
+            bool isFirstTaskToday = !user.UserTasks!
+                .Any(ut => ut.Status == AppTaskStatus.Completed &&
+                           ut.CompletedAt.HasValue &&
+                           ut.CompletedAt.Value.Date == DateTime.UtcNow.Date &&
+                           ut.Id != userTask.Id);
+            if (isFirstTaskToday)
+                bonusXp += 20;
+
+            // Geri dönüş bonusu: 3+ gün aradan sonra +50 XP
+            bool isComebackBonus = user.LastTaskCompletedDate.HasValue &&
+                                   user.LastTaskCompletedDate.Value < today.AddDays(-3);
+            if (isComebackBonus)
+                bonusXp += 50;
+
+            // Streak çarpanı (temel XP üzerine)
+            double streakMultiplier = 1.0;
+            if (user.CurrentStreak > 30) streakMultiplier = 1.25;
+            else if (user.CurrentStreak > 7) streakMultiplier = 1.10;
+
+            int finalXp = (int)Math.Round(xpToEarn * streakMultiplier) + bonusXp;
+
+            // XP farkını ekle (temel XP zaten eklendi, sadece farkı ekle)
+            int extraXp = finalXp - xpToEarn;
+            if (extraXp > 0)
+                await _gamificationService.AddExperienceAsync(request.UserId, extraXp);
+
+            xpToEarn = finalXp; // response için güncelle
+
             _userWriteRepository.Update(user);
             await _userWriteRepository.SaveAsync();
 
@@ -118,7 +175,7 @@ public sealed class CompleteUserTaskCommandHandler
                 DayOfWeek = (int)DateTime.UtcNow.DayOfWeek,
                 HourOfDay = DateTime.UtcNow.Hour,
                 UserCompletedTaskCount = user.UserTasks?.Count(ut => ut.Status == AppTaskStatus.Completed) ?? 0,
-                UserStreakDays = 0,
+                UserStreakDays = user.CurrentStreak,
                 WasCompleted = true,
                 CompletionTimeHours = (float)(DateTime.UtcNow - userTask.AssignedAt).TotalHours,
                 Rating = 5.0f
