@@ -791,6 +791,127 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("OnboardingResponses");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Post", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId")
+                        .HasDatabaseName("IX_Post_AppUserId");
+
+                    b.ToTable("Posts");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostComment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("PostId");
+
+                    b.ToTable("PostComments");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostLike", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId");
+
+                    b.HasIndex("PostId", "AppUserId")
+                        .IsUnique();
+
+                    b.ToTable("PostLikes");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostTag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AppTaskId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("CoordinateX")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("CoordinateY")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PostId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppTaskId");
+
+                    b.HasIndex("PostId");
+
+                    b.ToTable("PostTags");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1398,6 +1519,74 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("AppUser");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Post", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostComment", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Post", "Post")
+                        .WithMany("Comments")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostLike", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "AppUser")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Post", "Post")
+                        .WithMany("Likes")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppUser");
+
+                    b.Navigation("Post");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.PostTag", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.AppTask", "AppTask")
+                        .WithMany()
+                        .HasForeignKey("AppTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Post", "Post")
+                        .WithMany("Tags")
+                        .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppTask");
+
+                    b.Navigation("Post");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>
                 {
                     b.HasOne("LifeQuestAPI.Domain.Entities.Achievement", "Achievement")
@@ -1574,6 +1763,15 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Navigation("UserTasks");
 
                     b.Navigation("WeeklyReports");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Post", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("Likes");
+
+                    b.Navigation("Tags");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserGoal", b =>

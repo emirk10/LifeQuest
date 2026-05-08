@@ -71,7 +71,7 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
             AppUserId = request.UserId,
             AppTaskId = userTask.AppTaskId,
             Status = AppTaskStatus.Suggested,
-            DueDate = request.PostponeTo.ToDateTime(TimeOnly.MinValue),
+            DueDate = DateTime.SpecifyKind(request.PostponeTo.ToDateTime(TimeOnly.MinValue), DateTimeKind.Utc),
             IsPostponed = true,
             PostponeCount = userTask.PostponeCount,
             XpCompensationRate = PostponeXpRate

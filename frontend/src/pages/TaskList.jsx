@@ -80,6 +80,25 @@ const TaskList = () => {
     }
   };
 
+  const handlePostponeTask = (taskId) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t.id === taskId ? { ...t, status: 'Postponed' } : t
+      )
+    );
+    showToast("📅 Görev yarına ertelendi.", "success");
+  };
+
+  const handleCancelPostponeTask = (taskId) => {
+    setTasks((prevTasks) =>
+      prevTasks.map((t) =>
+        t.id === taskId ? { ...t, status: 'Selected', postponedTo: null } : t
+      )
+    );
+    showToast("Görevin ertelemesi iptal edildi.", "success");
+  };
+
+
   const handleRequestNewQuests = () => {
     navigate("/task-pool");
   };
@@ -176,7 +195,11 @@ const TaskList = () => {
                   xp={task.baseXP || task.xp}
                   difficulty={task.difficulty}
                   isCompleted={task.isCompleted}
+                  status={task.status}
+                  postponedTo={task.postponedTo}
                   onComplete={handleCompleteTask}
+                  onPostpone={handlePostponeTask}
+                  onCancelPostpone={handleCancelPostponeTask}
                 />
               ))
             ) : (

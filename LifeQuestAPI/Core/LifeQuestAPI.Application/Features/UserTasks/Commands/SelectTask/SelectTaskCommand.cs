@@ -50,7 +50,7 @@ public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest
         if (user.TodayTaskCount >= user.DailyTaskLimit)
         {
             if (!request.ForceOverLimit || user.OverLimitWarningShown)
-                throw new Exception($"Bugün için görev limitine ({user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin.");
+                throw new Exception($"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin.");
 
             // İlk kez aşıyor, uyarı flag'ini set et
             user.OverLimitWarningShown = true;
@@ -58,7 +58,7 @@ public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest
 
         // ─── SP-05: ActiveLimitRule ────────────────────────────────────────
         if (user.ActiveTaskCount >= user.DailyTaskLimit * 2)
-            throw new Exception($"Henüz tamamlanmamış {user.ActiveTaskCount} görevin var. Önce mevcut görevlerini tamamla veya ertele.");
+            throw new Exception($"Henüz tamamlanmamış {user.ActiveTaskCount}/{user.DailyTaskLimit * 2} görevin var. Önce mevcut görevlerini tamamla veya ertele.");
 
         var userTask = await _userTaskReadRepository
             .GetWhere(ut => ut.Id == request.UserTaskId && ut.AppUserId == request.UserId, tracking: true)

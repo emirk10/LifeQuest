@@ -204,6 +204,28 @@ public class UserTasksController : ControllerBase
         }
     }
 
+    /// <summary>Görev ertelemesini iptal et</summary>
+    [HttpPost("{id}/cancel-postpone")]
+    public async Task<IActionResult> CancelPostponeTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        try
+        {
+            var success = await _mediator.Send(new LifeQuestAPI.Application.Features.UserTasks.Commands.CancelPostponeTask.CancelPostponeTaskCommandRequest
+            {
+                UserId = Guid.Parse(userIdString),
+                UserTaskId = id
+            });
+            return Ok(new { success });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
     /// <summary>Görevi duraklat</summary>
     [HttpPost("{id}/pause")]
     public async Task<IActionResult> PauseTask([FromRoute] Guid id)

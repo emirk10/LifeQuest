@@ -79,31 +79,29 @@ public class DailyQuestWorker : BackgroundService
         var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
         var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
 
-        // BUG-008: 500'lük batch'ler halinde paralel işleme (max 10 eş zamanlı)
+        // 500'lük batch'ler halinde standart (senkron) işleme
         var batches = users.Chunk(500);
         foreach (var batch in batches)
         {
-            await Parallel.ForEachAsync(batch, new ParallelOptions { MaxDegreeOfParallelism = 10 },
-                (user, _) =>
+            foreach (var user in batch)
+            {
+                user.TodayTaskCount = 0;
+                user.OverLimitWarningShown = false;
+                if (isMonday) user.WeeklyCompletedCount = 0;
+
+                // MISS-004: Dün görev tamamlamayan kullanıcının streak'ini sıfırla
+                // Tatil modundaki kullanıcıları atla (IsOnVacation kontrolü)
+                var isOnVacation = user.GetType().GetProperty("IsOnVacation")?.GetValue(user) as bool?;
+                if (isOnVacation != true)
                 {
-                    user.TodayTaskCount = 0;
-                    user.OverLimitWarningShown = false;
-                    if (isMonday) user.WeeklyCompletedCount = 0;
-
-                    // MISS-004: Dün görev tamamlamayan kullanıcının streak'ini sıfırla
-                    // Tatil modundaki kullanıcıları atla (IsOnVacation kontrolü)
-                    var isOnVacation = user.GetType().GetProperty("IsOnVacation")?.GetValue(user) as bool?;
-                    if (isOnVacation != true)
+                    if (user.LastTaskCompletedDate.HasValue && user.LastTaskCompletedDate.Value < yesterday)
                     {
-                        if (user.LastTaskCompletedDate.HasValue && user.LastTaskCompletedDate.Value < yesterday)
-                        {
-                            user.CurrentStreak = 0;
-                        }
+                        user.CurrentStreak = 0;
                     }
+                }
 
-                    userWriteRepo.Update(user);
-                    return ValueTask.CompletedTask;
-                });
+                userWriteRepo.Update(user);
+            }
         }
 
         await userWriteRepo.SaveAsync();

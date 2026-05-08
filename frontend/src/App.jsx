@@ -13,6 +13,7 @@ import AdminPage from './pages/AdminPage';
 import GoalsPage from './pages/GoalsPage';
 import ReportsPage from './pages/ReportsPage';
 import SocialPage from './pages/SocialPage';
+import SocialFeedPage from './pages/SocialFeedPage';
 import DailyTaskPage from './pages/DailyTaskPage';
 import OnboardingPage from './pages/OnboardingPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
@@ -46,6 +47,7 @@ function App() {
             <Route path="/goals" element={<PrivateRoute><GoalsPage /></PrivateRoute>} />
             <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
             <Route path="/social" element={<PrivateRoute><SocialPage /></PrivateRoute>} />
+            <Route path="/feed" element={<PrivateRoute><SocialFeedPage /></PrivateRoute>} />
             <Route path="/daily" element={<PrivateRoute><DailyTaskPage /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
             <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />

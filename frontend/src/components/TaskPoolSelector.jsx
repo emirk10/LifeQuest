@@ -18,8 +18,7 @@ const SLOT_LABELS = {
   4: 'Gece',
 };
 
-export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) {
-  const [selectedIds, setSelectedIds] = useState(new Set());
+export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh, isPoolMode = false, isLimitReached = false, selectedIds = new Set() }) {
   const [filter, setFilter] = useState('all'); // all | quick | deep
 
   if (!poolData) return null;
@@ -34,11 +33,8 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) 
     return true;
   }) || [];
 
-  const handleSelect = async (task) => {
-    const taskId = task.userTaskId ?? task.UserTaskId ?? task.id;
-    if (selectedIds.has(taskId)) return;
-    setSelectedIds((prev) => new Set([...prev, taskId]));
-    await onTaskSelect?.(task);
+  const handleSelect = (task) => {
+    onTaskSelect?.(task);
   };
 
   return (
@@ -89,6 +85,8 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh }) 
                 task={task}
                 isSelected={selectedIds.has(taskId)}
                 onSelect={() => handleSelect(task)}
+                isPoolMode={isPoolMode}
+                isLimitReached={isLimitReached}
               />
             );
           })}

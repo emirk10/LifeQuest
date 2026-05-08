@@ -8,9 +8,9 @@ const DIFFICULTY_CONFIG = {
   Hard: { label: 'Zor', color: '#ef4444', stars: 3 },
 };
 
-export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
+export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMode = false, isLimitReached = false }) {
   const [actionLoading, setActionLoading] = useState(null);
-  const [status, setStatus] = useState('suggested'); // suggested | selected | inprogress | paused | postponed
+  const [status, setStatus] = useState(task.status?.toLowerCase() || task.Status?.toLowerCase() || 'suggested'); // suggested | selected | inprogress | paused | postponed
   const [showPostpone, setShowPostpone] = useState(false);
   const [postponeReason, setPostponeReason] = useState('');
 
@@ -18,15 +18,15 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
   const diff = DIFFICULTY_CONFIG[task.difficulty] || DIFFICULTY_CONFIG.Easy;
   const matchPercent = Math.round((task.matchScore || 0) * 100);
 
-  const handleSelect = async () => {
-    setActionLoading('select');
-    try {
-      await taskPoolApi.selectTask(taskId);
-      setStatus('selected');
-      onSelect?.();
-    } finally {
-      setActionLoading(null);
-    }
+  const handleSelect = () => {
+    onSelect?.(task);
+  };
+
+  const handleDeselect = () => {
+    // If we passed an onDeselect prop, we could use it here.
+    // For now, we will expect the parent to toggle selection via onSelect,
+    // but if we want a separate button to deselect, we should use onSelect too or a new prop.
+    // Let's just use onSelect as a toggle, or let the parent pass onDeselect.
   };
 
   const handlePause = async () => {
@@ -90,8 +90,10 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
     );
   }
 
+  const isAlreadySelected = isSelected || status === 'selected';
+
   return (
-    <div className={`task-card ${isSelected ? 'task-card--selected' : ''} task-card--${status}`}>
+    <div className={`task-card ${isAlreadySelected ? 'task-card--selected' : ''} task-card--${status}`}>
       {/* Match Score Badge */}
       <div className="task-match-badge">
         <div
@@ -147,61 +149,74 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect }) {
       <div className="task-actions">
         {status === 'suggested' && (
           <button
-            className="task-btn task-btn--primary"
+            className={`task-btn ${isSelected ? 'task-btn--secondary' : 'task-btn--primary'}`}
             onClick={handleSelect}
-            disabled={!!actionLoading}
+            disabled={!!actionLoading || (!isSelected && isLimitReached)}
           >
-            {actionLoading === 'select' ? '⌛' : '✅ Seç'}
+            {actionLoading === 'select' ? '⌛' : isSelected ? '❌ Seçimi Kaldır' : isLimitReached ? 'LİMİT DOLDU 🔒' : '✅ Seç'}
           </button>
         )}
 
-        {status === 'selected' && (
-          <button
-            className="task-btn task-btn--start"
-            onClick={() => setStatus('inprogress')}
-          >
-            ▶️ Başla
-          </button>
-        )}
+        {/* Havuz modunda "Başla", "Duraklat" gibi butonları gizliyoruz */}
+        {isPoolMode ? (
+          <>
+            {(status === 'selected' || status === 'inprogress') && (
+              <div className="selected-badge">
+                ✅ Seçildi
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {status === 'selected' && (
+              <button
+                className="task-btn task-btn--start"
+                onClick={() => setStatus('inprogress')}
+              >
+                ▶️ Başla
+              </button>
+            )}
 
-        {status === 'inprogress' && (
-          <button
-            className="task-btn task-btn--pause"
-            onClick={handlePause}
-            disabled={!!actionLoading}
-          >
-            {actionLoading === 'pause' ? '⌛' : '⏸️ Duraklat'}
-          </button>
-        )}
+            {status === 'inprogress' && (
+              <button
+                className="task-btn task-btn--pause"
+                onClick={handlePause}
+                disabled={!!actionLoading}
+              >
+                {actionLoading === 'pause' ? '⌛' : '⏸️ Duraklat'}
+              </button>
+            )}
 
-        {status === 'paused' && (
-          <button
-            className="task-btn task-btn--resume"
-            onClick={handleResume}
-            disabled={!!actionLoading}
-          >
-            {actionLoading === 'resume' ? '⌛' : '▶️ Devam Et'}
-          </button>
-        )}
+            {status === 'paused' && (
+              <button
+                className="task-btn task-btn--resume"
+                onClick={handleResume}
+                disabled={!!actionLoading}
+              >
+                {actionLoading === 'resume' ? '⌛' : '▶️ Devam Et'}
+              </button>
+            )}
 
-        {/* Erteleme butonu her durumda görünür */}
-        {['suggested', 'selected', 'paused'].includes(status) && (
-          <button
-            className="task-btn task-btn--postpone"
-            onClick={() => setShowPostpone(!showPostpone)}
-          >
-            📅 Ertele
-          </button>
-        )}
+            {/* Erteleme butonu her durumda görünür */}
+            {['suggested', 'selected', 'paused'].includes(status) && (
+              <button
+                className="task-btn task-btn--postpone"
+                onClick={() => setShowPostpone(!showPostpone)}
+              >
+                📅 Ertele
+              </button>
+            )}
 
-        {['selected', 'inprogress', 'paused'].includes(status) && (
-          <button
-            className="task-btn task-btn--abandon"
-            onClick={handleAbandon}
-            disabled={!!actionLoading}
-          >
-            {actionLoading === 'abandon' ? '⌛' : '🚫'}
-          </button>
+            {['selected', 'inprogress', 'paused'].includes(status) && (
+              <button
+                className="task-btn task-btn--abandon"
+                onClick={handleAbandon}
+                disabled={!!actionLoading}
+              >
+                {actionLoading === 'abandon' ? '⌛' : '🚫'}
+              </button>
+            )}
+          </>
         )}
       </div>
 

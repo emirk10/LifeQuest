@@ -101,8 +101,8 @@ public sealed class CompleteOnboardingCommandHandler
         {
             user.PreferredTasksPerWeek = request.PreferredTasksPerWeek;
             user.WeeklyTaskLimit = request.PreferredTasksPerWeek.Value;
-            // DailyTaskLimit = max(1, haftada / 7)
-            user.DailyTaskLimit = Math.Max(1, request.PreferredTasksPerWeek.Value / 7);
+            // DailyTaskLimit = max(3, haftada / 7) — Seviye 1 başlangıcı için minimum 3.
+            user.DailyTaskLimit = Math.Max(3, request.PreferredTasksPerWeek.Value / 7);
         }
 
         user.OnboardingCompleted = true;

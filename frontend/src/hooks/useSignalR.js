@@ -51,13 +51,24 @@ export const useSignalR = ({ onNotification, onProactiveMessage } = {}) => {
             if (err) console.error("[SignalR] Bağlantı kapatıldı:", err);
         });
 
+        let isMounted = true;
+
         connection.start()
-            .then(() => console.info("[SignalR] Bağlandı →", HUB_URL))
-            .catch((err) => console.error("[SignalR] Bağlantı başarısız:", err));
+            .then(() => {
+                if (isMounted) console.info("[SignalR] Bağlandı →", HUB_URL);
+            })
+            .catch((err) => {
+                // Sadece hala mount edilmişsek VE hata "negotiation" hatası değilse hata bas
+                const isNegotiationError = err?.message?.includes("negotiation") || err?.name === "AbortError";
+                if (isMounted && !isNegotiationError) {
+                    console.error("[SignalR] Bağlantı başarısız:", err);
+                }
+            });
 
         connectionRef.current = connection;
 
         return () => {
+            isMounted = false;
             connection.stop().catch(() => {});
         };
     }, []); // token değişirse sayfa zaten yeniden yüklenir (logout/login)

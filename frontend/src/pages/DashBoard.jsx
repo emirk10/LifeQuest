@@ -9,7 +9,7 @@ import axiosClient from '../api/axiosClient';
 import { getUserIdFromToken } from '../utils/authUtils';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import * as signalR from '@microsoft/signalr';
+import useSignalR from '../hooks/useSignalR';
 
 
 const DashBoard = () => {
@@ -28,24 +28,10 @@ const DashBoard = () => {
   const [showMoodModal, setShowMoodModal] = useState(false);
   const [taskToAccept, setTaskToAccept] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const connectionRef = useRef(null);
 
-  // SP-03: SignalR proaktif nudge bağlantısı
-  useEffect(() => {
-    const userId = getUserIdFromToken();
-    if (!userId) return;
-
-    const connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${import.meta.env.VITE_API_URL?.replace('/api', '') ?? 'http://localhost:5000'}/hubs/notification`, {
-        accessTokenFactory: () => sessionStorage.getItem('token') ?? ''
-      })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Warning)
-      .build();
-
-    connectionRef.current = connection;
-
-    connection.on('ReceiveNotification', (notif) => {
+  // SP-03: useSignalR hook ile proaktif nudge dinleme
+  useSignalR({
+    onNotification: (notif) => {
       if (notif?.type === 'ProactiveNudge') {
         toast(
           <div>
@@ -57,18 +43,13 @@ const DashBoard = () => {
             className: 'bg-slate-800 border border-indigo-500/40 text-white rounded-2xl shadow-xl',
             progressClassName: 'bg-indigo-500',
             onClick: () => {
-              // ChatBot açılsun — window event üzerinden ChatBot dinler
               window.dispatchEvent(new CustomEvent('openChatBot', { detail: { message: notif.message } }));
             }
           }
         );
       }
-    });
-
-    connection.start().catch(err => console.warn('SignalR bağlanamıyor:', err));
-
-    return () => { connection.stop(); };
-  }, []);
+    }
+  });
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -180,7 +161,7 @@ const DashBoard = () => {
       <div className="space-y-8">
         <section className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
-            <div className="absolute -left-10 -top-10 w-40 h-40 bg-indigo-600/10 blur-[80px] rounded-full"></div>
+            <div className="absolute -left-10 -top-10 w-40 h-40 bg-indigo-600/10 blur-[80px] rounded-full pointer-events-none"></div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">DASHBOARD</h2>
             <div className="h-1.5 w-24 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.6)]"></div>
           </div>
@@ -307,7 +288,13 @@ const DashBoard = () => {
       {/* Mood Modal */}
       {showMoodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+            <button 
+              onClick={() => setShowMoodModal(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors p-2"
+            >
+              ✕
+            </button>
             <div className="p-6">
               <h2 className="text-2xl font-black text-white mb-2">Güne Hazır Mısın?</h2>
               <p className="text-slate-400 text-sm mb-6">Sana en uygun görevleri önerebilmemiz için bugünkü durumunu paylaş.</p>

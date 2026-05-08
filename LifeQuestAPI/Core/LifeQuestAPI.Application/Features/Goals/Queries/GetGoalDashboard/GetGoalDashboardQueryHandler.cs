@@ -27,6 +27,7 @@ public class GoalDashboardItem
     public int CompletedMilestoneCount { get; set; }
     public string? Why { get; set; }
     public string Type { get; set; } = string.Empty;
+    public DateTime? CompletedAt { get; set; }
 }
 
 public class GetGoalDashboardQueryResponse
@@ -87,7 +88,8 @@ public sealed class GetGoalDashboardQueryHandler
                 MilestoneCount = g.Milestones?.Count ?? 0,
                 CompletedMilestoneCount = g.Milestones?.Count(m => m.IsCompleted) ?? 0,
                 Why = g.Why,
-                Type = g.Type.ToString()
+                Type = g.Type.ToString(),
+                CompletedAt = g.CompletedAt
             };
         };
 

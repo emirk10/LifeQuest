@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using LifeQuestAPI.Application.Exceptions;
 
 namespace LifeQuestAPI.API.Middlewares;
 
@@ -49,6 +50,20 @@ public class GlobalExceptionMiddleware
 
             var validationJsonResponse = JsonSerializer.Serialize(validationResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             return context.Response.WriteAsync(validationJsonResponse);
+        }
+
+        if (exception is BusinessException businessException)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+
+            var businessResponse = new
+            {
+                IsSuccess = false,
+                Message = businessException.Message
+            };
+
+            var businessJsonResponse = JsonSerializer.Serialize(businessResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            return context.Response.WriteAsync(businessJsonResponse);
         }
 
         context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;

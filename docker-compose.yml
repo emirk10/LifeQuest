@@ -68,7 +68,7 @@ services:
       - ai_models:/app/models
     environment:
       - PYTHONUNBUFFERED=1
-      - ALLOWED_ORIGINS=http://lifequest-api:5020,http://localhost:5020
+      - ALLOWED_ORIGINS=http://lifequest-api:5020,http://localhost:5020,http://localhost:5173
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
@@ -102,6 +102,8 @@ services:
         condition: service_healthy
       ai_service:
         condition: service_healthy
+    volumes:
+      - ./LifeQuestAPI/Presentation/LifeQuestAPI.API/wwwroot:/app/wwwroot
     restart: unless-stopped
 
   # ─────────────────────────────────────────

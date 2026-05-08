@@ -36,6 +36,12 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<GoalMilestone> GoalMilestones { get; set; }
     public DbSet<ChallengeParticipant> ChallengeParticipants { get; set; }
 
+    // Social Feed
+    public DbSet<Post> Posts { get; set; }
+    public DbSet<PostTag> PostTags { get; set; }
+    public DbSet<PostLike> PostLikes { get; set; }
+    public DbSet<PostComment> PostComments { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserCategoryProgress>()
@@ -231,6 +237,59 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<AppTask>()
             .HasIndex(t => new { t.IsActive, t.CategoryId })
             .HasDatabaseName("IX_AppTask_IsActive_CategoryId");
+
+        // Social Feed — Post ilişkileri
+        modelBuilder.Entity<Post>()
+            .HasOne(p => p.AppUser)
+            .WithMany()
+            .HasForeignKey(p => p.AppUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Post>()
+            .HasIndex(p => p.AppUserId)
+            .HasDatabaseName("IX_Post_AppUserId");
+
+        modelBuilder.Entity<PostTag>()
+            .HasOne(pt => pt.Post)
+            .WithMany(p => p.Tags)
+            .HasForeignKey(pt => pt.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PostTag>()
+            .HasOne(pt => pt.AppTask)
+            .WithMany()
+            .HasForeignKey(pt => pt.AppTaskId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // PostLike
+        modelBuilder.Entity<PostLike>()
+            .HasOne(pl => pl.Post)
+            .WithMany(p => p.Likes)
+            .HasForeignKey(pl => pl.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PostLike>()
+            .HasOne(pl => pl.AppUser)
+            .WithMany()
+            .HasForeignKey(pl => pl.AppUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<PostLike>()
+            .HasIndex(pl => new { pl.PostId, pl.AppUserId })
+            .IsUnique();
+
+        // PostComment
+        modelBuilder.Entity<PostComment>()
+            .HasOne(pc => pc.Post)
+            .WithMany(p => p.Comments)
+            .HasForeignKey(pc => pc.PostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PostComment>()
+            .HasOne(pc => pc.AppUser)
+            .WithMany()
+            .HasForeignKey(pc => pc.AppUserId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         base.OnModelCreating(modelBuilder);
     }

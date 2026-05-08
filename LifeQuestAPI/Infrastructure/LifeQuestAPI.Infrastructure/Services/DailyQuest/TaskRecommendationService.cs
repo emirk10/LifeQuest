@@ -130,7 +130,8 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
                 WhyThisTask = item.Task.WhyThisTask,
                 BadgeHint = item.Task.BadgeHint,
                 MatchScore = Math.Round(item.Score, 2),
-                RecommendationReason = item.Reason
+                RecommendationReason = item.Reason,
+                Status = "Suggested"
             });
         }
 

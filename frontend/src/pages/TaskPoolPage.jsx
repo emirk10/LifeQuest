@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import axiosClient from "../api/axiosClient";
 import DailyMoodSelector from "../components/DailyMoodSelector";
@@ -21,7 +22,11 @@ const TaskPoolPage = () => {
   // Filter & Pagination States for ALL Tasks
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [userLimits, setUserLimits] = useState({ daily: 3, today: 0, active: 0 });
+  const [selectedInSession, setSelectedInSession] = useState(0);
+  const [pendingSelections, setPendingSelections] = useState(new Map()); // Map<taskId, {task, type}>
   const pageSize = 6;
+  const navigate = useNavigate();
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -35,6 +40,11 @@ const TaskPoolPage = () => {
       try {
         const freshData = await userService.getProfile();
         setUserLevel(freshData.generalLevel ?? freshData.GeneralLevel ?? 1);
+        setUserLimits({
+          daily: freshData.dailyTaskLimit ?? 3,
+          today: freshData.todayTaskCount ?? 0,
+          active: freshData.activeTaskCount ?? 0
+        });
       } catch (err) {
         console.error(err);
       }
@@ -91,24 +101,28 @@ const TaskPoolPage = () => {
     }
   };
 
-  const handleAssignAppTask = async (appTaskId) => {
-    setActionLoading(appTaskId);
-    try {
-      const res = await axiosClient.post(`/user-tasks/assign/${appTaskId}`);
-      if (res.data && res.data.success) {
-        showToast("🎉 Görev doğrudan listene eklendi!", "success");
-        setAvailableTasks((prev) => prev.filter((t) => t.id !== appTaskId));
-        loadPool();
-        fetchAvailableTasks();
+  const toggleSelection = (task, type = 'all') => {
+    const taskId = task.userTaskId ?? task.UserTaskId ?? task.id ?? task.Id;
+    
+    setPendingSelections(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(taskId)) {
+        newMap.delete(taskId);
       } else {
-        showToast(res.data?.message || "Görev alınamadı.", "error");
+        // Limit check BEFORE adding
+        if (userLimits.today + newMap.size >= userLimits.daily) {
+          showToast(`⚠️ Günlük limitine (${userLimits.daily}) ulaştın!`, "error");
+          return prev; // Do not add
+        }
+        newMap.set(taskId, { task, type });
       }
-    } catch (err) {
-      console.error(err);
-      showToast(err.response?.data?.message || "Görevi alırken bir hata oluştu.", "error");
-    } finally {
-      setActionLoading(null);
-    }
+      return newMap;
+    });
+  };
+
+  const handleAssignAppTask = async (appTaskId) => {
+    // This is no longer used directly on button click, we use toggleSelection now.
+    // Keeping it here just in case, but refactored to toggleSelection.
   };
 
   // Get dynamic categories list from available tasks - MEMOIZED
@@ -153,6 +167,45 @@ const TaskPoolPage = () => {
       }))
       .sort((a, b) => b.count - a.count)[0]?.name || "Genel";
   }, [uniqueCategories, availableTasks]);
+
+  const handleFinishSelection = async () => {
+    if (pendingSelections.size === 0) {
+      navigate("/tasks");
+      return;
+    }
+
+    setActionLoading('finish');
+    let successCount = 0;
+    
+    try {
+      // Process all pending selections
+      for (const [taskId, data] of pendingSelections.entries()) {
+        if (data.type === 'recommended') {
+          await taskPoolApi.selectTask(taskId);
+        } else {
+          await axiosClient.post(`/user-tasks/assign/${taskId}`);
+        }
+        successCount++;
+      }
+      
+      showToast(`🎉 ${successCount} görev başarıyla listene eklendi!`, "success");
+      setPendingSelections(new Map());
+      setTimeout(() => navigate("/tasks"), 1000);
+      
+    } catch (err) {
+      console.error("Toplu atama sırasında hata:", err);
+      const msg = err.response?.data?.message || "Görevler atanırken bir hata oluştu.";
+      showToast(msg, "error");
+      
+      // If some succeeded, we still want to clear them and maybe navigate
+      if (successCount > 0) {
+        showToast(`⚠️ Sadece ${successCount} görev atanabildi.`, "warning");
+        setTimeout(() => navigate("/tasks"), 2000);
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <MainLayout>
@@ -206,6 +259,25 @@ const TaskPoolPage = () => {
             </button>
           </div>
         </section>
+        
+        {/* Limit Warning Banner */}
+        {userLimits.today >= userLimits.daily && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-[2rem] flex flex-col md:flex-row items-center gap-6 animate-pulse">
+            <div className="text-4xl">⚠️</div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-amber-400 font-black text-lg tracking-tight">BUGÜNLÜK BU KADAR!</h3>
+              <p className="text-amber-500/80 text-sm font-medium">
+                Günlük görev limitine ({userLimits.daily}) ulaştın. Harika bir iş çıkardın! Yeni görevler için yarını bekleyebilir veya mevcut görevlerini tamamlayabilirsin.
+              </p>
+            </div>
+            <button
+              onClick={handleFinishSelection}
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs transition-all shadow-lg shadow-amber-500/20"
+            >
+              GÖREVLERİME GİT
+            </button>
+          </div>
+        )}
 
         {/* Contents */}
         {activeTab === "recommended" ? (
@@ -245,18 +317,10 @@ const TaskPoolPage = () => {
 
                   <TaskPoolSelector
                     poolData={poolData}
-                    onTaskSelect={async (task) => {
-                      try {
-                        const taskId = task.userTaskId ?? task.UserTaskId ?? task.id ?? task.Id;
-                        await taskPoolApi.selectTask(taskId);
-                        showToast("🎉 Görev başarıyla seçildi!", "success");
-                        loadPool();
-                        fetchAvailableTasks();
-                      } catch (err) {
-                        console.error("Görev seçilemedi:", err);
-                        showToast("Görev seçilirken bir hata oluştu.", "error");
-                      }
-                    }}
+                    isPoolMode={true}
+                    isLimitReached={userLimits.today + pendingSelections.size >= userLimits.daily}
+                    selectedIds={new Set(pendingSelections.keys())}
+                    onTaskSelect={(task) => toggleSelection(task, 'recommended')}
                     onRefresh={loadPool}
                   />
                 </div>
@@ -366,16 +430,21 @@ const TaskPoolPage = () => {
                         </div>
 
                         <button
-                          onClick={() => handleAssignAppTask(t.id)}
-                          disabled={actionLoading !== null}
-                          className="w-full bg-fuchsia-600 hover:bg-fuchsia-500 disabled:bg-slate-800 text-white text-xs font-black py-3 rounded-2xl transition-all duration-300 active:scale-95 shadow-lg shadow-fuchsia-600/20 hover:shadow-fuchsia-600/40 flex items-center justify-center gap-2"
+                          onClick={() => toggleSelection(t, 'all')}
+                          disabled={actionLoading !== null || (!pendingSelections.has(t.id) && userLimits.today + pendingSelections.size >= userLimits.daily)}
+                          className={`w-full ${pendingSelections.has(t.id) ? 'bg-slate-700 hover:bg-slate-600' : 'bg-fuchsia-600 hover:bg-fuchsia-500'} disabled:bg-slate-800 disabled:opacity-50 text-white text-xs font-black py-3 rounded-2xl transition-all duration-300 active:scale-95 shadow-lg shadow-fuchsia-600/20 hover:shadow-fuchsia-600/40 flex items-center justify-center gap-2`}
                         >
                           {actionLoading === t.id ? (
                             <span className="animate-spin">↻</span>
+                          ) : pendingSelections.has(t.id) ? (
+                            <>
+                              <span>SEÇİMİ KALDIR</span>
+                              <span>❌</span>
+                            </>
                           ) : (
                             <>
-                              <span>GÖREVİ LİSTENE EKLE</span>
-                              <span>➕</span>
+                              <span>{userLimits.today + pendingSelections.size >= userLimits.daily ? "LİMİT DOLDU" : "GÖREVİ LİSTENE EKLE"}</span>
+                              <span>{userLimits.today + pendingSelections.size >= userLimits.daily ? "🔒" : "➕"}</span>
                             </>
                           )}
                         </button>
@@ -408,6 +477,37 @@ const TaskPoolPage = () => {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {/* Global Redirection Button */}
+        {(selectedInSession > 0 || pendingSelections.size > 0 || userLimits.active > 0) && (
+          <div className="flex justify-center py-12 border-t border-slate-800/50 mt-12">
+            <button
+              onClick={handleFinishSelection}
+              disabled={actionLoading === 'finish'}
+              className="group relative px-12 py-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-fuchsia-600 rounded-3xl font-black text-white shadow-[0_20px_50px_rgba(79,70,229,0.3)] hover:shadow-indigo-500/50 transition-all hover:scale-105 active:scale-95 overflow-hidden disabled:opacity-75 disabled:scale-100"
+            >
+              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+              <span className="relative z-10 flex items-center gap-4 text-lg tracking-wider">
+                {actionLoading === 'finish' ? (
+                  <>
+                    <span className="animate-spin">↻</span>
+                    ATAMALAR YAPILIYOR...
+                  </>
+                ) : pendingSelections.size > 0 ? (
+                  <>
+                    SEÇİLEN {pendingSelections.size} GÖREVİ ATAYIP BAŞLA
+                    <span className="text-2xl group-hover:translate-x-2 transition-transform">⚔️</span>
+                  </>
+                ) : (
+                  <>
+                    GÖREV LİSTEME GİT VE BAŞLA
+                    <span className="text-2xl group-hover:translate-x-2 transition-transform">⚔️</span>
+                  </>
+                )}
+              </span>
+            </button>
           </div>
         )}
       </div>

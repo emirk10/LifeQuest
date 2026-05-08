@@ -23,6 +23,9 @@ export const taskPoolApi = {
   postponeTask: (userTaskId, postponeTo, skipReason) =>
     axiosClient.post(`/user-tasks/${userTaskId}/postpone`, { postponeTo, skipReason }),
 
+  cancelPostponeTask: (userTaskId) =>
+    axiosClient.post(`/user-tasks/${userTaskId}/cancel-postpone`),
+
   pauseTask: (userTaskId) =>
     axiosClient.post(`/user-tasks/${userTaskId}/pause`),
 

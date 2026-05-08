@@ -3,6 +3,7 @@ import MainLayout from '../layouts/MainLayout';
 import socialService from '../services/socialService';
 import ChallengeCard from '../components/ChallengeCard';
 import { challengeService } from '../services/challengeService';
+import categoryService from '../services/categoryService';
 
 const tabs = ['Arkadaşlarım', 'İstekler', 'Mücadeleler', 'Kullanıcı Ara'];
 const CHALLENGE_STATUS_TABS = ['active', 'invited', 'completed'];
@@ -13,6 +14,7 @@ const SocialPage = () => {
   const [friends, setFriends] = useState([]);
   const [requests, setRequests] = useState([]);
   const [challenges, setChallenges] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,7 @@ const SocialPage = () => {
     durationDays: 7,
     winnerXPBonus: 200,
     challengerMessage: '',
+    targetCategoryId: '',
   });
 
 
@@ -38,12 +41,14 @@ const SocialPage = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [friendsData, requestsData] = await Promise.all([
+      const [friendsData, requestsData, categoriesData] = await Promise.all([
         socialService.getFriends(),
         socialService.getFriendRequests(),
+        categoryService.getAllCategories()
       ]);
       setFriends(friendsData);
       setRequests(requestsData);
+      setCategories(categoriesData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -138,12 +143,15 @@ const SocialPage = () => {
         durationDays: challengeForm.durationDays,
         winnerXPBonus: challengeForm.winnerXPBonus,
         challengerMessage: challengeForm.challengerMessage,
+        targetCategoryId: challengeForm.challengeType === 'CategoryFocus' ? challengeForm.targetCategoryId : null,
       });
       showToast(`${challengeTarget.name}'e mücadele daveti gönderildi! ⚔️`);
       setShowChallengeModal(false);
       fetchChallenges();
     } catch (err) {
-      showToast(err.response?.data?.message || 'Mücadele oluşturulamadı.', 'error');
+      console.error("Challenge error details:", err.response?.data);
+      const errorMessage = err.response?.data?.message || err.response?.data?.Message || 'Mücadele oluşturulamadı.';
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -409,6 +417,19 @@ const SocialPage = () => {
                   <option value="CategoryFocus">🎯 Kategori Odağı</option>
                 </select>
               </div>
+              {challengeForm.challengeType === 'CategoryFocus' && (
+                <div>
+                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Hedef Kategori *</label>
+                  <select required className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
+                    value={challengeForm.targetCategoryId}
+                    onChange={e => setChallengeForm({ ...challengeForm, targetCategoryId: e.target.value })}>
+                    <option value="">Kategori Seçin...</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Hedef Sayı</label>

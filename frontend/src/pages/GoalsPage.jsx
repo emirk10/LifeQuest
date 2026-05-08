@@ -88,7 +88,7 @@ const GoalsPage = () => {
         {/* Header */}
         <div className="flex justify-between items-end">
           <section className="relative">
-            <div className="absolute -left-10 -top-10 w-40 h-40 bg-teal-600/10 blur-[80px] rounded-full"></div>
+            <div className="absolute -left-10 -top-10 w-40 h-40 bg-teal-600/10 blur-[80px] rounded-full pointer-events-none"></div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">HEDEFLER</h2>
             <div className="h-1.5 w-24 bg-teal-600 rounded-full shadow-[0_0_20px_rgba(13,148,136,0.6)]"></div>
           </section>
@@ -119,7 +119,7 @@ const GoalsPage = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all relative z-20 cursor-pointer ${
                 activeTab === tab.id
                   ? 'text-white shadow-lg'
                   : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'

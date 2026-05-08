@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -53,6 +53,9 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             GeneralLevel = user.GeneralLevel,
             CreatedAt = user.CreatedAt,
             CompletedTaskCount = completedTaskCount,
+            DailyTaskLimit = user.DailyTaskLimit,
+            TodayTaskCount = user.TodayTaskCount,
+            ActiveTaskCount = user.ActiveTaskCount,
 
             EarnedBadges = userBadges.Select(ub => new UserBadgeDto
             {

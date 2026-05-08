@@ -70,7 +70,8 @@ public class GetDailyTaskPoolQueryHandler : IRequestHandler<GetDailyTaskPoolQuer
                     WhyThisTask = ut.AppTask.WhyThisTask,
                     BadgeHint = ut.AppTask.BadgeHint,
                     MatchScore = 0.8,
-                    RecommendationReason = "Bugün için daha önce önerildi"
+                    RecommendationReason = "Bugün için daha önce önerildi",
+                    Status = ut.Status.ToString()
                 }).ToList(),
                 TodayMood = moodMode,
                 AvailableMinutes = availableMinutes,

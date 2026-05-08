@@ -50,6 +50,7 @@ const MainLayout = ({ children }) => {
         { name: "Görevlerim", path: "/tasks", icon: "⚔️" },
         { name: "Hedefler", path: "/goals", icon: "🎯" },
         { name: "Sosyal", path: "/social", icon: "🤝" },
+        { name: "Akış", path: "/feed", icon: "📸" },
         { name: "Raporlar", path: "/reports", icon: "📈" },
         { name: "Rozetler", path: "/badges", icon: "🎖️" },
         { name: "Profil", path: "/profile", icon: "👤" },

@@ -45,7 +45,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse 
             { 
                 Success = false, 
-                Message = $"Bugün için görev limitine ({user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin." 
+                Message = $"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin." 
             };
         }
 
@@ -55,7 +55,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse 
             { 
                 Success = false, 
-                Message = $"Henüz tamamlanmamış {user.ActiveTaskCount} görevin var. Önce mevcut görevlerini tamamla veya ertele." 
+                Message = $"Henüz tamamlanmamış {user.ActiveTaskCount}/{user.DailyTaskLimit * 2} görevin var. Önce mevcut görevlerini tamamla veya ertele." 
             };
         }
 

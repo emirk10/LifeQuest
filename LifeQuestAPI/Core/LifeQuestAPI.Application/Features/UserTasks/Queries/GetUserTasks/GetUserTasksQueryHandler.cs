@@ -34,14 +34,18 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
             .Select(ut => new UserTaskDto
             {
                 Id = ut.Id,
+                AppTaskId = ut.AppTaskId,
                 Title = ut.AppTask.Title,
                 Description = ut.AppTask.Description,
                 Xp = ut.AppTask.BaseXP,
                 BaseXP = ut.AppTask.BaseXP,
                 Difficulty = ut.AppTask.Difficulty.ToString(),
                 IsCompleted = ut.CompletedAt.HasValue,
+                CompletedAt = ut.CompletedAt,
                 AssignedAt = ut.AssignedAt,
-                CategoryName = ut.AppTask.Category != null ? ut.AppTask.Category.Name : null
+                CategoryName = ut.AppTask.Category != null ? ut.AppTask.Category.Name : null,
+                Status = ut.Status.ToString(),
+                PostponedTo = ut.PostponedTo
             })
             .ToListAsync(cancellationToken);
 

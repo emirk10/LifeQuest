@@ -60,7 +60,7 @@ import os
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020").split(","),
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020,http://localhost:5173").split(","),
     allow_credentials=False,
     allow_methods=["POST", "GET"],
     allow_headers=["Content-Type"],

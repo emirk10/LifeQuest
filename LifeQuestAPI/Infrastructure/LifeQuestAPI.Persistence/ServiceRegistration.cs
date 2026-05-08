@@ -69,5 +69,14 @@ public static class ServiceRegistration
         services.AddScoped<IGoalMilestoneWriteRepository, GoalMilestoneWriteRepository>();
         services.AddScoped<IChallengeParticipantReadRepository, ChallengeParticipantReadRepository>();
         services.AddScoped<IChallengeParticipantWriteRepository, ChallengeParticipantWriteRepository>();
+
+        // Social Feed
+        services.AddScoped<IPostReadRepository, PostReadRepository>();
+        services.AddScoped<IPostWriteRepository, PostWriteRepository>();
+        services.AddScoped<IPostTagWriteRepository, PostTagWriteRepository>();
+        services.AddScoped<IPostLikeReadRepository, PostLikeReadRepository>();
+        services.AddScoped<IPostLikeWriteRepository, PostLikeWriteRepository>();
+        services.AddScoped<IPostCommentReadRepository, PostCommentReadRepository>();
+        services.AddScoped<IPostCommentWriteRepository, PostCommentWriteRepository>();
     }
 }

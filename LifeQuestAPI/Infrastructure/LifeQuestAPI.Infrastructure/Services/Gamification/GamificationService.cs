@@ -67,6 +67,9 @@ public sealed class GamificationService : IGamificationService
         user.GeneralLevel = 1 + (user.TotalXP / 1000.0);
         user.LastActiveAt = DateTime.UtcNow;
 
+        // Seviye arttıkça günlük görev limitini güncelle (Max 10)
+        UpdateDailyTaskLimit(user);
+
         _userWriteRepository.Update(user);
 
         if (categoryId.HasValue)
@@ -134,5 +137,19 @@ public sealed class GamificationService : IGamificationService
         }
 
         await _userBadgeWriteRepository.SaveAsync();
+    }
+
+    private void UpdateDailyTaskLimit(AppUser user)
+    {
+        int level = (int)Math.Floor(user.GeneralLevel);
+        // Formül: 1-2->3, 3-4->4, 5-6->5, 7-8->6, 9-10->7, 11-12->8, 13-14->9, 15+->10
+        int calculatedLimit = 3 + (level - 1) / 2;
+        if (calculatedLimit > 10) calculatedLimit = 10;
+
+        // Kullanıcının limiti mevcut seviyesine göre düşük kalmışsa otomatik yükselt
+        if (calculatedLimit > user.DailyTaskLimit)
+        {
+            user.DailyTaskLimit = calculatedLimit;
+        }
     }
 }
