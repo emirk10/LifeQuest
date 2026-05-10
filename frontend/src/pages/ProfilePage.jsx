@@ -21,6 +21,9 @@ const ProfilePage = () => {
   const [personalitySaving, setPersonalitySaving] = useState(false);
   const [behaviorSummary, setBehaviorSummary] = useState(null);
   const [isOnVacation, setIsOnVacation] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ bio: "", location: "", interests: [] });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -30,6 +33,11 @@ const ProfilePage = () => {
         setChatPersonality(data?.chatPersonality || "friendly");
         setNudgeEnabled(data?.nudgeEnabled ?? true);
         setIsOnVacation(data?.isOnVacation ?? false);
+        setEditData({
+          bio: data?.bio || "",
+          location: data?.location || "",
+          interests: data?.interests || []
+        });
 
         // SP-03: Davranış analizi özeti
         const userId = getUserIdFromToken();
@@ -70,6 +78,19 @@ const ProfilePage = () => {
     } catch (err) {
       console.error("Nudge kaydedilemedi:", err);
       setNudgeEnabled(!newVal); // rollback
+    }
+  };
+
+  const handleUpdateProfile = async () => {
+    setSaving(true);
+    try {
+      await userService.updateProfile(editData);
+      setProfile(prev => ({ ...prev, ...editData }));
+      setShowEditModal(false);
+    } catch (err) {
+      console.error("Profil güncellenemedi:", err);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -154,6 +175,27 @@ const ProfilePage = () => {
                 </span>
               </div>
             </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <p className="text-sm text-slate-300 italic">"{profile?.bio || "Henüz bir biyografi eklenmemiş."}"</p>
+              <div className="flex items-center gap-4 text-xs text-slate-500">
+                {profile?.location && <span>📍 {profile.location}</span>}
+                {profile?.interests?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {profile.interests.map(interest => (
+                      <span key={interest} className="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20">#{interest}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowEditModal(true)}
+              className="mt-6 px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-all border border-slate-700"
+            >
+              Profili Düzenle
+            </button>
           </div>
         </section>
 
@@ -302,6 +344,66 @@ const ProfilePage = () => {
             onVacationChange={(val) => setIsOnVacation(val)}
           />
         </section>
+        {/* Edit Profile Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
+              <div className="p-8 space-y-6">
+                <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">Profili Düzenle</h2>
+                
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Biyografi</label>
+                    <textarea 
+                      value={editData.bio}
+                      onChange={(e) => setEditData({...editData, bio: e.target.value})}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-indigo-500 transition-colors min-h-[100px]"
+                      placeholder="Kendinden bahset..."
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Konum</label>
+                    <input 
+                      type="text"
+                      value={editData.location}
+                      onChange={(e) => setEditData({...editData, location: e.target.value})}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Örn: İstanbul, Türkiye"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">İlgi Alanları (Virgülle ayır)</label>
+                    <input 
+                      type="text"
+                      value={editData.interests.join(", ")}
+                      onChange={(e) => setEditData({...editData, interests: e.target.value.split(",").map(s => s.trim()).filter(s => s !== "")})}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm text-white outline-none focus:border-indigo-500 transition-colors"
+                      placeholder="Örn: Yazılım, Fitness, Kitap"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl transition-all"
+                  >
+                    İptal
+                  </button>
+                  <button 
+                    onClick={handleUpdateProfile}
+                    disabled={saving}
+                    className="flex-1 px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+                  >
+                    {saving ? "Kaydediliyor..." : "Kaydet"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </MainLayout>
   );

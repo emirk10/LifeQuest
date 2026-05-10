@@ -12,9 +12,8 @@ const NotificationBell = () => {
         const fetchNotifications = async () => {
             try {
                 const response = await axiosClient.get("/notifications");
-                const notifs = response.data.notifications || [];
-                setNotifications(notifs);
-                setUnreadCount(notifs.filter(n => !n.isRead).length);
+                setNotifications(response.data.grouped || {});
+                setUnreadCount(response.data.unreadCount || 0);
             } catch (err) {
                 console.error("Failed to fetch notifications", err);
             }
@@ -25,9 +24,12 @@ const NotificationBell = () => {
 
     // Setup SignalR — real-time notifications via useSignalR hook (MISS-007)
     useSignalR({
-        onNotification: (notification) => {
-            setNotifications(prev => [notification, ...prev]);
-            setUnreadCount(prev => prev + 1);
+        onNotification: () => {
+            // Re-fetch to keep grouping correct
+            axiosClient.get("/notifications").then(response => {
+                setNotifications(response.data.grouped || {});
+                setUnreadCount(response.data.unreadCount || 0);
+            });
         },
     });
 
@@ -35,7 +37,14 @@ const NotificationBell = () => {
         if (!isOpen && unreadCount > 0) {
             axiosClient.patch("/notifications/mark-all-as-read").then(() => {
                 setUnreadCount(0);
-                setNotifications(prev => prev.map(n => ({...n, isRead: true})));
+                // Lokal olarak hepsini okundu işaretle (Gruplanmış veride derin güncelleme)
+                setNotifications(prev => {
+                    const newGroups = { ...prev };
+                    Object.keys(newGroups).forEach(key => {
+                        newGroups[key] = newGroups[key].map(n => ({ ...n, isRead: true }));
+                    });
+                    return newGroups;
+                });
             });
         }
         setIsOpen(!isOpen);
@@ -63,16 +72,23 @@ const NotificationBell = () => {
                         {unreadCount > 0 && <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full">{unreadCount} yeni</span>}
                     </div>
                     <div className="max-h-96 overflow-y-auto">
-                        {notifications.length === 0 ? (
+                        {Object.keys(notifications).length === 0 ? (
                             <div className="p-4 text-center text-slate-400">Bildirim bulunmuyor.</div>
                         ) : (
-                            notifications.map((n, idx) => (
-                                <div key={n.id || idx} className={`p-4 border-b border-slate-700/50 hover:bg-slate-700/40 transition-colors ${!n.isRead ? 'bg-slate-700/20' : ''}`}>
-                                    <h4 className="font-medium text-slate-200 mb-1">{n.title}</h4>
-                                    <p className="text-slate-400 text-xs">{n.message}</p>
-                                    <span className="text-[10px] text-slate-500 mt-2 block">
-                                        {new Date(n.createdAt).toLocaleString('tr-TR')}
-                                    </span>
+                            Object.entries(notifications).map(([type, group]) => (
+                                <div key={type}>
+                                    <div className="bg-slate-900/50 px-4 py-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest border-b border-slate-700/30">
+                                        {type === 'Social' ? '🤝 SOSYAL' : type === 'System' ? '⚙️ SİSTEM' : type === 'Task' ? '⚔️ GÖREV' : `🔔 ${type.toUpperCase()}`}
+                                    </div>
+                                    {group.map((n, idx) => (
+                                        <div key={n.id || idx} className={`p-4 border-b border-slate-700/50 hover:bg-slate-700/40 transition-colors ${!n.isRead ? 'bg-slate-700/20' : ''}`}>
+                                            <h4 className="font-medium text-slate-200 mb-1">{n.title}</h4>
+                                            <p className="text-slate-400 text-xs">{n.message}</p>
+                                            <span className="text-[10px] text-slate-500 mt-2 block">
+                                                {new Date(n.createdAt).toLocaleString('tr-TR')}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             ))
                         )}

@@ -19,6 +19,8 @@ public sealed class AppTask : BaseEntity
     public DifficultyLevel Difficulty { get; set; }
     public bool IsDaily { get; set; }
     public bool IsActive { get; set; } = true;
+    public bool IsCustom { get; set; } = false;
+    public Guid? CreatedByUserId { get; set; }
 
     // ─── SP-01: Yeni Alanlar ──────────────────────────────────────────────
     /// <summary>Görevin tahmini süresi (dakika)</summary>
@@ -53,5 +55,9 @@ public sealed class AppTask : BaseEntity
     /// <summary>Hangi hedefleri destekliyor — jsonb</summary>
     [Column(TypeName = "jsonb")]
     public List<string>? TargetedGoals { get; set; }
+
+    /// <summary>Görev etiketleri — FEAT-008</summary>
+    [Column(TypeName = "jsonb")]
+    public List<string>? Tags { get; set; }
 }
 

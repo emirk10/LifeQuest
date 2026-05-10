@@ -44,8 +44,21 @@ public class UsersController : ControllerBase
 
     [HttpGet("leaderboard")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetLeaderboard()
-        => Ok(await _mediator.Send(new GetLeaderboardQueryRequest()));
+    public async Task<IActionResult> GetLeaderboard([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string filter = "global")
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        Guid? currentUserId = string.IsNullOrEmpty(userIdString) ? null : Guid.Parse(userIdString);
+
+        var request = new GetLeaderboardQueryRequest(
+            PageNumber: pageNumber,
+            PageSize: pageSize,
+            Filter: filter,
+            CurrentUserId: currentUserId
+        );
+
+        var response = await _mediator.Send(request);
+        return Ok(response);
+    }
 
     [HttpGet("activities")]
     public async Task<IActionResult> GetActivities()
@@ -173,6 +186,9 @@ public class UsersController : ControllerBase
         if (body.MotivationFactor != null) user.MotivationFactor = body.MotivationFactor;
         if (body.PreferredTasksPerWeek.HasValue) user.PreferredTasksPerWeek = body.PreferredTasksPerWeek;
         if (body.DifficultyPreference != null) user.DifficultyPreference = body.DifficultyPreference;
+        if (body.Bio != null) user.Bio = body.Bio;
+        if (body.Location != null) user.Location = body.Location;
+        if (body.Interests != null) user.Interests = body.Interests;
 
         user.UpdatedAt = DateTime.UtcNow;
         _userWriteRepository.Update(user);
@@ -195,4 +211,7 @@ public class UpdatePreferencesBody
     public string? MotivationFactor { get; set; }
     public int? PreferredTasksPerWeek { get; set; }
     public string? DifficultyPreference { get; set; }
+    public string? Bio { get; set; }
+    public string? Location { get; set; }
+    public List<string>? Interests { get; set; }
 }

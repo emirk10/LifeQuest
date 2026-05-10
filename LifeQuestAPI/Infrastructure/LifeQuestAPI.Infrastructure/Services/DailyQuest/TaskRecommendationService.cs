@@ -50,14 +50,28 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
 
         // Bugün zaten görev atanmış AppTaskId'leri bul (hariç tut)
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var assignedTaskIds = await _userTaskReadRepository
-            .GetWhere(ut => ut.AppUserId == userId
-                && ut.Status != AppTaskStatus.Expired
-                && ut.Status != AppTaskStatus.Abandoned
-                && (ut.DueDate == null || DateOnly.FromDateTime(ut.DueDate.Value) == today),
-                tracking: false)
-            .Select(ut => ut.AppTaskId)
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        var userTaskHistory = await _userTaskReadRepository
+            .GetWhere(ut => ut.AppUserId == userId && ut.CreatedAt >= sevenDaysAgo, tracking: false)
             .ToListAsync();
+
+        var assignedTaskIds = userTaskHistory
+            .Where(ut => ut.Status != AppTaskStatus.Expired
+                && ut.Status != AppTaskStatus.Abandoned
+                && (ut.DueDate == null || DateOnly.FromDateTime(ut.DueDate.Value) == today))
+            .Select(ut => ut.AppTaskId)
+            .ToList();
+
+        var abandonedTaskIds = userTaskHistory
+            .Where(ut => ut.Status == AppTaskStatus.Abandoned)
+            .Select(ut => ut.AppTaskId)
+            .ToList();
+
+        var recentlyCompletedTaskIds = userTaskHistory
+            .Where(ut => ut.Status == AppTaskStatus.Completed)
+            .Select(ut => ut.AppTaskId)
+            .ToList();
 
         // Uygun görevleri çek
         var candidateTasks = await _taskReadRepository
@@ -93,7 +107,7 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
             .Select(task => new
             {
                 Task = task,
-                Score = CalculateScore(task, user, mood, timeSlot, energyLevel, availableMinutes),
+                Score = CalculateScore(task, user, mood, timeSlot, energyLevel, availableMinutes, abandonedTaskIds, recentlyCompletedTaskIds),
                 Reason = BuildReason(task, user, mood, timeSlot, energyLevel)
             })
             .Where(x => x.Score >= 0) // skoru 0 olanları da alsın eğer görev kalmadıysa
@@ -103,8 +117,19 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
 
         // UserTask olarak kaydet (Status=Suggested)
         var result = new List<TaskRecommendationDto>();
+        var selectedCategories = new Dictionary<Guid, int>();
+
         foreach (var item in scored)
         {
+            // Variety bonus: Aynı kategoriden çok fazla öneri varsa puanı düşürmek yerine 
+            // burada bir kontrol yapabiliriz ama scored zaten sıralı. 
+            // Planda "3.'yü farklı kategoriden seç" diyor.
+            var catId = item.Task.CategoryId;
+            selectedCategories.TryGetValue(catId, out int catCount);
+            if (catCount >= 2) continue; // Basit bir variety check
+            
+            selectedCategories[catId] = catCount + 1;
+
             var userTask = new Domain.Entities.UserTask
             {
                 AppUserId = userId,
@@ -133,6 +158,8 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
                 RecommendationReason = item.Reason,
                 Status = "Suggested"
             });
+            
+            if (result.Count >= count) break;
         }
 
         await _userTaskWriteRepository.SaveAsync();
@@ -145,20 +172,26 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
         MoodMode mood,
         DayTimeSlot timeSlot,
         int energyLevel,
-        int availableMinutes)
+        int availableMinutes,
+        List<Guid> abandonedTaskIds,
+        List<Guid> recentlyCompletedTaskIds)
     {
+        ArgumentNullException.ThrowIfNull(task);
+        ArgumentNullException.ThrowIfNull(user);
+
         double score = 0.0;
 
         // 1. GoalMatch (0.25) — kullanıcının hedefleriyle görev kategorisi eşleşiyor mu?
         var userGoals = user.UserGoals ?? new List<string>();
         var taskGoals = task.TargetedGoals ?? new List<string>();
-        if (userGoals.Any() && (userGoals.Contains(task.Category?.Name?.ToLower() ?? "") || taskGoals.Any(g => userGoals.Contains(g))))
+        var categoryName = task.Category?.Name?.ToLower() ?? string.Empty;
+        if (userGoals.Any() && (userGoals.Contains(categoryName) || taskGoals.Any(g => userGoals.Contains(g))))
             score += 0.25;
 
         // 2. TimeMatch (0.20) — görev müsait süreye sığıyor mu?
         bool timeSlotMatch = task.RecommendedTimeSlots == null || !task.RecommendedTimeSlots.Any()
             || task.RecommendedTimeSlots.Contains(timeSlot);
-        bool durationFits = !task.EstimatedMinutes.HasValue || task.EstimatedMinutes.Value <= availableMinutes;
+        bool durationFits = (task.EstimatedMinutes ?? int.MaxValue) <= availableMinutes;
         if (timeSlotMatch && durationFits) score += 0.20;
 
         // 3. EnergyMatch (0.20) — enerji seviyesi görevin gereksinimlerine uyuyor mu?
@@ -178,29 +211,41 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
 
         // 6. StrengthMatch (0.10)
         var userStrengths = user.Strengths ?? new List<string>();
+        var taskDescription = task.Description ?? string.Empty;
+        var taskTitle = task.Title ?? string.Empty;
         if (userStrengths.Any() && userStrengths.Any(s =>
-            (task.Description?.Contains(s, StringComparison.OrdinalIgnoreCase) == true) ||
-            (task.Title?.Contains(s, StringComparison.OrdinalIgnoreCase) == true)))
+            taskDescription.Contains(s, StringComparison.OrdinalIgnoreCase) ||
+            taskTitle.Contains(s, StringComparison.OrdinalIgnoreCase)))
             score += 0.10;
 
-        // ── SP-03: Davranış Faktörleri ──────────────────────────────────
+        // ── SP-03 / Phase 2: Davranış Faktörleri ──────────────────────────
 
-        // 7. BehaviorBonus (0.10) — Bu kategoride geçmişte başarılıysa bonus
-        //    user.MostSkippedCategory dolu ve bu görev o kategoride değilse bonus
+        // 7. Abandoned Penalty (-0.30) — Daha önce bırakılan görevlere ceza
+        if (abandonedTaskIds.Contains(task.Id))
+            score -= 0.30;
+
+        // 8. Recency Penalty (-0.20) — Son 7 günde tamamlananları tekrar önerme
+        if (recentlyCompletedTaskIds.Contains(task.Id))
+            score -= 0.20;
+
+        // 9. Streak Bonus (+0.05) — Streak varsa besleyen görevlere hafif bonus
+        if (user.CurrentStreak > 0)
+            score += 0.05;
+
+        // 10. BehaviorBonus (0.10) / MostSkippedPenalty (-0.15)
         if (!string.IsNullOrEmpty(user.MostSkippedCategory))
         {
             bool isMostSkipped = string.Equals(
                 task.Category?.Name, user.MostSkippedCategory,
                 StringComparison.OrdinalIgnoreCase);
 
-            // 8. MostSkippedPenalty (-0.15)
             if (isMostSkipped)
                 score -= 0.15;
             else
-                score += 0.10; // BehaviorBonus — farklı kategori başarı şansı daha yüksek
+                score += 0.10;
         }
 
-        // 9. TimeOfDayBonus (0.05) — Kullanıcının en verimli saat dilimiyle eşleşiyorsa bonus
+        // 11. TimeOfDayBonus (0.05)
         if (user.PreferredMorningTime.HasValue)
         {
             var preferredSlot = user.PreferredMorningTime.Value.Hour switch
@@ -240,10 +285,10 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
         var parts = new List<string>();
 
         var userGoals = user.UserGoals ?? new List<string>();
-        if (userGoals.Any(g => task.Category?.Name?.ToLower().Contains(g) == true))
+        if (userGoals.Any(g => task.Category?.Name?.ToLower()?.Contains(g) == true))
             parts.Add($"{task.Category?.Name} hedefine uygun");
 
-        if (task.EstimatedMinutes.HasValue)
+        if (task.EstimatedMinutes.HasValue && task.EstimatedMinutes.Value > 0)
             parts.Add($"{task.EstimatedMinutes} dk içinde tamamlanabilir");
 
         var slotLabel = timeSlot switch

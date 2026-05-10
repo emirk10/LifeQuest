@@ -40,7 +40,8 @@ public class GlobalExceptionMiddleware
             var validationResponse = new
             {
                 IsSuccess = false,
-                Message = "Doğrulama hataları oluştu.",
+                Message = "Doğrulama hataları oluştu. Lütfen bilgilerinizi kontrol edin.",
+                ErrorCode = "VALIDATION_ERROR",
                 Errors = validationException.Errors.Select(e => new
                 {
                     Property = e.PropertyName,
@@ -59,7 +60,8 @@ public class GlobalExceptionMiddleware
             var businessResponse = new
             {
                 IsSuccess = false,
-                Message = businessException.Message
+                Message = businessException.Message,
+                ErrorCode = businessException.ErrorCode
             };
 
             var businessJsonResponse = JsonSerializer.Serialize(businessResponse, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
@@ -71,7 +73,8 @@ public class GlobalExceptionMiddleware
         var response = new
         {
             IsSuccess = false,
-            Message = $"Sunucuda beklenmeyen bir hata oluştu." // Avoid exposing raw exception messages to the client
+            Message = "Sunucuda beklenmeyen bir teknik hata oluştu. Mühendislerimiz bilgilendirildi.",
+            ErrorCode = "INTERNAL_SERVER_ERROR"
         };
 
         var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });

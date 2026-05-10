@@ -73,38 +73,45 @@ public class DailyQuestWorker : BackgroundService
     private async Task ResetDailyCountersAsync(IServiceProvider services, CancellationToken ct)
     {
         var userReadRepo = services.GetRequiredService<IAppUserReadRepository>();
-        var userWriteRepo = services.GetRequiredService<IAppUserWriteRepository>();
+        
+        var userIds = await userReadRepo.GetAll(tracking: false)
+            .Select(u => u.Id)
+            .ToListAsync(ct);
 
-        var users = await userReadRepo.GetAll(tracking: true).ToListAsync(ct);
         var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
         var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
 
-        // 500'lük batch'ler halinde standart (senkron) işleme
-        var batches = users.Chunk(500);
-        foreach (var batch in batches)
+        // 100'lük batch'ler halinde paralel işleme
+        var batches = userIds.Chunk(100).ToList();
+        
+        await Parallel.ForEachAsync(batches, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct }, async (batch, token) =>
         {
-            foreach (var user in batch)
+            using (var scope = _serviceProvider.CreateScope())
             {
-                user.TodayTaskCount = 0;
-                user.OverLimitWarningShown = false;
-                if (isMonday) user.WeeklyCompletedCount = 0;
+                var writeRepo = scope.ServiceProvider.GetRequiredService<IAppUserWriteRepository>();
+                var readRepo = scope.ServiceProvider.GetRequiredService<IAppUserReadRepository>();
+                
+                var usersInBatch = await readRepo.GetWhere(u => batch.Contains(u.Id), tracking: true).ToListAsync(token);
 
-                // MISS-004: Dün görev tamamlamayan kullanıcının streak'ini sıfırla
-                // Tatil modundaki kullanıcıları atla (IsOnVacation kontrolü)
-                var isOnVacation = user.GetType().GetProperty("IsOnVacation")?.GetValue(user) as bool?;
-                if (isOnVacation != true)
+                foreach (var user in usersInBatch)
                 {
-                    if (user.LastTaskCompletedDate.HasValue && user.LastTaskCompletedDate.Value < yesterday)
+                    user.TodayTaskCount = 0;
+                    user.OverLimitWarningShown = false;
+                    if (isMonday) user.WeeklyCompletedCount = 0;
+
+                    if (!user.IsOnVacation)
                     {
-                        user.CurrentStreak = 0;
+                        if (user.LastTaskCompletedDate.HasValue && user.LastTaskCompletedDate.Value < yesterday)
+                        {
+                            user.CurrentStreak = 0;
+                        }
                     }
+                    writeRepo.Update(user);
                 }
-
-                userWriteRepo.Update(user);
+                await writeRepo.SaveAsync();
             }
-        }
+        });
 
-        await userWriteRepo.SaveAsync();
-        _logger.LogInformation("SP-05 + MISS-004: {Count} kullanıcının günlük sayaçları ve streak'leri güncellendi.", users.Count);
+        _logger.LogInformation("SP-05 + MISS-004: {Count} kullanıcının günlük sayaçları ve streak'leri paralel olarak güncellendi.", userIds.Count);
     }
 }

@@ -1,0 +1,8 @@
+# LifeQuest AI Mikro Servis - Tüm Bağımlılıklar (Image Verification dahil)
+# Bu liste TensorFlow içerir, Docker image boyutu >2GB olacaktır.
+
+-r requirements.txt
+
+# Deep Learning (Image Verification)
+tensorflow==2.18.0
+pillow==11.1.0

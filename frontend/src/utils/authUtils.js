@@ -1,74 +1,32 @@
 export const getUserIdFromToken = () => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return null;
-
+  const userDataStr = sessionStorage.getItem("user_data");
+  if (!userDataStr) return null;
   try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    const decoded = JSON.parse(jsonPayload);
-
-    return decoded.nameid || decoded.sub || decoded.unique_name || null;
-  } catch (error) {
+    const userData = JSON.parse(userDataStr);
+    return userData.userId || null;
+  } catch {
     return null;
   }
 };
 
 export const getUserNameFromToken = () => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return null;
-
+  const userDataStr = sessionStorage.getItem("user_data");
+  if (!userDataStr) return null;
   try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    const decoded = JSON.parse(jsonPayload);
-
-    return (
-      decoded.unique_name ||
-      decoded.name ||
-      decoded.email ||
-      "Bilinmeyen Kullanıcı"
-    );
-  } catch (error) {
+    const userData = JSON.parse(userDataStr);
+    return userData.userName || "Bilinmeyen Kullanıcı";
+  } catch {
     return null;
   }
 };
 
 export const getUserRoleFromToken = () => {
-  const token = sessionStorage.getItem("token");
-  if (!token) return null;
-
+  const userDataStr = sessionStorage.getItem("user_data");
+  if (!userDataStr) return null;
   try {
-    const base64Url = token.split(".")[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonPayload = decodeURIComponent(
-      window
-        .atob(base64)
-        .split("")
-        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
-    );
-    const decoded = JSON.parse(jsonPayload);
-
-    return (
-      decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
-      decoded.role ||
-      null
-    );
-  } catch (error) {
+    const userData = JSON.parse(userDataStr);
+    return userData.role || null;
+  } catch {
     return null;
   }
 };

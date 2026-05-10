@@ -37,10 +37,23 @@ public class NotificationsController : ControllerBase
         var notifications = await _notificationRead.GetAll(false)
             .Where(n => n.AppUserId == userId)
             .OrderByDescending(n => n.CreatedAt)
-            .Take(50) // Son 50 bildirim
+            .Take(100)
             .ToListAsync();
 
-        return Ok(new { success = true, notifications });
+        var unreadCount = await _notificationRead.GetAll(false)
+            .CountAsync(n => n.AppUserId == userId && !n.IsRead);
+
+        var grouped = notifications
+            .GroupBy(n => n.Type)
+            .ToDictionary(g => g.Key.ToString(), g => g.ToList());
+
+        return Ok(new 
+        { 
+            success = true, 
+            unreadCount,
+            notifications, // Düz liste de kalsın
+            grouped 
+        });
     }
 
     [HttpPatch("{id}/mark-as-read")]

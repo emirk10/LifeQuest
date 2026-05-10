@@ -5,6 +5,7 @@ import chatService from "../services/chatService";
 import userService from "../services/userService";
 import MiniTaskCard from "./MiniTaskCard";
 import GoalRevisionModal from "./GoalRevisionModal";
+import axiosClient from "../api/axiosClient";
 
 // ─── Sabitler ────────────────────────────────────────────────────────────────
 
@@ -166,17 +167,13 @@ const ChatBot = () => {
 
     setActionLoading(action.type);
     try {
-      const res = await fetch("/api/chat/action", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${sessionStorage.getItem("token")}` },
-        body: JSON.stringify({
-          messageId: msgId,
-          actionType: action.type,
-          taskId: action.task_id,
-          payload: action.payload,
-        }),
+      const res = await axiosClient.post("/chat/action", {
+        messageId: msgId,
+        actionType: action.type,
+        taskId: action.task_id,
+        payload: action.payload,
       });
-      const data = await res.json();
+      const data = res.data;
 
       // Aksiyonu "kullanıldı" olarak işaretle
       setMessages(prev => prev.map(m => m.id === msgId ? { ...m, actionsUsed: true } : m));
@@ -202,10 +199,7 @@ const ChatBot = () => {
 
   const handleSelectMiniTask = async (taskId) => {
     try {
-      await fetch(`/api/user-tasks/${taskId}/select`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
-      });
+      await axiosClient.post(`/user-tasks/${taskId}/select`);
       addBotMessage("✅ Görev seçildi! Görevler sayfasında aktif görünecek.");
     } catch {
       addBotMessage("⚠️ Görev seçilirken hata oluştu.");
@@ -244,10 +238,18 @@ const ChatBot = () => {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[440px] h-[620px] bg-slate-900 rounded-3xl border border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 z-50 w-full h-full sm:w-[440px] sm:h-[620px] bg-slate-900 sm:rounded-3xl border-t sm:border border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-5 bg-gradient-to-r from-indigo-600 to-indigo-700 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setIsOpen(false)}
+                className="sm:hidden text-white/80 hover:text-white mr-1"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center text-lg backdrop-blur-sm">
                 🤖
               </div>
@@ -316,9 +318,13 @@ const ChatBot = () => {
                           key={i}
                           onClick={() => handleAction(action, msg.id)}
                           disabled={actionLoading !== null}
-                          className="text-xs bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 px-3 py-1.5 rounded-lg hover:bg-indigo-500/25 transition-colors font-semibold disabled:opacity-50"
+                          className={`text-xs border px-3 py-1.5 rounded-lg transition-all font-semibold disabled:opacity-50 ${
+                            action.type === 'create_task' 
+                              ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/25'
+                              : 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/25'
+                          }`}
                         >
-                          {actionLoading === action.type ? "⌛" : action.label}
+                          {actionLoading === action.type ? "⌛" : (action.type === 'create_task' ? `✨ ${action.label}` : action.label)}
                         </button>
                       ))}
                     </div>

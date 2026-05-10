@@ -61,6 +61,8 @@ public class MoodController : ControllerBase
                 MoodMode = m.MoodMode,
                 AvailableMinutes = m.AvailableMinutes,
                 EnergyLevel = m.EnergyLevel,
+                JournalEntry = m.JournalEntry,
+                SleepQuality = m.SleepQuality,
                 RecordedAt = m.RecordedAt
             })
             .FirstOrDefaultAsync();
@@ -89,6 +91,8 @@ public class MoodController : ControllerBase
                 MoodMode = m.MoodMode,
                 AvailableMinutes = m.AvailableMinutes,
                 EnergyLevel = m.EnergyLevel,
+                JournalEntry = m.JournalEntry,
+                SleepQuality = m.SleepQuality,
                 RecordedAt = m.RecordedAt
             })
             .ToListAsync();
@@ -97,4 +101,4 @@ public class MoodController : ControllerBase
     }
 }
 
-public record RecordDailyMoodRequest(Domain.Enums.MoodMode MoodMode, int AvailableMinutes, int EnergyLevel);
+public record RecordDailyMoodRequest(Domain.Enums.MoodMode MoodMode, int AvailableMinutes, int EnergyLevel, string? JournalEntry, int? SleepQuality);

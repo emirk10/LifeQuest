@@ -60,7 +60,7 @@ import os
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020,http://localhost:5173").split(","),
+    allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020,http://localhost:3000,http://localhost:5173,https://localhost:5173").split(","),
     allow_credentials=False,
     allow_methods=["POST", "GET"],
     allow_headers=["Content-Type"],
@@ -138,6 +138,20 @@ class RecommendRequest(BaseModel):
 class RecommendResponse(BaseModel):
     tasks: list[MiniTaskDto] = []
     question_to_ask: Optional[str] = None
+
+
+class ReflectionAnalysisRequest(BaseModel):
+    user_id: str
+    task_id: str
+    reflection_text: str = Field(..., min_length=5, max_length=1000)
+
+
+class ReflectionAnalysisResponse(BaseModel):
+    sentiment: str
+    sentiment_confidence: float
+    keywords: list[str]
+    insight: str
+    bonus_xp_eligible: bool = True
 
 
 class TrainResponse(BaseModel):
@@ -404,12 +418,37 @@ async def chat(request: ChatRequest):
 @app.post("/api/recommend-tasks", response_model=RecommendResponse, tags=["Recommendations"])
 async def recommend_tasks(request: RecommendRequest):
     """SP-02: Chatbot 'görev öner' intent'i için bağlam bazlı öneriler."""
-    # Not: Gerçek görev verisi .NET backend'den gelecek.
-    # Bu endpoint şu an placeholder olarak çalışır; SP-03'te ML entegrasyonu yapılacak.
-    question = None
-    if request.energy_level <= 2:
-        question = "Enerji seviyeniz düşük, hafif görevler mi istersiniz?"
-    return RecommendResponse(tasks=[], question_to_ask=question)
+    return RecommendResponse(tasks=[], question_to_ask=None)
+
+
+@app.post("/api/ai/analyze-reflection", response_model=ReflectionAnalysisResponse, tags=["Insights"])
+async def analyze_reflection(request: ReflectionAnalysisRequest):
+    """FEAT-002: Mikro-günlük analizi."""
+    try:
+        sentiment = sentiment_analyzer.analyze(request.reflection_text)
+        
+        # Basit keyword extraction
+        words = request.reflection_text.lower().split()
+        keywords = [w for w in words if len(w) > 4 and w not in ("oldu", "yaptım", "ettim", "vardı", "geldi")]
+        
+        # Insight üretimi
+        if sentiment["label"] == "positive":
+            insight = "Bu başarının sana hissettirdiği pozitif enerjiyi diğer görevlerine de yansıtabilirsin! ⭐"
+        elif sentiment["label"] == "negative":
+            insight = "Zorlandığın noktaları fark etmen gelişiminin bir parçası. Yarın daha güçlü döneceksin. 💙"
+        else:
+            insight = "Görevi tamamlayıp üzerine düşünmen harika bir disiplin göstergesi. ✨"
+
+        return ReflectionAnalysisResponse(
+            sentiment=sentiment["label"],
+            sentiment_confidence=sentiment["confidence"],
+            keywords=list(set(keywords))[:5],
+            insight=insight,
+            bonus_xp_eligible=True
+        )
+    except Exception as e:
+        logger.error("Reflection analiz hatası: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/api/train", response_model=TrainResponse, tags=["Admin"])

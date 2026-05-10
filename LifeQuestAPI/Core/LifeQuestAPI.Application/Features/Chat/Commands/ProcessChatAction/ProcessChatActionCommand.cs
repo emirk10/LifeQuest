@@ -2,6 +2,7 @@ using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.PostponeTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.PauseResumeTask;
 using LifeQuestAPI.Application.Repositories;
+using LifeQuestAPI.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,15 +23,24 @@ public sealed class ProcessChatActionCommandHandler
     private readonly IMediator _mediator;
     private readonly IChatBotMessageWriteRepository _chatWriteRepository;
     private readonly IChatBotMessageReadRepository _chatReadRepository;
+    private readonly IAppTaskWriteRepository _appTaskWrite;
+    private readonly ICategoryReadRepository _categoryRead;
+    private readonly IUserTaskWriteRepository _userTaskWrite;
 
     public ProcessChatActionCommandHandler(
         IMediator mediator,
         IChatBotMessageWriteRepository chatWriteRepository,
-        IChatBotMessageReadRepository chatReadRepository)
+        IChatBotMessageReadRepository chatReadRepository,
+        IAppTaskWriteRepository appTaskWrite,
+        ICategoryReadRepository categoryRead,
+        IUserTaskWriteRepository userTaskWrite)
     {
         _mediator = mediator;
         _chatWriteRepository = chatWriteRepository;
         _chatReadRepository = chatReadRepository;
+        _appTaskWrite = appTaskWrite;
+        _categoryRead = categoryRead;
+        _userTaskWrite = userTaskWrite;
     }
 
     public async Task<ChatActionResultDto> Handle(
@@ -81,6 +91,43 @@ public sealed class ProcessChatActionCommandHandler
 
                 case "activate_light_mode":
                     resultMessage = "💡 Hafif mod aktif! Sana en kolay görevi önerdim.";
+                    break;
+
+                case "create_task":
+                    if (request.Payload == null || !request.Payload.ContainsKey("title"))
+                        return Fail("Görev başlığı eksik.");
+
+                    // Varsayılan bir kategori bul (Genel veya ilk kategori)
+                    var category = await _categoryRead.GetAll(false).FirstOrDefaultAsync(cancellationToken);
+                    if (category == null) return Fail("Sistemde kategori bulunamadı.");
+
+                    var appTask = new AppTask
+                    {
+                        Title = request.Payload["title"],
+                        Description = request.Payload.GetValueOrDefault("description", "AI tarafından oluşturuldu."),
+                        CategoryId = category.Id,
+                        BaseXP = 50,
+                        Difficulty = LifeQuestAPI.Domain.Enums.DifficultyLevel.Easy,
+                        IsCustom = true,
+                        CreatedByUserId = request.UserId
+                    };
+
+                    await _appTaskWrite.AddAsync(appTask);
+                    await _appTaskWrite.SaveAsync();
+
+                    var userTask = new UserTask
+                    {
+                        AppUserId = request.UserId,
+                        AppTaskId = appTask.Id,
+                        Status = LifeQuestAPI.Domain.Enums.AppTaskStatus.Selected,
+                        AssignedAt = DateTime.UtcNow,
+                        DueDate = DateTime.UtcNow.AddHours(24)
+                    };
+
+                    await _userTaskWrite.AddAsync(userTask);
+                    await _userTaskWrite.SaveAsync();
+
+                    resultMessage = $"📝 '{appTask.Title}' görevi oluşturuldu ve listene eklendi!";
                     break;
 
                 default:

@@ -49,6 +49,8 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
   const [selectedMood, setSelectedMood] = useState(null);
   const [availableMinutes, setAvailableMinutes] = useState(30);
   const [energyLevel, setEnergyLevel] = useState(3);
+  const [journalEntry, setJournalEntry] = useState('');
+  const [sleepQuality, setSleepQuality] = useState(3);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: mood seç, 2: detaylar
 
@@ -71,8 +73,10 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
         moodMode: selectedMood.key,
         availableMinutes,
         energyLevel,
+        journalEntry,
+        sleepQuality,
       });
-      onMoodRecorded?.({ mood: selectedMood, availableMinutes, energyLevel });
+      onMoodRecorded?.({ mood: selectedMood, availableMinutes, energyLevel, journalEntry, sleepQuality });
     } catch (err) {
       console.error('Mood kaydedilemedi:', err);
     } finally {
@@ -145,6 +149,30 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
             <div className="slider-labels">
               <span>5 dk</span><span>2 saat</span><span>4 saat</span>
             </div>
+          </div>
+
+          <div className="mood-slider-group">
+            <label>
+              🌙 Uyku Kalitesi: <strong>{sleepQuality}/5</strong>
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="5"
+              value={sleepQuality}
+              onChange={(e) => setSleepQuality(Number(e.target.value))}
+              className="mood-slider"
+            />
+          </div>
+
+          <div className="mood-input-group">
+            <label>📝 Günlük Notu / Niyetin (Opsiyonel)</label>
+            <textarea
+              value={journalEntry}
+              onChange={(e) => setJournalEntry(e.target.value)}
+              placeholder="Bugün nasıl hissediyorsun? Kendine ne söylemek istersin?"
+              className="mood-textarea"
+            />
           </div>
 
           <div className="mood-actions">

@@ -4,8 +4,9 @@ import socialService from '../services/socialService';
 import ChallengeCard from '../components/ChallengeCard';
 import { challengeService } from '../services/challengeService';
 import categoryService from '../services/categoryService';
+import useSignalR from '../hooks/useSignalR';
 
-const tabs = ['Arkadaşlarım', 'İstekler', 'Mücadeleler', 'Kullanıcı Ara'];
+const tabs = ['Arkadaşlarım', 'İstekler', 'Mücadeleler', 'Kullanıcı Ara', 'Engellenenler'];
 const CHALLENGE_STATUS_TABS = ['active', 'invited', 'completed'];
 
 const SocialPage = () => {
@@ -17,6 +18,7 @@ const SocialPage = () => {
   const [categories, setCategories] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [blockedUsers, setBlockedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -27,9 +29,17 @@ const SocialPage = () => {
     challengeType: 'TaskCount',
     targetValue: 10,
     durationDays: 7,
-    winnerXPBonus: 200,
     challengerMessage: '',
     targetCategoryId: '',
+  });
+
+  // Real-time challenge updates
+  useSignalR({
+    onNotification: (notif) => {
+      if (notif?.type === 'ChallengeProgressUpdated' || notif?.type === 'ChallengeCompleted') {
+        fetchChallenges();
+      }
+    }
   });
 
 
@@ -41,16 +51,25 @@ const SocialPage = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [friendsData, requestsData, categoriesData] = await Promise.all([
-        socialService.getFriends(),
-        socialService.getFriendRequests(),
-        categoryService.getAllCategories()
+      // Ayrıştırılmış hata yönetimi: Bir servis çökerse diğerleri çalışmaya devam etsin
+      const safeFetch = async (fn, setter, defaultValue = []) => {
+        try {
+          const res = await fn();
+          setter(res);
+        } catch (err) {
+          console.error(`Fetch error:`, err);
+          setter(defaultValue);
+        }
+      };
+
+      await Promise.all([
+        safeFetch(socialService.getFriends, setFriends),
+        safeFetch(socialService.getFriendRequests, setRequests),
+        safeFetch(categoryService.getAllCategories, setCategories),
+        safeFetch(socialService.getBlockedUsers, setBlockedUsers)
       ]);
-      setFriends(friendsData);
-      setRequests(requestsData);
-      setCategories(categoriesData);
     } catch (err) {
-      console.error(err);
+      console.error("General fetch error", err);
     } finally {
       setLoading(false);
     }
@@ -117,11 +136,32 @@ const SocialPage = () => {
   };
 
   const handleRemoveFriend = async (friendshipId) => {
-    if (!confirm('Bu arkadaşlığı sonlandırmak istediğine emin misin?')) return;
+    if (!confirm('Arkadaşını listeden çıkarmak istediğine emin misin?')) return;
     try {
       await socialService.removeFriend(friendshipId);
-      showToast('Arkadaşlık sonlandırıldı.');
-      setFriends(prev => prev.filter(f => f.friendshipId !== friendshipId));
+      showToast('Arkadaşlıktan çıkarıldı.');
+      fetchData();
+    } catch (err) {
+      showToast('İşlem başarısız.', 'error');
+    }
+  };
+
+  const handleBlock = async (userId) => {
+    if (!confirm('Bu kullanıcıyı engellemek istediğine emin misin? Arkadaşlıktan çıkarılacak ve sana ulaşamayacak.')) return;
+    try {
+      await socialService.blockUser(userId);
+      showToast('Kullanıcı engellendi.');
+      fetchData();
+    } catch (err) {
+      showToast('İşlem başarısız.', 'error');
+    }
+  };
+
+  const handleUnblock = async (userId) => {
+    try {
+      await socialService.unblockUser(userId);
+      showToast('Engel kaldırıldı.');
+      fetchData();
     } catch (err) {
       showToast('İşlem başarısız.', 'error');
     }
@@ -141,7 +181,6 @@ const SocialPage = () => {
         challengeType: challengeForm.challengeType,
         targetValue: challengeForm.targetValue,
         durationDays: challengeForm.durationDays,
-        winnerXPBonus: challengeForm.winnerXPBonus,
         challengerMessage: challengeForm.challengerMessage,
         targetCategoryId: challengeForm.challengeType === 'CategoryFocus' ? challengeForm.targetCategoryId : null,
       });
@@ -258,6 +297,13 @@ const SocialPage = () => {
                         >
                           Çıkar
                         </button>
+                        <button
+                          onClick={() => handleBlock(f.friendId)}
+                          className="px-3 py-1.5 text-[10px] font-black rounded-lg bg-slate-800/50 text-rose-500/50 hover:bg-rose-500 hover:text-white transition-all uppercase"
+                          title="Engelle"
+                        >
+                          🚫
+                        </button>
                       </div>
                     </div>
                   ))
@@ -372,12 +418,21 @@ const SocialPage = () => {
                           <p className="text-slate-500 text-xs">@{user.userName} • Lv. {user.level}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleSendRequest(user.id)}
-                        className="px-4 py-2 rounded-xl bg-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white text-xs font-black transition-all uppercase"
-                      >
-                        + Arkadaş Ekle
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleSendRequest(user.id)}
+                          className="px-4 py-2 rounded-xl bg-violet-600/20 text-violet-400 hover:bg-violet-600 hover:text-white text-xs font-black transition-all uppercase"
+                        >
+                          + Arkadaş Ekle
+                        </button>
+                        <button
+                          onClick={() => handleBlock(user.id)}
+                          className="p-2 rounded-xl bg-slate-800 text-slate-500 hover:bg-rose-600 hover:text-white transition-all"
+                          title="Engelle"
+                        >
+                          🚫
+                        </button>
+                      </div>
                     </div>
                   ))}
 
@@ -385,6 +440,38 @@ const SocialPage = () => {
                     <p className="text-slate-500 text-center py-8">Kullanıcı bulunamadı.</p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* ENGELLENENLER */}
+            {activeTab === 4 && (
+              <div className="space-y-4">
+                {blockedUsers.length === 0 ? (
+                  <div className="bg-slate-900/40 rounded-2xl border border-dashed border-slate-700 p-12 text-center">
+                    <p className="text-4xl mb-4">🛡️</p>
+                    <p className="text-slate-400 font-bold">Engellenmiş kullanıcı yok.</p>
+                  </div>
+                ) : (
+                  blockedUsers.map((u) => (
+                    <div key={u.id} className="bg-slate-900/60 p-5 rounded-2xl border border-rose-500/10 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center font-black text-slate-500">
+                          {u.name.charAt(0)}{u.surname.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="text-slate-200 font-bold">{u.name} {u.surname}</p>
+                          <p className="text-slate-500 text-xs">@{u.userName}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUnblock(u.id)}
+                        className="px-4 py-2 text-xs font-black rounded-xl bg-slate-800 text-slate-400 hover:bg-white hover:text-black transition-all uppercase border border-slate-700"
+                      >
+                        Engeli Kaldır
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </>
@@ -442,12 +529,6 @@ const SocialPage = () => {
                   <input type="number" min="1" max="90" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
                     value={challengeForm.durationDays}
                     onChange={e => setChallengeForm({ ...challengeForm, durationDays: parseInt(e.target.value) })} />
-                </div>
-                <div className="flex-1">
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Ödül XP</label>
-                  <input type="number" min="50" max="1000" step="50" className="w-full bg-slate-800 rounded-xl text-white p-3 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-                    value={challengeForm.winnerXPBonus}
-                    onChange={e => setChallengeForm({ ...challengeForm, winnerXPBonus: parseInt(e.target.value) })} />
                 </div>
               </div>
               <div>

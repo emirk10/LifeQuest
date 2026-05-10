@@ -235,18 +235,12 @@ const GoalsPage = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Süre (Gün)</label>
                   <input type="number" min="1" max="365" className="w-full bg-slate-800 border-none rounded-xl text-white p-3 focus:ring-2 focus:ring-teal-500 outline-none text-sm"
                     value={newGoal.durationDays}
                     onChange={e => setNewGoal(p => ({ ...p, durationDays: parseInt(e.target.value) }))} />
-                </div>
-                <div>
-                  <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1 block">Ödül XP</label>
-                  <input type="number" min="0" step="25" className="w-full bg-slate-800 border-none rounded-xl text-white p-3 focus:ring-2 focus:ring-teal-500 outline-none text-sm"
-                    value={newGoal.bonusXP}
-                    onChange={e => setNewGoal(p => ({ ...p, bonusXP: parseInt(e.target.value) }))} />
                 </div>
               </div>
 

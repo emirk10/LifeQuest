@@ -20,39 +20,66 @@ const TaskItem = ({
   onComplete,
   onPostpone,
   onCancelPostpone,
+  onFocus,
+  tags = [],
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDesc, setShowDesc] = useState(false);
   const [showPostpone, setShowPostpone] = useState(false);
   const [postponeReason, setPostponeReason] = useState("");
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
+  // Swipe thresholds
+  const minSwipeDistance = 50;
 
   const safeDifficulty = DIFFICULTY_COLORS[difficulty] ? difficulty : "Medium";
 
+  const [showReflection, setShowReflection] = useState(false);
+  const [reflectionText, setReflectionText] = useState("");
+  const [customTags, setCustomTags] = useState("");
+
   const handleShare = async () => {
-    const email = window.prompt("Görevi e-posta ile paylaşmak istediğiniz adresi giriniz:");
-    if (!email || !email.includes("@")) {
-      alert("Lütfen geçerli bir e-posta adresi giriniz.");
-      return;
+    try {
+      const res = await axiosClient.post(`/user-tasks/${id}/share`);
+      if (res.data.success) {
+        const fullUrl = `${window.location.origin}${res.data.shareUrl}`;
+        const action = window.confirm(`Paylaşım linki oluşturuldu!\n\nLink: ${fullUrl}\n\nTamam'a basarak linki kopyalayabilir, İptal'e basarak e-posta ile paylaşmaya devam edebilirsiniz.`);
+        
+        if (action) {
+          await navigator.clipboard.writeText(fullUrl);
+          alert("Bağlantı panoya kopyalandı! 📋");
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Link oluşturma hatası:", err);
     }
+
+    const email = window.prompt("Görevi e-posta ile paylaşmak istediğiniz adresi giriniz:");
+    if (!email || !email.includes("@")) return;
 
     try {
       const res = await axiosClient.post("/social/share-task", { recipientEmail: email, taskTitle: title, taskId: id });
-      if (res.data.success) {
-        alert(res.data.message);
-      } else {
-        alert(res.data.message || "Paylaşma başarısız.");
-      }
+      alert(res.data.message || (res.data.success ? "Paylaşıldı!" : "Hata oluştu."));
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Görev paylaşılırken bir hata oluştu.");
+      alert(err.response?.data?.message || "Paylaşım hatası.");
     }
   };
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
+    if (isCompleted || isSubmitting) return;
+    setShowReflection(true);
+  };
+
+  const handleFinalComplete = async () => {
     if (isSubmitting || isCompleted) return;
     setIsSubmitting(true);
     try {
-      await onComplete(id);
+      const tagsArray = customTags ? customTags.split(',').map(t => t.trim()).filter(t => t) : [];
+      await onComplete(id, reflectionText, tagsArray);
+      setShowReflection(false);
     } catch (err) {
       console.error("Görev tamamlama hatası:", err);
     } finally {
@@ -93,16 +120,63 @@ const TaskItem = ({
     }
   };
 
+  // Swipe Handlers
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    const currentTouch = e.targetTouches[0].clientX;
+    const offset = currentTouch - touchStart;
+    
+    // Limit swipe offset for visual effect
+    if (Math.abs(offset) < 150) {
+      setSwipeOffset(offset);
+    }
+    setTouchEnd(currentTouch);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isRightSwipe && !isCompleted) {
+      handleComplete();
+    } else if (isLeftSwipe && !isCompleted && !isPostponed) {
+      setShowPostpone(true);
+    }
+    
+    setSwipeOffset(0);
+  };
+
   const isPostponed = status === 'Postponed';
 
   return (
     <div
-      className={`rounded-2xl border transition-all duration-300 ${
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeOffset === 0 ? 'transform 0.3s' : 'none' }}
+      className={`rounded-2xl border transition-all duration-300 relative overflow-hidden ${
         isCompleted
           ? "opacity-50 grayscale border-slate-800 bg-slate-900/20"
           : "border-slate-800 hover:border-indigo-500/40 bg-slate-900/40 hover:bg-slate-900/60 hover:shadow-lg hover:shadow-indigo-500/5"
       }`}
     >
+      {/* Swipe Indicators */}
+      {swipeOffset > 20 && !isCompleted && (
+        <div className="absolute inset-y-0 left-0 w-16 bg-emerald-500/20 flex items-center justify-center text-emerald-500 font-black text-xs animate-pulse">
+          BİTİR
+        </div>
+      )}
+      {swipeOffset < -20 && !isCompleted && !isPostponed && (
+        <div className="absolute inset-y-0 right-0 w-16 bg-amber-500/20 flex items-center justify-center text-amber-500 font-black text-xs animate-pulse">
+          ERTELE
+        </div>
+      )}
       <div className="p-4 flex items-center justify-between gap-4">
         {/* Checkbox + Info */}
         <div
@@ -154,6 +228,14 @@ const TaskItem = ({
                 </span>
               )}
             </div>
+            {/* Tags Display */}
+            {(tags.length > 0 || customTags) && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {tags.map((tag, i) => (
+                  <span key={i} className="text-[9px] bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/20">#{tag}</span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -182,6 +264,16 @@ const TaskItem = ({
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
+                </button>
+              )}
+
+              {!isCompleted && onFocus && (
+                <button
+                  onClick={() => onFocus({ id, title, xp, difficulty })}
+                  title="Odaklanma Modu"
+                  className="w-10 h-10 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 flex items-center justify-center transition-colors border border-indigo-500/20 shrink-0"
+                >
+                  <span className="text-lg">⏱️</span>
                 </button>
               )}
 
@@ -248,6 +340,51 @@ const TaskItem = ({
       {showDesc && description && (
         <div className="px-4 pb-4 border-t border-slate-800/50">
           <p className="text-slate-400 text-sm mt-3 leading-relaxed">{description}</p>
+        </div>
+      )}
+
+      {/* Reflection Panel — FEAT-002 */}
+      {showReflection && !isCompleted && (
+        <div className="px-4 pb-4 border-t border-slate-800/50 bg-indigo-500/5 rounded-b-2xl animate-in slide-in-from-top-2 duration-300">
+          <div className="pt-4 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <p className="text-indigo-400 text-xs font-black uppercase tracking-widest">Görevi Tamamla & Yorumla</p>
+              <span className="text-[10px] text-indigo-500/60 font-bold">+5 XP Bonus Kazan! ✍️</span>
+            </div>
+            
+            <textarea
+              placeholder="Bu görev sana ne hissettirdi? (Mikro-günlük)..."
+              value={reflectionText}
+              onChange={(e) => setReflectionText(e.target.value)}
+              className="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-indigo-500/50 transition-colors resize-none"
+              rows={2}
+            />
+
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  placeholder="Etiketler (virgülle ayır)..."
+                  value={customTags}
+                  onChange={(e) => setCustomTags(e.target.value)}
+                  className="w-full bg-slate-900/80 border border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-400 outline-none focus:border-indigo-500/50"
+                />
+              </div>
+              <button
+                onClick={handleFinalComplete}
+                disabled={isSubmitting}
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+              >
+                {isSubmitting ? "..." : "Kaydet & Bitir"}
+              </button>
+              <button
+                onClick={() => setShowReflection(false)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-400 px-4 py-2 rounded-xl text-xs font-bold transition-all"
+              >
+                İptal
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

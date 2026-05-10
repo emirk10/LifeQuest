@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import postService from '../services/postService';
+import socialService from '../services/socialService';
 import taskService from '../services/taskService';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAuth } from '../context/authContext';
 
 // ─── PostCard Bileşeni ───────────────────────────────────────────────────────
 const PostCard = ({ post, currentUserId, onDelete }) => {
@@ -132,12 +134,34 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
       {post.tags?.length > 0 && (
         <div className="px-5 pb-4 flex flex-wrap gap-2">
           {post.tags.map((tag) => (
-            <div key={tag.id} className="flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 px-3 py-2 rounded-xl">
-              <span className="text-lg">🏆</span>
-              <div>
-                <p className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">Tamamlanan Görev</p>
-                <p className="text-white text-xs font-bold">{tag.taskTitle}</p>
+            <div key={tag.id} className="flex items-center justify-between w-full bg-indigo-500/10 border border-indigo-500/20 px-3 py-2 rounded-xl">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🏆</span>
+                <div>
+                  <p className="text-[10px] text-indigo-400 font-black uppercase tracking-wider">Tamamlanan Görev</p>
+                  <p className="text-white text-xs font-bold">{tag.taskTitle}</p>
+                </div>
               </div>
+              {!isOwner && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const userTaskId = tag.userTaskId || tag.id;
+                      const res = await socialService.sendKudos(userTaskId);
+                      if (res.success) {
+                        toast.success(res.message || 'Kudos gönderildi! 🌟');
+                      } else {
+                        toast.info(res.message || 'Kudos zaten gönderilmiş.');
+                      }
+                    } catch (err) {
+                      toast.error(err.response?.data?.message || 'Kudos gönderilemedi.');
+                    }
+                  }}
+                  className="bg-indigo-600/20 hover:bg-indigo-600 text-indigo-400 hover:text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                >
+                  🌟 Kudos Ver
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -500,33 +524,31 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
 // ─── Tab Navigator ───────────────────────────────────────────────────────────
 const TabNavigator = ({ activeTab, setActiveTab }) => {
   const tabs = [
-    { id: 'create', label: 'Paylaş', icon: '✍️', color: 'indigo' },
-    { id: 'feed', label: 'Akış', icon: '👥', color: 'violet' },
-    { id: 'mine', label: 'Başarılarım', icon: '🏆', color: 'emerald' },
+    { id: 'create', label: 'Paylaş',     icon: '✍️', color: 'indigo'  },
+    { id: 'feed',   label: 'Akış',       icon: '👥', color: 'violet'  },
+    { id: 'mine',   label: 'Başarılarım',icon: '🏆', color: 'emerald' },
   ];
-
   const activeIdx = tabs.findIndex(t => t.id === activeTab);
 
   return (
-    <div className="max-w-xl mx-auto relative flex p-1.5 bg-slate-900/60 backdrop-blur-2xl border border-slate-800/50 rounded-[2rem] mb-10 sticky top-4 z-40 shadow-2xl shadow-black/40">
+    // sticky kaldırıldı — scroll'da içerik üstüne gelme sorunu çözüldü
+    <div className="max-w-xl mx-auto relative flex p-1.5 bg-slate-950/90 backdrop-blur-2xl border border-slate-800/50 rounded-[2rem] mb-10 shadow-2xl shadow-black/40">
       {/* Sliding Indicator */}
-      <div 
-        className="absolute h-[calc(100%-12px)] rounded-2xl transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1) shadow-lg"
+      <div
+        className="absolute h-[calc(100%-12px)] top-1.5 rounded-2xl transition-all duration-500 shadow-lg z-0"
         style={{
           width: `calc(${100 / tabs.length}% - 8px)`,
-          left: `calc(${(activeIdx * (100 / tabs.length))}% + 4px)`,
-          background: activeTab === 'create' ? 'rgba(79, 70, 229, 0.15)' : activeTab === 'feed' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-          border: `1px solid ${activeTab === 'create' ? 'rgba(79, 70, 229, 0.3)' : activeTab === 'feed' ? 'rgba(139, 92, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+          left: `calc(${activeIdx * (100 / tabs.length)}% + 4px)`,
+          background: activeTab === 'create' ? 'rgba(79,70,229,0.25)' : activeTab === 'feed' ? 'rgba(139,92,246,0.25)' : 'rgba(16,185,129,0.25)',
+          border: `1px solid ${activeTab === 'create' ? 'rgba(79,70,229,0.4)' : activeTab === 'feed' ? 'rgba(139,92,246,0.4)' : 'rgba(16,185,129,0.4)'}`,
         }}
       />
-      {tabs.map((tab) => (
+      {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
           className={`relative z-10 flex-1 flex flex-col sm:flex-row items-center justify-center gap-2 py-3 rounded-2xl text-[10px] sm:text-xs font-black uppercase tracking-[0.1em] transition-all duration-300 ${
-            activeTab === tab.id 
-              ? 'text-white' 
-              : 'text-slate-500 hover:text-slate-300'
+            activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
           }`}
         >
           <span className={`text-lg transition-transform duration-300 ${activeTab === tab.id ? 'scale-125' : ''}`}>
@@ -534,7 +556,7 @@ const TabNavigator = ({ activeTab, setActiveTab }) => {
           </span>
           <span className="opacity-80">{tab.label}</span>
           {activeTab === tab.id && (
-            <span className={`absolute -bottom-1 w-1 h-1 rounded-full bg-current animate-pulse`} />
+            <span className="absolute -bottom-1 w-1 h-1 rounded-full bg-current animate-pulse" />
           )}
         </button>
       ))}
@@ -544,12 +566,13 @@ const TabNavigator = ({ activeTab, setActiveTab }) => {
 
 // ─── Ana Sayfa ───────────────────────────────────────────────────────────────
 const SocialFeedPage = () => {
+  const { user } = useAuth();
+  const currentUserId = user?.userId || user?.id || null;
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userTasks, setUserTasks] = useState([]);
   const [completedGoals, setCompletedGoals] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
-  const [currentUserId, setCurrentUserId] = useState(null);
   const [activeTab, setActiveTab] = useState('feed'); // 'create', 'feed', 'mine'
 
   const fetchFeed = useCallback(async () => {
@@ -564,14 +587,7 @@ const SocialFeedPage = () => {
   }, []);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('token');
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUserId(payload.nameid);
-      } catch {}
-    }
-
+    // userId artık authContext'ten alınıyor (sessionStorage token decode etmeye gerek yok)
     import('../services/taskService').then(({ default: taskService }) => {
       taskService.getAllTasks().then((tasks) => {
         setUserTasks(Array.isArray(tasks) ? tasks : []);
@@ -621,11 +637,11 @@ const SocialFeedPage = () => {
         {/* Tab Navigation */}
         <TabNavigator activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Focused Content Layout */}
-        <div className="max-w-4xl mx-auto min-h-[60vh] relative">
-          
-          {/* Section: Create Post */}
-          <div className={`transition-all duration-500 ${activeTab === 'create' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 translate-y-10'}`}>
+        {/* Tab İçeriği — conditional render ile absolute çakışma kaldırıldı */}
+        <div className="max-w-4xl mx-auto">
+
+          {/* Paylaş */}
+          {activeTab === 'create' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
@@ -638,10 +654,10 @@ const SocialFeedPage = () => {
                 completedChallenges={completedChallenges}
               />
             </div>
-          </div>
+          )}
 
-          {/* Section: Friends Feed */}
-          <div className={`transition-all duration-500 ${activeTab === 'feed' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 translate-y-10'}`}>
+          {/* Akış */}
+          {activeTab === 'feed' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-violet-500 rounded-full" />
@@ -665,31 +681,32 @@ const SocialFeedPage = () => {
                 </div>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Section: My Posts */}
-          <div className={`transition-all duration-500 ${activeTab === 'mine' ? 'opacity-100 translate-y-0' : 'hidden opacity-0 translate-y-10'}`}>
+          {/* Başarılarım */}
+          {activeTab === 'mine' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                 Başarılarım ve İlerlemem
               </h3>
-              <div className="space-y-6">
-                {loading ? (
-                  <div className="h-48 bg-slate-900/40 rounded-3xl animate-pulse border border-slate-800" />
-                ) : myPosts.length === 0 ? (
-                  <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 text-center">
-                    <p className="text-3xl mb-3 opacity-50">⭐</p>
-                    <p className="text-slate-400 text-sm font-bold">Henüz bir paylaşımın yok.</p>
-                    <p className="text-slate-600 text-xs mt-2">İlk başarını paylaşarak seriyi başlat!</p>
-                  </div>
-                ) : (
-                  myPosts.map(post => (
+              {loading ? (
+                <div className="h-48 bg-slate-900/40 rounded-3xl animate-pulse border border-slate-800" />
+              ) : myPosts.length === 0 ? (
+                <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-8 text-center">
+                  <p className="text-3xl mb-3 opacity-50">⭐</p>
+                  <p className="text-slate-400 text-sm font-bold">Henüz bir paylaşımın yok.</p>
+                  <p className="text-slate-600 text-xs mt-2">İlk başarını paylaşarak seriyi başlat!</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {myPosts.map(post => (
                     <PostCard key={post.id} post={post} currentUserId={currentUserId} onDelete={handleDelete} />
-                  )))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
 
         </div>
       </div>

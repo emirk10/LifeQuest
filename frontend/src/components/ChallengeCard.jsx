@@ -12,8 +12,10 @@ const TYPE_ICONS = {
 const ChallengeCard = ({ challenge, onUpdate }) => {
   const [timeLeft, setTimeLeft] = useState('');
   const [responding, setResponding] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [details, setDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Canlı sayaç
   useEffect(() => {
     const calc = () => {
       const end = new Date(challenge.endDate);
@@ -41,6 +43,19 @@ const ChallengeCard = ({ challenge, onUpdate }) => {
     }
   };
 
+  const fetchDetails = async () => {
+    setShowDetails(true);
+    setLoadingDetails(true);
+    try {
+      const data = await challengeService.getChallengeDetails(challenge.id);
+      setDetails(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
   const myPct = challenge.targetValue
     ? Math.min(100, Math.round((challenge.myProgress / challenge.targetValue) * 100))
     : 0;
@@ -48,105 +63,145 @@ const ChallengeCard = ({ challenge, onUpdate }) => {
     ? Math.min(100, Math.round((challenge.opponentProgress / challenge.targetValue) * 100))
     : 0;
 
-  const isWinner = challenge.winnerId && challenge.iAmChallenger
-    ? challenge.winnerId === challenge.opponentId ? false : true
-    : challenge.winnerId && !challenge.iAmChallenger
-    ? challenge.winnerId !== challenge.opponentId : false;
+  const isWinner = challenge.winnerId && (
+    challenge.iAmChallenger 
+      ? challenge.winnerId === challenge.challengerId 
+      : challenge.winnerId === challenge.opponentId
+  );
 
   return (
-    <div style={{
-      background: 'rgba(255,255,255,0.04)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '16px',
-      padding: '1.25rem',
-      marginBottom: '0.75rem',
-      transition: 'all 0.2s'
-    }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 hover:border-rose-500/30 transition-all group shadow-xl">
+      <div className="flex justify-between items-start mb-4">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span>{TYPE_ICONS[challenge.challengeType] || '⚔️'}</span>
-            <span style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem' }}>{challenge.title}</span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">{TYPE_ICONS[challenge.challengeType] || '⚔️'}</span>
+            <h4 className="font-black text-white text-sm uppercase italic tracking-tight">{challenge.title}</h4>
           </div>
-          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)' }}>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
             vs {challenge.opponentName} • {challenge.status === 'Active' ? `⏱️ ${timeLeft}` : challenge.status}
-          </div>
+          </p>
         </div>
-        <div style={{
-          padding: '0.25rem 0.6rem',
-          borderRadius: '8px',
-          fontSize: '0.72rem',
-          fontWeight: 600,
-          background: challenge.status === 'Active' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.07)',
-          color: challenge.status === 'Active' ? '#10b981' : 'rgba(255,255,255,0.4)',
-          border: `1px solid ${challenge.status === 'Active' ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)'}`
-        }}>
-          {challenge.status === 'Invited' ? '⏳ Davet' : challenge.status === 'Active' ? 'Aktif' : challenge.status}
+        <div className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
+          challenge.status === 'Active' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'
+        }`}>
+          {challenge.status === 'Invited' ? '⏳ Davet' : challenge.status === 'Active' ? 'Aktif' : 'Bitti'}
         </div>
       </div>
 
-      {/* Progress Bars */}
       {challenge.status === 'Active' && (
-        <div style={{ marginBottom: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: '0.3rem' }}>
-            <span style={{ color: '#a78bfa', fontWeight: 600 }}>Sen: {challenge.myProgress}{challenge.targetValue ? `/${challenge.targetValue}` : ''}</span>
-            <span style={{ color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>Rakip: {challenge.opponentProgress}{challenge.targetValue ? `/${challenge.targetValue}` : ''}</span>
+        <div className="space-y-3 mb-4">
+          <div className="space-y-1">
+            <div className={`flex justify-between text-[10px] font-black uppercase tracking-widest ${challenge.challengeType === 'XPRace' ? 'text-amber-400' : 'text-indigo-400'}`}>
+              <span>Sen</span>
+              <span>{challenge.myProgress.toLocaleString()} / {challenge.targetValue.toLocaleString()} {challenge.challengeType === 'XPRace' ? 'XP' : 'birim'}</span>
+            </div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+              <div 
+                className={`h-full transition-all duration-1000 ${
+                  challenge.challengeType === 'XPRace' ? 'bg-gradient-to-r from-amber-600 to-amber-400' : 
+                  challenge.challengeType === 'StreakBattle' ? 'bg-gradient-to-r from-orange-600 to-orange-400' : 
+                  'bg-gradient-to-r from-indigo-600 to-indigo-400'
+                }`} 
+                style={{ width: `${myPct}%` }} 
+              />
+            </div>
           </div>
-          <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden', marginBottom: '0.3rem' }}>
-            <div style={{ height: '100%', width: `${myPct}%`, background: 'linear-gradient(90deg, #7c3aed, #4f46e5)', borderRadius: '99px', transition: 'width 0.5s' }} />
+          <div className="space-y-1">
+            <div className={`flex justify-between text-[10px] font-black uppercase tracking-widest ${challenge.challengeType === 'XPRace' ? 'text-amber-500/80' : 'text-rose-400'}`}>
+              <span>Rakip</span>
+              <span>{challenge.opponentProgress.toLocaleString()} / {challenge.targetValue.toLocaleString()} {challenge.challengeType === 'XPRace' ? 'XP' : 'birim'}</span>
+            </div>
+            <div className="h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+              <div 
+                className={`h-full transition-all duration-1000 ${
+                  challenge.challengeType === 'XPRace' ? 'bg-gradient-to-r from-amber-700/50 to-amber-500/50' : 
+                  'bg-gradient-to-r from-rose-600 to-rose-400'
+                }`} 
+                style={{ width: `${opPct}%` }} 
+              />
+            </div>
           </div>
-          <div style={{ height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '99px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${opPct}%`, background: 'linear-gradient(90deg, #ef4444, #dc2626)', borderRadius: '99px', transition: 'width 0.5s' }} />
-          </div>
+          
+          <button 
+            onClick={fetchDetails}
+            className="w-full mt-2 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all border border-slate-700/50"
+          >
+            Sıralamayı Gör
+          </button>
         </div>
       )}
 
-      {/* Completed */}
-      {challenge.status === 'Completed' && (
-        <div style={{
-          textAlign: 'center', padding: '0.75rem',
-          background: isWinner ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)',
-          borderRadius: '10px', marginBottom: '1rem',
-          color: isWinner ? '#10b981' : 'rgba(255,255,255,0.5)',
-          fontWeight: 600, fontSize: '0.9rem'
-        }}>
-          {isWinner ? '🏆 Kazandın! ' : '💪 Tamamlandı'}
-          {isWinner && `+${challenge.winnerXPBonus} XP`}
-        </div>
-      )}
-
-      {/* Invite Actions */}
       {challenge.status === 'Invited' && !challenge.iAmChallenger && (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="flex gap-2 mb-4">
           <button
             onClick={() => handleRespond(true)}
             disabled={responding}
-            style={{
-              flex: 1, padding: '0.5rem', background: 'rgba(16,185,129,0.2)',
-              border: '1px solid rgba(16,185,129,0.4)', borderRadius: '10px',
-              color: '#10b981', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem'
-            }}
+            className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl transition-all uppercase shadow-lg shadow-emerald-900/20"
           >
-            ✅ Kabul Et
+            {responding ? '...' : '✅ Kabul'}
           </button>
           <button
             onClick={() => handleRespond(false)}
             disabled={responding}
-            style={{
-              flex: 1, padding: '0.5rem', background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px',
-              color: '#ef4444', fontWeight: 600, cursor: 'pointer', fontSize: '0.85rem'
-            }}
+            className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-black rounded-xl transition-all uppercase"
           >
-            ❌ Reddet
+            {responding ? '...' : '❌ Red'}
           </button>
         </div>
       )}
 
+      {challenge.status === 'Completed' && (
+        <div className={`text-center p-3 rounded-xl mb-4 font-black text-xs uppercase tracking-widest border ${
+          isWinner ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-500'
+        }`}>
+          {isWinner ? '🏆 KAZANDIN!' : '🏁 TAMAMLANDI'}
+        </div>
+      )}
+
       {challenge.challengerMessage && (
-        <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.5rem', fontStyle: 'italic' }}>
+        <p className="text-[10px] text-slate-500 italic border-t border-slate-800/50 pt-3">
           "{challenge.challengerMessage}"
+        </p>
+      )}
+
+      {/* Details Modal */}
+      {showDetails && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-black text-white italic uppercase tracking-tighter">Mücadele Sıralaması</h3>
+              <button onClick={() => setShowDetails(false)} className="text-slate-500 hover:text-white">✕</button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[400px] overflow-y-auto">
+              {loadingDetails ? (
+                <div className="py-8 text-center animate-pulse text-slate-500">Yükleniyor...</div>
+              ) : (
+                details?.participants?.sort((a, b) => b.score - a.score).map((p, idx) => (
+                  <div key={p.userId} className={`flex items-center gap-4 p-3 rounded-2xl border ${p.isMe ? 'bg-indigo-600/10 border-indigo-500/30' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                    <div className="w-6 text-center font-black text-slate-500 text-xs">{idx + 1}.</div>
+                    <div className="flex-1">
+                      <p className="text-white font-bold text-sm">{p.userName} {p.isMe && '(Sen)'}</p>
+                      <div className="h-1.5 bg-slate-950 rounded-full mt-1.5 overflow-hidden">
+                        <div className="h-full bg-indigo-500" style={{ width: `${(p.progress / challenge.targetValue) * 100}%` }} />
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-indigo-400 font-black text-xs">{p.score} Puan</p>
+                      <p className="text-[10px] text-slate-500 font-bold">{p.progress} / {challenge.targetValue}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="p-6 bg-slate-900/50">
+              <button 
+                onClick={() => setShowDetails(false)}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition-all"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -10,7 +10,7 @@ namespace LifeQuestAPI.API.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+[Authorize(Roles = "Admin")]
 public class TasksController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -28,7 +28,6 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost("create-task")]
-    [Authorize]
     public async Task<IActionResult> CreateTask(CreateTaskCommandRequest request)
     {
         var response = await _mediator.Send(request);
@@ -36,7 +35,6 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost("create-bulk-tasks")]
-    [Authorize]
     public async Task<IActionResult> CreateBulkTasks(CreateBulkTasksCommandRequest request)
     {
         var response = await _mediator.Send(request);

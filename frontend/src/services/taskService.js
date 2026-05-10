@@ -7,8 +7,11 @@ const taskService = {
     return response.data.tasks || [];
   },
 
-  completeTask: async (userTaskId) => {
-    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`);
+  completeTask: async (userTaskId, reflectionText = null, customTags = []) => {
+    const response = await axiosClient.patch(`/user-tasks/${userTaskId}/complete`, {
+      reflectionText,
+      customTags
+    });
     return response.data;
   },
 

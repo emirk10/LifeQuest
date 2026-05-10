@@ -16,17 +16,27 @@ const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [myRank, setMyRank] = useState(null);
+  const [filter, setFilter] = useState('global'); // 'global' | 'friends'
+  const [timeRange, setTimeRange] = useState('alltime'); // 'alltime' | 'weekly' | 'monthly'
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const currentUserId = getUserIdFromToken?.() || null;
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
+      setLoading(true);
       try {
-        const data = await leaderboardService.getLeaderboard();
-        const list = Array.isArray(data) ? data : (data.leaderboard || []);
+        const response = await leaderboardService.getLeaderboard(page, 20, filter, timeRange);
+        const list = response.leaderboard || [];
         setLeaderboard(list);
+        setTotalCount(response.totalCount || 0);
+        
         // Find current user's rank
-        const myEntry = list.findIndex(u => u.userName === JSON.parse(sessionStorage.getItem('user_data'))?.userName);
-        if (myEntry >= 0) setMyRank(myEntry + 1);
+        const userData = JSON.parse(sessionStorage.getItem('user_data') || '{}');
+        const myEntryIndex = list.findIndex(u => u.userName === userData?.userName);
+        if (myEntryIndex >= 0) {
+          setMyRank((page - 1) * 20 + myEntryIndex + 1);
+        }
       } catch (err) {
         console.error(err);
       } finally {
@@ -34,7 +44,7 @@ const LeaderboardPage = () => {
       }
     };
     fetchLeaderboard();
-  }, []);
+  }, [page, filter, timeRange]);
 
   const top3 = leaderboard.slice(0, 3);
   const rest = leaderboard.slice(3);
@@ -48,6 +58,33 @@ const LeaderboardPage = () => {
           <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">SIRALAMALAR</h2>
           <div className="h-1.5 w-24 bg-amber-500 rounded-full shadow-[0_0_20px_rgba(245,158,11,0.6)]"></div>
           <p className="text-slate-500 text-sm mt-2">En yüksek XP'ye sahip oyuncular</p>
+          
+          <div className="flex flex-wrap gap-4 mt-6">
+            <div className="flex bg-slate-900/60 p-1 border border-slate-800 rounded-xl">
+              <button 
+                onClick={() => { setFilter('global'); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-xs font-black tracking-widest transition-all ${filter === 'global' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                🌍 KÜRESEL
+              </button>
+              <button 
+                onClick={() => { setFilter('friends'); setPage(1); }}
+                className={`px-4 py-2 rounded-lg text-xs font-black tracking-widest transition-all ${filter === 'friends' ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                🤝 ARKADAŞLAR
+              </button>
+            </div>
+
+            <select 
+              value={timeRange} 
+              onChange={(e) => { setTimeRange(e.target.value); setPage(1); }}
+              className="bg-slate-900 border border-slate-800 text-slate-300 text-xs font-bold rounded-xl px-4 py-2 outline-none focus:border-indigo-500 transition-colors"
+            >
+              <option value="alltime">Tüm Zamanlar</option>
+              <option value="weekly">Bu Hafta</option>
+              <option value="monthly">Bu Ay</option>
+            </select>
+          </div>
         </section>
 
         {loading ? (
@@ -136,6 +173,27 @@ const LeaderboardPage = () => {
               <div className="text-center py-16 text-slate-500">
                 <p className="text-4xl mb-4">🏆</p>
                 <p className="font-bold">Sıralama verisi yok.</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalCount > 20 && (
+              <div className="flex justify-center gap-4 mt-8">
+                <button 
+                  disabled={page === 1}
+                  onClick={() => setPage(p => p - 1)}
+                  className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg disabled:opacity-30"
+                >
+                  Önceki
+                </button>
+                <span className="text-slate-500 flex items-center px-4 font-bold">Sayfa {page}</span>
+                <button 
+                  disabled={page * 20 >= totalCount}
+                  onClick={() => setPage(p => p + 1)}
+                  className="px-4 py-2 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg disabled:opacity-30"
+                >
+                  Sonraki
+                </button>
               </div>
             )}
           </>

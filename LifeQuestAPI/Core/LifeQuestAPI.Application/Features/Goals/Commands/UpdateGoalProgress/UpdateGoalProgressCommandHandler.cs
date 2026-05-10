@@ -60,20 +60,17 @@ public sealed class UpdateGoalProgressCommandHandler
             return new() { Success = false, Message = "Bu hedef zaten tamamlanmış." };
 
         goal.CurrentValue += request.IncrementBy;
-        int? earnedXp = null;
 
         // Tamamlandı mı?
         if (goal.CurrentValue >= goal.TargetValue)
         {
             goal.IsCompleted = true;
             goal.CompletedAt = DateTime.UtcNow;
-            earnedXp = goal.CompletionXP;
 
-            await _gamificationService.AddExperienceAsync(request.UserId, goal.CompletionXP);
             await _notificationService.SendNotificationAsync(
                 request.UserId,
                 "Hedef Tamamlandı! 🏆",
-                $"Tebrikler! '{goal.Title}' hedefini tamamladın! +{goal.CompletionXP} XP",
+                $"Tebrikler! '{goal.Title}' hedefini tamamladın!",
                 "GoalCompleted");
         }
         else
@@ -88,10 +85,9 @@ public sealed class UpdateGoalProgressCommandHandler
             {
                 ms.IsCompleted = true;
                 ms.CompletedAt = DateTime.UtcNow;
-                await _gamificationService.AddExperienceAsync(request.UserId, ms.BonusXP);
                 await _notificationService.SendNotificationAsync(
                     request.UserId, "Milestone! 🎯",
-                    $"'{ms.Title}' adımını geçtin! +{ms.BonusXP} XP", "MilestoneCompleted");
+                    $"'{ms.Title}' adımını geçtin!", "MilestoneCompleted");
             }
             await _milestoneWriteRepository.SaveAsync();
         }
@@ -106,7 +102,7 @@ public sealed class UpdateGoalProgressCommandHandler
             CurrentValue = goal.CurrentValue,
             TargetValue = goal.TargetValue,
             IsCompleted = goal.IsCompleted,
-            EarnedXp = earnedXp
+            EarnedXp = 0
         };
     }
 }

@@ -4,6 +4,7 @@ import MainLayout from "../layouts/MainLayout";
 import TaskItem from "../components/TaskItem";
 import taskService from "../services/taskService";
 import categoryService from "../services/categoryService";
+import TaskTimer from "../components/TaskTimer";
 
 const TaskList = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +16,7 @@ const TaskList = () => {
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [activeTimerTask, setActiveTimerTask] = useState(null);
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -62,9 +64,9 @@ const TaskList = () => {
     }
   };
 
-  const handleCompleteTask = async (taskId) => {
+  const handleCompleteTask = async (taskId, reflectionText = null, customTags = []) => {
     try {
-      const result = await taskService.completeTask(taskId);
+      const result = await taskService.completeTask(taskId, reflectionText, customTags);
       if (result.success) {
         setTasks((prevTasks) =>
           prevTasks.map((t) => (t.id === taskId ? { ...t, isCompleted: true } : t))
@@ -101,6 +103,10 @@ const TaskList = () => {
 
   const handleRequestNewQuests = () => {
     navigate("/task-pool");
+  };
+
+  const handleFocusTask = (task) => {
+    setActiveTimerTask(task);
   };
 
   const completedCount = tasks.filter((t) => t.isCompleted).length;
@@ -200,6 +206,7 @@ const TaskList = () => {
                   onComplete={handleCompleteTask}
                   onPostpone={handlePostponeTask}
                   onCancelPostpone={handleCancelPostponeTask}
+                  onFocus={handleFocusTask}
                 />
               ))
             ) : (
@@ -229,6 +236,17 @@ const TaskList = () => {
           )}
         </div>
       </div>
+
+      {activeTimerTask && (
+        <TaskTimer 
+          task={activeTimerTask} 
+          onClose={() => setActiveTimerTask(null)}
+          onComplete={(id) => {
+            handleCompleteTask(id);
+            setActiveTimerTask(null);
+          }}
+        />
+      )}
     </MainLayout>
   );
 };

@@ -5,39 +5,39 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user_data");
+    const storedUser = sessionStorage.getItem("user_data");
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
+    if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
     setLoading(false);
   }, []);
 
-  const login = (userData, userToken) => {
-    localStorage.setItem("token", userToken);
-    localStorage.setItem("user_data", JSON.stringify(userData));
-    setToken(userToken);
+  const login = (userData) => {
+    sessionStorage.setItem("user_data", JSON.stringify(userData));
     setUser(userData);
     navigate("/dashboard");
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user_data");
-    setToken(null);
+  const logout = async () => {
+    try {
+      // Import and call API to clear cookies
+      const axiosClient = (await import("../api/axiosClient")).default;
+      await axiosClient.post("/Auth/revoke");
+    } catch (err) {
+      console.error("Logout API failed", err);
+    }
+    sessionStorage.removeItem("user_data");
     setUser(null);
     navigate("/login");
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

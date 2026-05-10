@@ -44,6 +44,9 @@ public class DailyQuestService : IDailyQuestService
     {
         _logger.LogInformation($"Toplu görev dağıtımı başlıyor... {DateTime.UtcNow}");
 
+        // SP-03 / Phase 3: Eski görevleri temizle
+        await ExpireOldTasksAsync();
+
         var users = await _userReadRepository.GetAll(false)
             .Include(u => u.CategoryProgresses)
             .ToListAsync();
@@ -116,5 +119,39 @@ public class DailyQuestService : IDailyQuestService
         _logger.LogInformation($"✅ {user.UserName} kullanıcısına {recommendations.Count} akıllı görev önerildi.");
 
         return recommendations.Select(r => r.UserTaskId).ToList();
+    }
+
+    private async Task ExpireOldTasksAsync()
+    {
+        var now = DateTime.UtcNow;
+
+        // 1. Süresi dolmuş Suggested görevler -> Expired
+        var expiredSuggested = await _userTaskReadRepository.GetWhere(ut =>
+            ut.Status == AppTaskStatus.Suggested &&
+            ut.DueDate < now, tracking: true).ToListAsync();
+
+        foreach (var ut in expiredSuggested)
+        {
+            ut.Status = AppTaskStatus.Expired;
+            _userTaskWriteRepository.Update(ut);
+        }
+
+        // 2. Süresi dolmuş Selected/InProgress görevler -> Abandoned (Cezalı durum)
+        var abandonedTasks = await _userTaskReadRepository.GetWhere(ut =>
+            (ut.Status == AppTaskStatus.Selected || ut.Status == AppTaskStatus.InProgress) &&
+            ut.DueDate < now, tracking: true).ToListAsync();
+
+        foreach (var ut in abandonedTasks)
+        {
+            ut.Status = AppTaskStatus.Abandoned;
+            _userTaskWriteRepository.Update(ut);
+        }
+
+        if (expiredSuggested.Any() || abandonedTasks.Any())
+        {
+            await _userTaskWriteRepository.SaveAsync();
+            _logger.LogInformation("Phase 3: {ExpiredCount} öneri süresi doldu, {AbandonedCount} aktif görev terk edildi (Abandoned).",
+                expiredSuggested.Count, abandonedTasks.Count);
+        }
     }
 }

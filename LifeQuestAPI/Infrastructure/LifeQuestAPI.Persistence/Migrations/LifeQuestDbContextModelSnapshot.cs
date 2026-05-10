@@ -36,6 +36,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -43,6 +46,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<string>("IconPath")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsHidden")
                         .HasColumnType("boolean");
@@ -86,6 +92,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -102,7 +114,13 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<bool>("IsChunkable")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsCustom")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDaily")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<int>("MaxEnergyLevel")
@@ -118,6 +136,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<List<DayTimeSlot>>("RecommendedTimeSlots")
+                        .HasColumnType("jsonb");
+
+                    b.Property<List<string>>("Tags")
                         .HasColumnType("jsonb");
 
                     b.Property<List<string>>("TargetedGoals")
@@ -143,7 +164,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.HasIndex("IsActive", "CategoryId")
                         .HasDatabaseName("IX_AppTask_IsActive_CategoryId");
 
-                    b.ToTable("AppTasks");
+                    b.ToTable("AppTasks", t =>
+                        {
+                            t.HasCheckConstraint("CK_AppTask_BaseXP", "\"BaseXP\" >= 0");
+
+                            t.HasCheckConstraint("CK_AppTask_Levels", "\"MaxLevel\" >= \"MinLevel\"");
+
+                            t.HasCheckConstraint("CK_AppTask_MinLevel", "\"MinLevel\" >= 1");
+                        });
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Badge", b =>
@@ -151,6 +179,10 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
+
+                    b.Property<string>("BadgeColor")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uuid");
@@ -161,6 +193,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("CriteriaType")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -169,11 +204,27 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSecret")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Rarity")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<int>("RequiredLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RequiredValue")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Type")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -195,6 +246,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -202,6 +256,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<string>("IconPath")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -242,6 +299,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -250,6 +310,9 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateTime>("InvitedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsPublic")
                         .HasColumnType("boolean");
@@ -321,6 +384,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("CurrentProgress")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsWinner")
                         .HasColumnType("boolean");
 
@@ -370,11 +439,17 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Intent")
                         .HasColumnType("text");
 
                     b.Property<float?>("IntentConfidence")
                         .HasColumnType("real");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsProactive")
                         .HasColumnType("boolean");
@@ -422,6 +497,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("RequesterId")
                         .HasColumnType("uuid");
 
@@ -456,7 +537,13 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<int>("OrderIndex")
@@ -491,6 +578,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -524,6 +617,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("AverageDailyActiveMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Bio")
+                        .HasColumnType("text");
+
                     b.Property<string>("ChatPersonality")
                         .IsRequired()
                         .HasColumnType("text");
@@ -541,6 +637,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(3);
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DifficultyPreference")
                         .HasColumnType("text");
@@ -564,6 +663,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<bool>("HasCompletedFirstTask")
                         .HasColumnType("boolean");
 
+                    b.Property<List<string>>("Interests")
+                        .HasColumnType("jsonb");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsEmailVerified")
                         .HasColumnType("boolean");
 
@@ -577,6 +682,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("date");
 
                     b.Property<string>("LifestyleType")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Location")
                         .HasColumnType("text");
 
                     b.Property<int>("LongestStreak")
@@ -713,6 +821,45 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.ToTable("AppUsers");
                 });
 
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Kudos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ReceiverId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserTaskId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReceiverId");
+
+                    b.HasIndex("UserTaskId");
+
+                    b.HasIndex("SenderId", "UserTaskId")
+                        .IsUnique();
+
+                    b.ToTable("Kudos");
+                });
+
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -728,8 +875,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("IconEmoji")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("boolean");
@@ -753,7 +906,11 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId", "IsRead");
+                    b.HasIndex("AppUserId", "CreatedAt")
+                        .HasDatabaseName("IX_Notification_UserId_CreatedAt");
+
+                    b.HasIndex("AppUserId", "IsRead", "CreatedAt")
+                        .HasDatabaseName("IX_Notification_UserId_IsRead_CreatedAt");
 
                     b.ToTable("Notifications");
                 });
@@ -776,6 +933,12 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("QuestionKey")
                         .IsRequired()
@@ -806,8 +969,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("ImageUrl")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -836,6 +1005,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
@@ -862,6 +1037,12 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
@@ -897,6 +1078,12 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
@@ -930,10 +1117,16 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("CurrentProgress")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EarnedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -964,8 +1157,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("EarnedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -996,6 +1195,12 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<int>("CurrentXp")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Level")
                         .HasColumnType("integer");
@@ -1037,14 +1242,26 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateOnly>("Date")
                         .HasColumnType("date");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("EnergyLevel")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JournalEntry")
+                        .HasColumnType("text");
 
                     b.Property<int>("MoodMode")
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("RecordedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("SleepQuality")
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1101,6 +1318,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("CurrentValue")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1115,6 +1335,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastReminderAt")
@@ -1186,8 +1409,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<List<string>>("CustomTags")
+                        .HasColumnType("jsonb");
+
                     b.Property<int?>("DayTimeSlot")
                         .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("timestamp with time zone");
@@ -1196,6 +1425,9 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.Property<bool>("IsCompensated")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPostponed")
@@ -1209,6 +1441,15 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateOnly?>("PostponedTo")
                         .HasColumnType("date");
+
+                    b.Property<string>("ReflectionText")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ShareToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ShareTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SkipReason")
                         .HasColumnType("text");
@@ -1237,13 +1478,16 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.HasIndex("AppTaskId");
 
-                    b.HasIndex("AppUserId", "DueDate")
-                        .HasDatabaseName("IX_UserTask_UserId_DueDate");
+                    b.HasIndex("AppUserId", "DueDate", "CreatedAt")
+                        .HasDatabaseName("IX_UserTask_UserId_DueDate_CreatedAt");
 
-                    b.HasIndex("AppUserId", "Status")
-                        .HasDatabaseName("IX_UserTask_UserId_Status");
+                    b.HasIndex("AppUserId", "Status", "CreatedAt")
+                        .HasDatabaseName("IX_UserTask_UserId_Status_CreatedAt");
 
-                    b.ToTable("UserTasks");
+                    b.ToTable("UserTasks", t =>
+                        {
+                            t.HasCheckConstraint("CK_UserTask_XpRate", "\"XpCompensationRate\" >= 0 AND \"XpCompensationRate\" <= 1.5");
+                        });
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserTaskInteraction", b =>
@@ -1267,8 +1511,14 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<int>("DayOfWeek")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("HourOfDay")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<float>("Rating")
                         .HasColumnType("real");
@@ -1328,6 +1578,12 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<float?>("OverallPerformanceScore")
                         .HasColumnType("real");
@@ -1495,6 +1751,33 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("AppRole");
+                });
+
+            modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Kudos", b =>
+                {
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Receiver")
+                        .WithMany()
+                        .HasForeignKey("ReceiverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LifeQuestAPI.Domain.Entities.UserTask", "UserTask")
+                        .WithMany()
+                        .HasForeignKey("UserTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Receiver");
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("UserTask");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Notification", b =>

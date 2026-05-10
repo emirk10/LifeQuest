@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import categoryService from "../services/categoryService";
 import taskService from "../services/taskService";
 import badgeService from "../services/badgeService";
 import axiosClient from "../api/axiosClient";
+import { getUserRoleFromToken } from "../utils/authUtils";
+import AdminAnalytics from "../components/AdminAnalytics";
 
 const sampleJson = {
   categories: [
@@ -32,6 +35,7 @@ const AdminPage = () => {
   const [jsonInput, setJsonInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [wipeDatabase, setWipeDatabase] = useState(false);
+  const navigate = useNavigate();
 
   const [taskData, setTaskData] = useState({
     title: "",
@@ -55,8 +59,13 @@ const AdminPage = () => {
   });
 
   useEffect(() => {
+    const role = getUserRoleFromToken();
+    if (role !== "Admin") {
+      navigate("/dashboard");
+      return;
+    }
     loadCategories();
-  }, []);
+  }, [navigate]);
 
   const loadCategories = async () => {
     try {
@@ -157,6 +166,7 @@ const AdminPage = () => {
               { id: "categories", label: "📂 Kategoriler" },
               { id: "tasks", label: "⚔️ Görevler" },
               { id: "badges", label: "🏆 Rozetler" },
+              { id: "analytics", label: "📊 Analitik" },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -247,6 +257,8 @@ const AdminPage = () => {
             </div>
           </div>
         )}
+
+        {activeTab === "analytics" && <AdminAnalytics />}
 
         {activeTab === "json-seed" && (
           <div className="bg-slate-900/40 p-10 rounded-[3rem] border border-slate-800 flex flex-col justify-between relative overflow-hidden min-h-[600px]">

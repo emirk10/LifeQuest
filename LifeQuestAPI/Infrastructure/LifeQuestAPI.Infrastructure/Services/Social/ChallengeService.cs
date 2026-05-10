@@ -26,11 +26,11 @@ public sealed class ChallengeService : IChallengeService
         _notificationService = notificationService;
     }
 
-    public async Task UpdateChallengeProgressAsync(Guid userId, Guid? categoryId)
+    public async Task UpdateChallengeProgressAsync(Guid userId, Guid? categoryId, int earnedXp)
     {
         var now = DateTime.UtcNow;
 
-        // SP-05: Status enum ile aktif mücadeleleri getir
+        // Status enum ile aktif mücadeleleri getir
         var activeChallenges = await _challengeReadRepository.Table
             .Where(c => c.Status == ChallengeStatus.Active &&
                         c.StartDate <= now &&
@@ -53,10 +53,13 @@ public sealed class ChallengeService : IChallengeService
             bool isWinnerDetermined = false;
             bool isChallenger = challenge.ChallengerId == userId;
 
+            // Puan artışı (XPRace ise XP kadar, değilse 1 birim)
+            int increment = challenge.ChallengeType == ChallengeType.XPRace ? earnedXp : 1;
+
             if (isChallenger)
-                challenge.ChallengerProgress++;
+                challenge.ChallengerProgress += increment;
             else
-                challenge.OpponentProgress++;
+                challenge.OpponentProgress += increment;
 
             // TargetValue varsa — kazanan kontrolü
             if (challenge.TargetValue.HasValue)
@@ -72,12 +75,10 @@ public sealed class ChallengeService : IChallengeService
 
             if (isWinnerDetermined)
             {
-                await _gamificationService.AddExperienceAsync(userId, challenge.WinnerXPBonus);
-
                 var loserId = isChallenger ? challenge.OpponentId : challenge.ChallengerId;
                 await _notificationService.SendNotificationAsync(
                     userId, "Mücadele Kazandın! 🏆",
-                    $"'{challenge.Title}' mücadelesini kazandın! +{challenge.WinnerXPBonus} XP",
+                    $"'{challenge.Title}' mücadelesini kazandın!",
                     "ChallengeCompleted");
                 await _notificationService.SendNotificationAsync(
                     loserId, "Mücadele Sona Erdi",
@@ -86,16 +87,18 @@ public sealed class ChallengeService : IChallengeService
             }
             else
             {
-                // Canlı ilerleme bildirimi (her 25% de bir)
+                // Canlı ilerleme bildirimi (her 25% de bir veya XPRace için her güncellemede?)
                 int myProg = isChallenger ? challenge.ChallengerProgress : challenge.OpponentProgress;
                 int target = challenge.TargetValue ?? 100;
                 int pct = (int)((double)myProg / target * 100);
-                if (pct > 0 && pct % 25 == 0)
+                
+                // XPRace ise her zaman bildirim gönderilebilir veya belli eşiklerde
+                if (challenge.ChallengeType == ChallengeType.XPRace || (pct > 0 && pct % 25 == 0))
                 {
                     var opponentId = isChallenger ? challenge.OpponentId : challenge.ChallengerId;
                     await _notificationService.SendNotificationAsync(
                         opponentId, "Rakibin İlerliyor! ⚠️",
-                        $"'{challenge.Title}' mücadelesinde rakibin %{pct} tamamladı!",
+                        $"'{challenge.Title}' mücadelesinde rakibin ilerleme kaydetti!",
                         "ChallengeProgressUpdated");
                 }
             }

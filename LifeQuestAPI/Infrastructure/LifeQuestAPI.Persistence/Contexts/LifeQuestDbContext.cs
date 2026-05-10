@@ -1,3 +1,4 @@
+using LifeQuestAPI.Domain.Entities.Common;
 using LifeQuestAPI.Domain.Entities.Identity;
 using LifeQuestAPI.Domain.Entities;
 using LifeQuestAPI.Domain.Enums;
@@ -35,6 +36,7 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<OnboardingResponse> OnboardingResponses { get; set; }
     public DbSet<GoalMilestone> GoalMilestones { get; set; }
     public DbSet<ChallengeParticipant> ChallengeParticipants { get; set; }
+    public DbSet<Kudos> Kudos { get; set; }
 
     // Social Feed
     public DbSet<Post> Posts { get; set; }
@@ -110,7 +112,12 @@ public sealed class LifeQuestDbContext : DbContext
 
         // Notification index
         modelBuilder.Entity<Notification>()
-            .HasIndex(n => new { n.AppUserId, n.IsRead });
+            .HasIndex(n => new { n.AppUserId, n.CreatedAt })
+            .HasDatabaseName("IX_Notification_UserId_CreatedAt");
+
+        modelBuilder.Entity<Notification>()
+            .HasIndex(n => new { n.AppUserId, n.IsRead, n.CreatedAt })
+            .HasDatabaseName("IX_Notification_UserId_IsRead_CreatedAt");
 
         // WeeklyReport index
         modelBuilder.Entity<WeeklyReport>()
@@ -125,6 +132,7 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<UserDailyMood>()
             .HasIndex(m => m.Date);
 
+
         // AppUser jsonb kolonları
         modelBuilder.Entity<AppUser>()
             .Property(u => u.UserGoals)
@@ -137,6 +145,10 @@ public sealed class LifeQuestDbContext : DbContext
 
         modelBuilder.Entity<AppUser>()
             .Property(u => u.Weaknesses)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppUser>()
+            .Property(u => u.Interests)
             .HasColumnType("jsonb");
 
         // AppUser.Goals → UserGoalsList navigation
@@ -157,6 +169,27 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<AppTask>()
             .Property(t => t.TargetedGoals)
             .HasColumnType("jsonb");
+
+        modelBuilder.Entity<AppTask>()
+            .Property(t => t.Tags)
+            .HasColumnType("jsonb");
+
+        modelBuilder.Entity<UserTask>()
+            .Property(ut => ut.CustomTags)
+            .HasColumnType("jsonb");
+
+        // SP-03 / Phase 3: Database Constraints
+        modelBuilder.Entity<AppTask>(entity =>
+        {
+            entity.ToTable(t => t.HasCheckConstraint("CK_AppTask_BaseXP", "\"BaseXP\" >= 0"));
+            entity.ToTable(t => t.HasCheckConstraint("CK_AppTask_Levels", "\"MaxLevel\" >= \"MinLevel\""));
+            entity.ToTable(t => t.HasCheckConstraint("CK_AppTask_MinLevel", "\"MinLevel\" >= 1"));
+        });
+
+        modelBuilder.Entity<UserTask>(entity =>
+        {
+            entity.ToTable(t => t.HasCheckConstraint("CK_UserTask_XpRate", "\"XpCompensationRate\" >= 0 AND \"XpCompensationRate\" <= 1.5"));
+        });
 
         modelBuilder.Entity<ChatBotMessage>()
             .HasIndex(m => m.AppUserId);
@@ -219,12 +252,12 @@ public sealed class LifeQuestDbContext : DbContext
 
         // IMP-006: Eksik performans indeksleri
         modelBuilder.Entity<UserTask>()
-            .HasIndex(ut => new { ut.AppUserId, ut.Status })
-            .HasDatabaseName("IX_UserTask_UserId_Status");
+            .HasIndex(ut => new { ut.AppUserId, ut.Status, ut.CreatedAt })
+            .HasDatabaseName("IX_UserTask_UserId_Status_CreatedAt");
 
         modelBuilder.Entity<UserTask>()
-            .HasIndex(ut => new { ut.AppUserId, ut.DueDate })
-            .HasDatabaseName("IX_UserTask_UserId_DueDate");
+            .HasIndex(ut => new { ut.AppUserId, ut.DueDate, ut.CreatedAt })
+            .HasDatabaseName("IX_UserTask_UserId_DueDate_CreatedAt");
 
         modelBuilder.Entity<ChatBotMessage>()
             .HasIndex(m => new { m.AppUserId, m.CreatedAt })
@@ -291,6 +324,71 @@ public sealed class LifeQuestDbContext : DbContext
             .HasForeignKey(pc => pc.AppUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Kudos — FEAT-005
+        modelBuilder.Entity<Kudos>()
+            .HasOne(k => k.Sender)
+            .WithMany()
+            .HasForeignKey(k => k.SenderId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Kudos>()
+            .HasOne(k => k.Receiver)
+            .WithMany()
+            .HasForeignKey(k => k.ReceiverId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Kudos>()
+            .HasOne(k => k.UserTask)
+            .WithMany()
+            .HasForeignKey(k => k.UserTaskId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Kudos>()
+            .HasIndex(k => new { k.SenderId, k.UserTaskId })
+            .IsUnique();
+
+        // Soft Delete Global Filter
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(ConvertFilterExpression(entityType.ClrType));
+            }
+        }
+
         base.OnModelCreating(modelBuilder);
+    }
+
+    private static System.Linq.Expressions.LambdaExpression ConvertFilterExpression(Type type)
+    {
+        var parameter = System.Linq.Expressions.Expression.Parameter(type, "e");
+        var property = System.Linq.Expressions.Expression.Property(parameter, "IsDeleted");
+        var comparison = System.Linq.Expressions.Expression.Equal(property, System.Linq.Expressions.Expression.Constant(false));
+        return System.Linq.Expressions.Expression.Lambda(comparison, parameter);
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries<BaseEntity>();
+
+        foreach (var entry in entries)
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    break;
+                case EntityState.Modified:
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    break;
+                case EntityState.Deleted:
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeleted = true;
+                    entry.Entity.DeletedAt = DateTime.UtcNow;
+                    break;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

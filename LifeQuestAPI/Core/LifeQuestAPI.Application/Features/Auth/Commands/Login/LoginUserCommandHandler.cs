@@ -48,9 +48,14 @@ public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommandRe
 
         return new LoginUserCommandResponse
         {
+            IsSuccess = true,
+            Message = "Giriş başarılı.",
             Token = token,
             RefreshToken = refreshToken,
-            RefreshTokenExpiration = expiry
+            RefreshTokenExpiration = expiry,
+            UserId = user.Id,
+            UserName = user.UserName,
+            Role = user.AppRole?.Name ?? "User"
         };
     }
 }

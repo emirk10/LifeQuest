@@ -21,6 +21,10 @@ const userService = {
     const response = await axiosClient.get("/users/stats");
     return response.data;
   },
+  updateProfile: async (data) => {
+    const response = await axiosClient.patch("/users/profile-fields", data);
+    return response.data;
+  },
 };
 
 export default userService;

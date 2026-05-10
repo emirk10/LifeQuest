@@ -31,8 +31,9 @@ public class OnboardingController : ControllerBase
     [HttpGet("status")]
     public async Task<IActionResult> GetStatus()
     {
-        // Kullanıcı bilgisi direkt JWT'den alınır
-        // Detaylı durum için kullanıcı profil endpoint'i kullanılabilir
-        return Ok(new { OnboardingCompleted = true });
+        var userId = GetUserId();
+        var request = new LifeQuestAPI.Application.Features.Onboarding.Queries.GetOnboardingStatus.GetOnboardingStatusQueryRequest { UserId = userId };
+        var result = await _mediator.Send(request);
+        return Ok(result);
     }
 }

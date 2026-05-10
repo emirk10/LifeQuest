@@ -10,6 +10,8 @@ using LifeQuestAPI.Application.Features.UserTasks.Queries.GetDailyTaskPool;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.SelectTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.PostponeTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.PauseResumeTask;
+using LifeQuestAPI.Application.Features.UserTasks.Commands.ShareUserTask;
+using LifeQuestAPI.Application.Features.UserTasks.Queries.GetSharedTaskByToken;
 
 namespace LifeQuestAPI.API.Controllers;
 
@@ -85,7 +87,7 @@ public class UserTasksController : ControllerBase
     }
 
     [HttpPatch("{id}/complete")]
-    public async Task<IActionResult> CompleteTask([FromRoute] Guid id)
+    public async Task<IActionResult> CompleteTask([FromRoute] Guid id, [FromBody] CompleteTaskBody? body)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
@@ -93,7 +95,9 @@ public class UserTasksController : ControllerBase
         var request = new CompleteUserTaskCommandRequest
         {
             UserTaskId = id,
-            UserId = Guid.Parse(userIdString)
+            UserId = Guid.Parse(userIdString),
+            ReflectionText = body?.ReflectionText,
+            CustomTags = body?.CustomTags
         };
 
         var response = await _mediator.Send(request);
@@ -101,6 +105,37 @@ public class UserTasksController : ControllerBase
         if (!response.Success)
             return BadRequest(response);
 
+        return Ok(response);
+    }
+
+    /// <summary>Görevi paylaşmak için token oluştur — FEAT-001</summary>
+    [HttpPost("{id}/share")]
+    public async Task<IActionResult> ShareTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var request = new ShareUserTaskCommandRequest
+        {
+            UserTaskId = id,
+            UserId = Guid.Parse(userIdString)
+        };
+
+        var response = await _mediator.Send(request);
+        if (!response.Success) return BadRequest(response);
+
+        return Ok(response);
+    }
+
+    /// <summary>Paylaşılan görevi görüntüle (Login gerekmez) — FEAT-001</summary>
+    [HttpGet("shared/{token}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetSharedTask([FromRoute] string token)
+    {
+        var request = new GetSharedTaskByTokenQueryRequest { Token = token };
+        var response = await _mediator.Send(request);
+
+        if (!response.Success) return NotFound(response);
         return Ok(response);
     }
 
@@ -293,3 +328,4 @@ public class UserTasksController : ControllerBase
 // Request body record'ları
 public record PostponeTaskBody(DateOnly? PostponeTo, string? SkipReason);
 public record AbandonTaskBody(string? Reason);
+public record CompleteTaskBody(string? ReflectionText, List<string>? CustomTags);

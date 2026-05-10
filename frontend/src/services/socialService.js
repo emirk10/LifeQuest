@@ -54,6 +54,25 @@ const socialService = {
     const response = await axiosClient.post('/social/challenges', challengeData);
     return response.data;
   },
+  
+  // P4-T1: Engelleme işlemleri
+  getBlockedUsers: async () => {
+    const response = await axiosClient.get('/social/blocked-users');
+    return response.data.blockedUsers || [];
+  },
+  blockUser: async (targetUserId) => {
+    const response = await axiosClient.post(`/social/block/${targetUserId}`);
+    return response.data;
+  },
+  unblockUser: async (targetUserId) => {
+    const response = await axiosClient.post(`/social/unblock/${targetUserId}`);
+    return response.data;
+  },
+  // P4-T2: Kudos gönder
+  sendKudos: async (userTaskId) => {
+    const response = await axiosClient.post('/social/kudos', { userTaskId });
+    return response.data;
+  },
 };
 
 export default socialService;

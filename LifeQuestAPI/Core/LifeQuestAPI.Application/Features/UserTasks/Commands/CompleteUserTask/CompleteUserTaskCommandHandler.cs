@@ -82,6 +82,10 @@ public sealed class CompleteUserTaskCommandHandler
         int xpToEarn = task.BaseXP;
         userTask.CompletedAt = DateTime.UtcNow;
         userTask.Status = AppTaskStatus.Completed;
+        
+        // FEAT-002 & FEAT-008
+        userTask.ReflectionText = request.ReflectionText;
+        userTask.CustomTags = request.CustomTags;
 
         await _gamificationService.AddExperienceWithTaskAsync(request.UserId, xpToEarn, userTask, task.CategoryId);
         await _userTaskWriteRepository.SaveAsync();
@@ -133,6 +137,10 @@ public sealed class CompleteUserTaskCommandHandler
                            ut.Id != userTask.Id);
             if (isFirstTaskToday)
                 bonusXp += 20;
+
+            // FEAT-002: Reflection Bonusu (+5 XP)
+            if (!string.IsNullOrWhiteSpace(request.ReflectionText))
+                bonusXp += 5;
 
             // Geri dönüş bonusu: 3+ gün aradan sonra +50 XP
             bool isComebackBonus = user.LastTaskCompletedDate.HasValue &&
@@ -187,7 +195,7 @@ public sealed class CompleteUserTaskCommandHandler
 
         // 4. Başarımları ve Mücadeleleri kontrol et
         await _achievementService.CheckAchievementsAsync(request.UserId);
-        await _challengeService.UpdateChallengeProgressAsync(request.UserId, task.CategoryId);
+        await _challengeService.UpdateChallengeProgressAsync(request.UserId, task.CategoryId, xpToEarn);
 
         return new()
         {
@@ -230,12 +238,11 @@ public sealed class CompleteUserTaskCommandHandler
             {
                 goal.IsCompleted = true;
                 goal.CompletedAt = DateTime.UtcNow;
-                await _gamificationService.AddExperienceAsync(userId, goal.CompletionXP);
 
                 await _notificationService.SendNotificationAsync(
                     userId,
                     "Hedef Tamamlandı! 🏆",
-                    $"Tebrikler! '{goal.Title}' hedefini tamamladın! +{goal.CompletionXP} XP",
+                    $"Tebrikler! '{goal.Title}' hedefini tamamladın!",
                     "GoalCompleted");
             }
             else
@@ -250,12 +257,11 @@ public sealed class CompleteUserTaskCommandHandler
                 {
                     milestone.IsCompleted = true;
                     milestone.CompletedAt = DateTime.UtcNow;
-                    await _gamificationService.AddExperienceAsync(userId, milestone.BonusXP);
 
                     await _notificationService.SendNotificationAsync(
                         userId,
                         "Milestone Tamamlandı! 🎯",
-                        $"'{goal.Title}' hedefinde '{milestone.Title}' adımını geçtin! +{milestone.BonusXP} XP",
+                        $"'{goal.Title}' hedefinde '{milestone.Title}' adımını geçtin!",
                         "MilestoneCompleted");
                 }
                 await _milestoneWriteRepository.SaveAsync();

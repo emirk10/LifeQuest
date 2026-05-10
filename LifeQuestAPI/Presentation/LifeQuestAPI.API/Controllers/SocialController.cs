@@ -2,6 +2,7 @@ using LifeQuestAPI.Application.Abstractions.Email;
 using LifeQuestAPI.Application.Features.Social.Commands.SendChallengeInvite;
 using LifeQuestAPI.Application.Features.Social.Commands.RespondToChallenge;
 using LifeQuestAPI.Application.Features.Social.Queries.GetActiveChallenges;
+using LifeQuestAPI.Application.Features.Social.Commands.GiveKudos;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
 using LifeQuestAPI.Domain.Enums;
@@ -199,6 +200,83 @@ public class SocialController : ControllerBase
         return Ok(new { success = true, message = "İstek reddedildi." });
     }
 
+    [HttpPost("block/{targetUserId}")]
+    public async Task<IActionResult> BlockUser(Guid targetUserId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        if (userId == targetUserId) return BadRequest(new { success = false, message = "Kendinizi engelleyemezsiniz." });
+
+        var friendship = await _friendshipRead.GetAll(false)
+            .FirstOrDefaultAsync(f =>
+                (f.RequesterId == userId && f.AddresseeId == targetUserId) ||
+                (f.RequesterId == targetUserId && f.AddresseeId == userId));
+
+        if (friendship == null)
+        {
+            friendship = new Friendship
+            {
+                RequesterId = userId.Value,
+                AddresseeId = targetUserId,
+                Status = FriendshipStatus.Blocked
+            };
+            await _friendshipWrite.AddAsync(friendship);
+        }
+        else
+        {
+            friendship.Status = FriendshipStatus.Blocked;
+            // Engelleyen her zaman requester gibi davranırız (basitlik için)
+            friendship.RequesterId = userId.Value;
+            friendship.AddresseeId = targetUserId;
+            _friendshipWrite.Update(friendship);
+        }
+
+        await _friendshipWrite.SaveAsync();
+        return Ok(new { success = true, message = "Kullanıcı engellendi." });
+    }
+
+    [HttpPost("unblock/{targetUserId}")]
+    public async Task<IActionResult> UnblockUser(Guid targetUserId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var friendship = await _friendshipRead.GetAll(false)
+            .FirstOrDefaultAsync(f =>
+                f.RequesterId == userId && f.AddresseeId == targetUserId && f.Status == FriendshipStatus.Blocked);
+
+        if (friendship == null)
+            return NotFound(new { success = false, message = "Engellenmiş kullanıcı bulunamadı." });
+
+        _friendshipWrite.Remove(friendship);
+        await _friendshipWrite.SaveAsync();
+
+        return Ok(new { success = true, message = "Engelleme kaldırıldı." });
+    }
+
+    [HttpGet("blocked-users")]
+    public async Task<IActionResult> GetBlockedUsers()
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var blocked = await _friendshipRead.GetAll(false)
+            .Where(f => f.RequesterId == userId && f.Status == FriendshipStatus.Blocked)
+            .Include(f => f.Addressee)
+            .Select(f => new
+            {
+                id = f.Addressee.Id,
+                name = f.Addressee.Name,
+                surname = f.Addressee.Surname,
+                userName = f.Addressee.UserName,
+                avatarId = f.Addressee.AvatarId
+            })
+            .ToListAsync();
+
+        return Ok(new { success = true, blockedUsers = blocked });
+    }
+
     [HttpDelete("friends/{friendshipId}")]
     public async Task<IActionResult> RemoveFriend(Guid friendshipId)
     {
@@ -244,6 +322,21 @@ public class SocialController : ControllerBase
             .ToListAsync();
 
         return Ok(new { success = true, users });
+    }
+
+    /// <summary>Görevi tamamlayan arkadaşına Kudos ver — FEAT-005</summary>
+    [HttpPost("kudos")]
+    public async Task<IActionResult> GiveKudos([FromBody] GiveKudosCommandRequest request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        request.SenderId = userId.Value;
+
+        var response = await _mediator.Send(request);
+        if (!response.Success) return BadRequest(response);
+
+        return Ok(response);
     }
 
     // ================================================================
@@ -332,6 +425,60 @@ public class SocialController : ControllerBase
         await _challengeWrite.SaveAsync();
 
         return Ok(new { success = true, message = "Mücadele iptal edildi." });
+    }
+
+    /// <summary>P4-T2: Mücadele detaylarını ve katılımcı sıralamasını getir</summary>
+    [HttpGet("challenges/{challengeId}")]
+    public async Task<IActionResult> GetChallengeDetails(Guid challengeId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var challenge = await _challengeRead.Table.AsNoTracking()
+            .Include(c => c.Challenger)
+            .Include(c => c.Opponent)
+            .Include(c => c.Participants)
+                .ThenInclude(p => p.User)
+            .Include(c => c.TargetCategory)
+            .Include(c => c.TargetAppTask)
+            .FirstOrDefaultAsync(c => c.Id == challengeId);
+
+        if (challenge == null)
+            return NotFound(new { success = false, message = "Mücadele bulunamadı." });
+
+        var participants = challenge.Participants
+            .OrderByDescending(p => p.CurrentProgress)
+            .Select(p => new
+            {
+                userId = p.UserId,
+                userName = p.User.UserName,
+                fullName = p.User.FullName,
+                avatarId = p.User.AvatarId,
+                score = p.CurrentProgress,
+                isWinner = challenge.WinnerId == p.UserId
+            });
+
+        return Ok(new
+        {
+            success = true,
+            challenge = new
+            {
+                challenge.Id,
+                challenge.Title,
+                challenge.Description,
+                challenge.Status,
+                challenge.ChallengeType,
+                challenge.StartDate,
+                challenge.EndDate,
+                challenge.TargetValue,
+                targetCategory = challenge.TargetCategory?.Name,
+                targetTask = challenge.TargetAppTask?.Title,
+                challengerProgress = challenge.ChallengerProgress,
+                opponentProgress = challenge.OpponentProgress,
+                winnerId = challenge.WinnerId,
+                participants
+            }
+        });
     }
 
     // ================================================================

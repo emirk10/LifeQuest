@@ -8,5 +8,5 @@ namespace LifeQuestAPI.Application.Abstractions.Social;
 
 public interface IChallengeService
 {
-    Task UpdateChallengeProgressAsync(Guid userId, Guid? categoryId);
+    Task UpdateChallengeProgressAsync(Guid userId, Guid? categoryId, int earnedXp);
 }

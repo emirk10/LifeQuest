@@ -2,11 +2,15 @@ namespace LifeQuestAPI.Application.Exceptions;
 
 public class BusinessException : Exception
 {
-    public BusinessException(string message) : base(message)
+    public string ErrorCode { get; }
+
+    public BusinessException(string message, string errorCode = "BUSINESS_ERROR") : base(message)
     {
+        ErrorCode = errorCode;
     }
 
-    public BusinessException(string message, Exception innerException) : base(message, innerException)
+    public BusinessException(string message, string errorCode, Exception innerException) : base(message, innerException)
     {
+        ErrorCode = errorCode;
     }
 }

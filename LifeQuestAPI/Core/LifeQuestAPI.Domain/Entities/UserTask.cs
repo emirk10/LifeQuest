@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema;
 using LifeQuestAPI.Domain.Entities.Common;
 using LifeQuestAPI.Domain.Entities.Identity;
 using LifeQuestAPI.Domain.Enums;
@@ -46,4 +47,15 @@ public sealed class UserTask : BaseEntity
     // ─── XP Hesaplaması ───────────────────────────────────────────────────
     /// <summary>Normal tamamlama = 1.0, erteleme sonrası = 0.70, telafi = 1.10</summary>
     public decimal XpCompensationRate { get; set; } = 1.0m;
-}
+
+    // ─── FEAT-002: Micro-journaling ──────────────────────────────────────
+    public string? ReflectionText { get; set; }
+
+    // ─── FEAT-008: Tagging ───────────────────────────────────────────────
+    [Column(TypeName = "jsonb")]
+    public List<string>? CustomTags { get; set; }
+
+    // ─── FEAT-001: Sharing ───────────────────────────────────────────────
+    public string? ShareToken { get; set; }
+    public DateTime? ShareTokenExpiresAt { get; set; }
+}

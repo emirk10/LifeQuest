@@ -26,6 +26,14 @@ public sealed class AppUser : BaseEntity
     public Guid AppRoleId { get; set; }
     public AppRole AppRole { get; set; } = default!;
 
+    // ─── Phase 4: Social & Profile ────────────────────────────────────────
+    public string? Bio { get; set; }
+    public string? Location { get; set; }
+    
+    /// <summary>İlgi alanları (ör: ["fitness", "tech", "art"])</summary>
+    [Column(TypeName = "jsonb")]
+    public List<string>? Interests { get; set; }
+
     // ─── Gamification ─────────────────────────────────────────────────────
     public int TotalXP { get; set; } = 0;
     public double GeneralLevel { get; set; } = 1.0;

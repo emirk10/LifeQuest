@@ -20,6 +20,10 @@ export const challengeService = {
   cancelChallenge: async (challengeId) => {
     const { data } = await axiosClient.delete(`/social/challenges/${challengeId}`);
     return data;
+  },
+  getChallengeDetails: async (challengeId) => {
+    const { data } = await axiosClient.get(`/social/challenges/${challengeId}/details`);
+    return data;
   }
 };
 

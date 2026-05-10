@@ -38,4 +38,8 @@ ENV ASPNETCORE_URLS="https://+:7071;http://+:5020"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password="password123"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/app/cert.pfx"
 
+# Add timezone data
+ENV TZ=Europe/Istanbul
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+
 ENTRYPOINT ["dotnet", "LifeQuestAPI.API.dll"]

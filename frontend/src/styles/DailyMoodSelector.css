@@ -168,3 +168,35 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.mood-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mood-input-group label {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.mood-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  color: #f1f5f9;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+  outline: none;
+  transition: all 0.25s;
+}
+
+.mood-textarea:focus {
+  border-color: #a78bfa;
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 15px rgba(167,139,250,0.15);
+}

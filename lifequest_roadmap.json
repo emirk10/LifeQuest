@@ -1,0 +1,827 @@
+{
+  "project": "LifeQuest",
+  "version": "2.0",
+  "roadmap_generated": "2026-05-10",
+  "analysis_source": "lifequest_full_analysis.json (2026-05-03)",
+
+  "summary": {
+    "total_items": 47,
+    "critical_bugs": 8,
+    "missing_features": 12,
+    "improvements": 14,
+    "new_feature_proposals": 9,
+    "security_issues": 4,
+    "phases": 4,
+    "estimated_total_weeks": 20
+  },
+
+  "phases": [
+    {
+      "phase": 1,
+      "title": "Kritik Düzeltmeler & Güvenlik",
+      "description": "Projenin build olması, deploy edilebilmesi ve temel güvenlik açıklarının kapatılması. Bu phase tamamlanmadan hiçbir şey prod'a çıkmamalı.",
+      "priority": "CRITICAL",
+      "estimated_weeks": 2,
+      "items": [
+        {
+          "id": "BUG-001",
+          "type": "bug",
+          "title": "AppUser entity — Goals property isim çakışması (derleme hatası)",
+          "severity": "CRITICAL",
+          "layer": "backend_domain",
+          "file": "LifeQuestAPI.Domain/Entities/Identity/AppUser.cs",
+          "description": "AppUser'da iki ayrı 'Goals' property var: List<string>? Goals (anket) ve ICollection<UserGoal> Goals (navigation). C# derleyicisi patlıyor, proje build olmuyor.",
+          "fix_steps": [
+            "List<string>? Goals → 'UserGoals' olarak yeniden adlandır",
+            "ICollection<UserGoal> Goals → 'UserGoalsList' olarak yeniden adlandır",
+            "DbContext OnModelCreating'e HasColumnName(\"UserGoals\") mapping ekle",
+            "Migration: 20260423_RenameGoalsColumn.cs oluştur",
+            "Tüm handler ve query'lerde 'user.Goals' referanslarını güncelle"
+          ]
+        },
+        {
+          "id": "BUG-002",
+          "type": "bug",
+          "title": "JWT Secret Key appsettings.json'da hardcoded",
+          "severity": "CRITICAL",
+          "layer": "backend_security",
+          "file": "LifeQuestAPI.API/appsettings.json",
+          "cve_class": "CWE-798 Use of Hard-coded Credentials",
+          "description": "JWT imzalama anahtarı appsettings.json içinde sabit yazılı. Git'e push edilirse token'lar kolayca taklit edilebilir.",
+          "fix_steps": [
+            "appsettings.json'daki Token değerini temizle: \"Token\": \"\"",
+            ".env dosyasına JWT_SECRET=<min 64 char random string> ekle",
+            "docker-compose.yml'e environment: JWT_SECRET=${JWT_SECRET} ekle",
+            "Program.cs'de Environment.GetEnvironmentVariable(\"JWT_SECRET\") kullan",
+            ".gitignore'a .env ve appsettings.Production.json ekle"
+          ]
+        },
+        {
+          "id": "BUG-004",
+          "type": "bug",
+          "title": "Frontend JWT localStorage'da saklanıyor (XSS açığı)",
+          "severity": "CRITICAL",
+          "layer": "frontend_security",
+          "file": "frontend/src/utils/authUtils.js",
+          "cve_class": "CWE-359 Exposure of Private Information",
+          "description": "localStorage'daki JWT, XSS saldırısında window.localStorage.getItem('token') ile çalınabilir.",
+          "fix_steps": [
+            "Backend: POST /api/auth/refresh endpoint ekle",
+            "Login response: accessToken (body) + refreshToken (httpOnly cookie)",
+            "axiosClient.js: accessToken'ı React context/state'de tut",
+            "Interceptor: 401 alınca /api/auth/refresh çağır",
+            "Cookie: Secure=true, HttpOnly=true, SameSite=Strict"
+          ]
+        },
+        {
+          "id": "BUG-007",
+          "type": "bug",
+          "title": "AI Service CORS allow_origins='*' (güvenlik açığı)",
+          "severity": "CRITICAL",
+          "layer": "ai_service",
+          "file": "ai_service/main.py",
+          "cve_class": "CWE-942 Overly Permissive Cross-domain Whitelist",
+          "description": "Python AI servisi tüm origin'lere açık. Yanlışlıkla dışa açılırsa herkes chatbot API'sini doğrudan kullanabilir.",
+          "fix_steps": [
+            "allow_origins=[\"http://lifequest-api:5020\"] olarak daralt",
+            "docker-compose.yml'de AI servis ports → expose olarak değiştir",
+            ".NET backend'den AI çağrılarına X-Internal-Key header ekle",
+            "ALLOWED_ORIGINS env variable üzerinden konfigüre et"
+          ]
+        },
+        {
+          "id": "MISS-009",
+          "type": "missing_feature",
+          "title": "Admin role authorization attribute eksik",
+          "severity": "HIGH",
+          "layer": "backend_api",
+          "file": "LifeQuestAPI.API/Controllers/TasksController.cs",
+          "cve_class": "CWE-285 Improper Authorization",
+          "description": "TasksController'da [Authorize(Roles = 'Admin')] yok. Her authenticated kullanıcı görev oluşturabilir.",
+          "fix_steps": [
+            "[Authorize(Roles = \"Admin\")] attribute TasksController class level'a ekle",
+            "RolesController'a da aynısını ekle",
+            "SeedData'da Admin rolü ve default admin user oluştur",
+            "Frontend AdminPage.jsx'te rol kontrolü ve redirect ekle"
+          ]
+        }
+      ]
+    },
+
+    {
+      "phase": 2,
+      "title": "Temel Özellikler & Sistem Stabilitesi",
+      "description": "Eksik kritik özellikler, performans darboğazları ve sistemin güvenilir çalışması için gereken altyapı iyileştirmeleri.",
+      "priority": "HIGH",
+      "estimated_weeks": 5,
+      "items": [
+        {
+          "id": "BUG-003",
+          "type": "bug",
+          "title": "DailyQuestWorker UTC/Timezone hatası",
+          "severity": "CRITICAL",
+          "layer": "backend_api",
+          "file": "LifeQuestAPI.API/BackgroundServices/DailyQuestWorker.cs",
+          "description": "DateTime.Today server'ın local saatini kullanır. Docker UTC'de çalışır, Türkiye UTC+3 → görevler gecenin 21:00'inde atanır.",
+          "fix_steps": [
+            "TimeZoneInfo turkeyTz = TimeZoneInfo.FindSystemTimeZoneById(\"Europe/Istanbul\")",
+            "DateTime.UtcNow üzerinden Türkiye saatine çevir",
+            "Bir sonraki gece yarısını UTC olarak hesapla",
+            "appsettings.json'a AppTimezone: \"Europe/Istanbul\" ekle",
+            "Dockerfile'a ENV TZ=Europe/Istanbul ve tzdata ekle"
+          ]
+        },
+        {
+          "id": "BUG-005",
+          "type": "bug",
+          "title": "TaskRecommendationService Null Reference Exception riski",
+          "severity": "CRITICAL",
+          "layer": "backend_infrastructure",
+          "file": "LifeQuestAPI.Infrastructure/Services/TaskRecommendationService.cs",
+          "description": "CalculateScore metodunda task.Description, task.Category, task.EstimatedMinutes için null check yok.",
+          "fix_steps": [
+            "task.Description?.Contains() — null-safe hale getir",
+            "(task.EstimatedMinutes ?? int.MaxValue) karşılaştırması kullan",
+            "task.Category?.Name?.ToLower() ?? string.Empty kullan",
+            "Metod başına ArgumentNullException.ThrowIfNull kontrolleri ekle"
+          ]
+        },
+        {
+          "id": "BUG-006",
+          "type": "bug",
+          "title": "AI Service her container restart'ta model yeniden eğitiliyor",
+          "severity": "CRITICAL",
+          "layer": "ai_service",
+          "file": "ai_service/main.py",
+          "description": "intent_clf ve sentiment_analyzer module-level'da her restart'ta eğitilir. Health check başarısız, 30-60 saniye startup gecikmesi.",
+          "fix_steps": [
+            "IntentClassifier.__init__: models/intent_clf.pkl varsa yükle, yoksa eğit ve kaydet",
+            "Aynısı SentimentAnalyzer için uygula",
+            "Docker volume: ai_models:/app/models",
+            "POST /api/train endpoint'i sadece admin tetiklemesi için bırak",
+            "FastAPI startup event ile model kontrolü yap"
+          ]
+        },
+        {
+          "id": "BUG-008",
+          "type": "bug",
+          "title": "GamificationService DailyQuestWorker ölçeklenemez seri foreach",
+          "severity": "HIGH",
+          "layer": "backend_api",
+          "file": "LifeQuestAPI.API/BackgroundServices/DailyQuestWorker.cs",
+          "description": "10.000 kullanıcı * 3 görev = 30.000 seri DB insert. Gece yarısı timeout riski.",
+          "fix_steps": [
+            "Kısa vade: Parallel.ForEachAsync ile batch=500, parallelism=10",
+            "Uzun vade: Hangfire veya Quartz.NET ile per-user job scheduling",
+            "EF Core bulk insert ile tek seferde kaydet"
+          ]
+        },
+        {
+          "id": "MISS-001",
+          "type": "missing_feature",
+          "title": "Refresh Token mekanizması yok",
+          "severity": "HIGH",
+          "layer": "backend_api",
+          "description": "JWT 24 saatte expire oluyor, yenileme yok. Kullanıcı sabah uygulamayı açtığında logout olmuş bulabilir.",
+          "implementation": {
+            "new_entity": "RefreshToken { Id, UserId, Token(hashed), ExpiresAt, CreatedAt, RevokedAt, CreatedByIp }",
+            "new_migration": "20260503_AddRefreshTokenTable.cs",
+            "new_endpoints": [
+              "POST /api/auth/refresh",
+              "POST /api/auth/revoke"
+            ],
+            "token_durations": {
+              "access_token": "15 dakika",
+              "refresh_token": "7 gün (httpOnly cookie)"
+            },
+            "security": "Tek kullanımlık token rotation"
+          }
+        },
+        {
+          "id": "MISS-002",
+          "type": "missing_feature",
+          "title": "Email doğrulama (verification) yok",
+          "severity": "HIGH",
+          "layer": "backend_api",
+          "description": "Kayıt akışında email doğrulanmıyor. Sahte email ile kayıt yapılabilir.",
+          "implementation": {
+            "new_appuser_fields": [
+              "IsEmailVerified bool = false",
+              "EmailVerificationToken string?",
+              "EmailVerificationTokenExpiry DateTime?"
+            ],
+            "flow": "Register → mail gönder → PATCH /api/auth/verify-email?token=xyz → IsEmailVerified = true",
+            "restriction": "Email doğrulanmadan sosyal özellikler kısıtlansın"
+          }
+        },
+        {
+          "id": "MISS-003",
+          "type": "missing_feature",
+          "title": "Şifre sıfırlama endpoint'i yok",
+          "severity": "HIGH",
+          "layer": "backend_api",
+          "description": "AuthController'da sadece register ve login mevcut. 'Şifremi unuttum' akışı yok.",
+          "implementation": {
+            "new_endpoints": [
+              "POST /api/auth/forgot-password",
+              "POST /api/auth/reset-password"
+            ],
+            "security": "UUID token, 1 saat geçerli, tek kullanımlık"
+          }
+        },
+        {
+          "id": "MISS-004",
+          "type": "missing_feature",
+          "title": "Streak sistemi entity'de tanımsız",
+          "severity": "HIGH",
+          "layer": "backend_domain",
+          "description": "Dashboard'da streak gösteriliyor ama AppUser'da streak alanı yok.",
+          "implementation": {
+            "new_appuser_fields": [
+              "CurrentStreak int = 0",
+              "LongestStreak int = 0",
+              "LastTaskCompletedDate DateOnly?"
+            ],
+            "streak_logic": "CompleteUserTaskCommandHandler'da streak hesapla ve güncelle",
+            "streak_reset": "DailyQuestWorker'da dün görev tamamlamayan kullanıcıların streak'ini sıfırla",
+            "new_migration": "20260503_AddStreakFields.cs"
+          }
+        },
+        {
+          "id": "MISS-006",
+          "type": "missing_feature",
+          "title": "FluentValidation validator sınıfları eksik",
+          "severity": "HIGH",
+          "layer": "backend_application",
+          "description": "FluentValidation kurulu ama kritik command'lar için validator yazılmamış.",
+          "missing_validators": [
+            "RegisterUserCommandValidator",
+            "LoginUserCommandValidator",
+            "CreateTaskCommandValidator",
+            "RecordDailyMoodCommandValidator",
+            "PostponeTaskCommandValidator",
+            "CreateGoalCommandValidator"
+          ],
+          "implementation": "Her validator ilgili command yanına, MediatR pipeline'a ValidationBehavior ekle"
+        },
+        {
+          "id": "MISS-010",
+          "type": "missing_feature",
+          "title": "AI Service fallback mekanizması yok",
+          "severity": "HIGH",
+          "layer": "backend_infrastructure",
+          "file": "LifeQuestAPI.Infrastructure/Services/AIChatService.cs",
+          "description": "Python AI servisi çökerse ne olacağı belli değil. HttpClient timeout tanımlı değil.",
+          "implementation": {
+            "steps": [
+              "HttpClient timeout: 5 saniye",
+              "try-catch: AI ulaşılamazsa fallback responses JSON'dan cevap dön",
+              "Polly: circuit breaker + 3x retry (1 saniye aralıklı)",
+              "Fallback JSON: intent bazında Türkçe sabit cevaplar"
+            ]
+          }
+        },
+        {
+          "id": "IMP-006",
+          "type": "improvement",
+          "title": "PostgreSQL eksik indexler eklenmeli",
+          "priority": "MEDIUM",
+          "layer": "database",
+          "description": "Sık sorgulanan alanlar index'lenmiyor. Kullanıcı büyüdükçe kritik yavaşlık.",
+          "missing_indexes": [
+            "IX_UserTask_UserId_Status ON usertask(UserId, Status)",
+            "IX_UserTask_UserId_DueDate ON usertask(UserId, DueDate)",
+            "IX_Notification_UserId_IsRead ON notification(UserId, IsRead)",
+            "IX_ChatBotMessage_UserId_CreatedAt ON chatbotmessage(UserId, CreatedAt DESC)",
+            "IX_UserCategoryProgress_UserId ON usercategoryprogress(UserId)",
+            "IX_UserDailyMood_UserId_Date ON userdailymood(UserId, Date)",
+            "IX_AppTask_IsActive_CategoryId ON apptask(IsActive, CategoryId)"
+          ],
+          "migration_file": "20260503_AddMissingIndexes.cs"
+        },
+        {
+          "id": "IMP-009",
+          "type": "improvement",
+          "title": "TensorFlow dependency gereksiz yere ağır",
+          "priority": "LOW",
+          "layer": "ai_service",
+          "file": "ai_service/requirements.txt",
+          "description": "tensorflow==2.18.0 kurulu ama modeller yalnızca scikit-learn kullanıyor. 2GB+ gereksiz image boyutu.",
+          "fix_steps": [
+            "requirements.txt'den tensorflow'u kaldır",
+            "requirements-full.txt oluştur, tensorflow oraya ekle",
+            "Image verifier aktifleşince Dockerfile'ı -full versiyona geçir"
+          ]
+        }
+      ]
+    },
+
+    {
+      "phase": 3,
+      "title": "Kullanıcı Deneyimi & Özellik Tamamlama",
+      "description": "Eksik orta öncelikli özellikler, frontend iyileştirmeleri ve gamification derinliği.",
+      "priority": "MEDIUM",
+      "estimated_weeks": 7,
+      "items": [
+        {
+          "id": "MISS-005",
+          "type": "missing_feature",
+          "title": "Pagination implement edilmemiş",
+          "severity": "MEDIUM",
+          "layer": "backend_api",
+          "description": "PaginatedResponse DTO tanımlı ama hiçbir endpoint'te kullanılmıyor. Leaderboard tüm kullanıcıları döndürür.",
+          "endpoints_needing_pagination": [
+            "GET /api/Leaderboard",
+            "GET /api/user-tasks",
+            "GET /api/chat/history",
+            "GET /api/Notifications",
+            "GET /api/Reports/weekly"
+          ],
+          "implementation": "IQueryable<T>.ToPaginatedListAsync(pageNumber, pageSize) extension method yaz"
+        },
+        {
+          "id": "MISS-007",
+          "type": "missing_feature",
+          "title": "SignalR bağlantısı frontend'de implement edilmemiş",
+          "severity": "HIGH",
+          "layer": "frontend",
+          "file": "frontend/src/components/NotificationBell.jsx",
+          "description": "Backend'de NotificationHub var, @microsoft/signalr kurulu ama frontend'de gerçek bağlantı yok.",
+          "implementation": {
+            "new_file": "frontend/src/hooks/useSignalR.js",
+            "events": ["ReceiveNotification", "ReceiveProactiveMessage"],
+            "features": ["withAutomaticReconnect", "accessTokenFactory"],
+            "usage": "App.jsx veya MainLayout.jsx'te hook kullan"
+          }
+        },
+        {
+          "id": "MISS-008",
+          "type": "missing_feature",
+          "title": "Challenge logic'i boş",
+          "severity": "MEDIUM",
+          "layer": "backend_infrastructure",
+          "file": "LifeQuestAPI.Infrastructure/Services/ChallengeService.cs",
+          "description": "Challenge entity ve ChallengeService mevcut ama içi boş. Yarışma mantığı hiç yok.",
+          "implementation": {
+            "missing_entity_fields": [
+              "CategoryId Guid?",
+              "TargetValue int",
+              "MetricType enum (TaskCount, XpEarned, StreakDays)",
+              "StartDate, EndDate DateTime",
+              "Status enum (Pending, Active, Completed, Expired)",
+              "WinnerId Guid?"
+            ],
+            "new_endpoints": [
+              "POST /api/Social/challenges/create",
+              "POST /api/Social/challenges/{id}/accept",
+              "POST /api/Social/challenges/{id}/decline",
+              "GET /api/Social/challenges/active"
+            ],
+            "winner": "ChallengeCompletionWorker — EndDate geçince arka planda kazananı belirle"
+          }
+        },
+        {
+          "id": "MISS-011",
+          "type": "missing_feature",
+          "title": "Kullanıcı anket/tercih güncelleme endpoint'i yok",
+          "severity": "MEDIUM",
+          "layer": "backend_api",
+          "description": "Kayıt sonrası tercihler değiştirilemiyor: zorluk, hedefler, günlük müsaitlik.",
+          "implementation": {
+            "new_endpoint": "PATCH /api/users/{id}/preferences",
+            "frontend": "ProfilePage.jsx'e 'Tercihlerimi Düzenle' bölümü"
+          }
+        },
+        {
+          "id": "MISS-012",
+          "type": "missing_feature",
+          "title": "SeedData yetersiz — öneri sistemi test edilemiyor",
+          "severity": "MEDIUM",
+          "layer": "backend_persistence",
+          "description": "25 görev ve 5 rozet var. Öneri sistemi için her kategoriden çok daha fazla görev gerekiyor.",
+          "required_data": {
+            "tasks": "Minimum 150 görev: 4 kategori * 3 zorluk * ~12 görev",
+            "badges": "Minimum 20 rozet: level(5), streak(5), task count(5), kategori master(4), sosyal(3)",
+            "categories": "En az 6: Eğitim, Sağlık, Kariyer, Sosyal, Kişisel Gelişim, Yaratıcılık",
+            "achievements": "10-15 başarı: ilk görev, 7 günlük streak, 50 görev vs."
+          }
+        },
+        {
+          "id": "IMP-001",
+          "type": "improvement",
+          "title": "XP sistemi değişken ödül mekanizmasıyla zenginleştirilmeli",
+          "priority": "HIGH",
+          "layer": "backend_infrastructure",
+          "description": "Her 1000 XP = 1 level formülü çok öngörülebilir. Değişken ödül daha motive edici.",
+          "proposed_changes": {
+            "streak_multiplier": "Streak > 7 → XP * 1.1 | Streak > 30 → XP * 1.25",
+            "daily_first_task_bonus": "+20 bonus XP",
+            "weekly_completion_bonus": "+200 XP",
+            "comeback_bonus": "3+ gün aradan sonra +50 XP",
+            "level_thresholds": [
+              { "level": 1, "required_xp": 0 },
+              { "level": 2, "required_xp": 500 },
+              { "level": 3, "required_xp": 1500 },
+              { "level": 5, "required_xp": 4000 },
+              { "level": 10, "required_xp": 15000 }
+            ]
+          }
+        },
+        {
+          "id": "IMP-002",
+          "type": "improvement",
+          "title": "Badge sistemi salt level bazlı olmaktan çıkmalı",
+          "priority": "HIGH",
+          "layer": "backend_domain",
+          "file": "LifeQuestAPI.Domain/Entities/Badge.cs",
+          "description": "Badge entity'sinde sadece RequiredLevel var. Çok daha zengin rozet tipleri olabilir.",
+          "new_badge_types": [
+            "Level — X seviyeye ulaş",
+            "Streak — X gün üst üste görev tamamla",
+            "TaskCount — toplam X görev tamamla",
+            "CategoryMaster — belirli kategoride level 10",
+            "FirstTime — ilk kez bir şey yap",
+            "Social — X arkadaş ekle veya challenge kazan",
+            "Consistency — haftada 5+ gün aktif ol"
+          ],
+          "new_badge_fields": [
+            "BadgeType BadgeType",
+            "RequiredValue int",
+            "CategoryId Guid?",
+            "IsSecret bool = false",
+            "BadgeColor string",
+            "Rarity enum (Common, Rare, Epic, Legendary)"
+          ]
+        },
+        {
+          "id": "IMP-003",
+          "type": "improvement",
+          "title": "Öneri algoritması geliştirilmeli",
+          "priority": "HIGH",
+          "layer": "backend_infrastructure",
+          "file": "LifeQuestAPI.Infrastructure/Services/TaskRecommendationService.cs",
+          "improvements": {
+            "abandon_penalty": "Daha önce abandon edilen görevler: score -= 0.3",
+            "variety_bonus": "Aynı kategoriden 2+ öneri varsa 3.'yü farklı kategoriden seç",
+            "recency_penalty": "Son 7 günde tamamlanan görevler tekrar önerilmesin",
+            "tiebreaker": "Eşit score'da: son 30 günde tamamlanmamışlar önce",
+            "level_check": "task.MinLevel <= userCategoryLevel <= task.MaxLevel kontrolü ekle",
+            "streak_safety_bonus": "Streak varsa, streak'i besleyen görevlere +0.05"
+          }
+        },
+        {
+          "id": "IMP-004",
+          "type": "improvement",
+          "title": "Frontend state management — React Query eklenmeli",
+          "priority": "HIGH",
+          "layer": "frontend",
+          "description": "Kullanıcı profili, görev listesi, bildirimler her component'te ayrı fetch ediliyor.",
+          "implementation": {
+            "library": "@tanstack/react-query v5",
+            "install": "npm install @tanstack/react-query",
+            "queries": [
+              "useUserProfile(userId) — staleTime: 5dk",
+              "useUserTasks(filters) — staleTime: 30sn",
+              "useDailyPool() — staleTime: 10dk",
+              "useNotifications() — staleTime: 1dk",
+              "useLeaderboard(category) — staleTime: 5dk",
+              "useWeeklyReport(userId) — staleTime: 1saat"
+            ],
+            "mutations": [
+              "useCompleteTask() — invalidate userTasks ve userProfile",
+              "usePostponeTask() — invalidate userTasks",
+              "useSelectTask() — invalidate dailyPool ve userTasks"
+            ]
+          }
+        },
+        {
+          "id": "IMP-007",
+          "type": "improvement",
+          "title": "API versioning eklenmeli",
+          "priority": "MEDIUM",
+          "layer": "backend_api",
+          "description": "Breaking change yapılınca mevcut client'lar bozulur.",
+          "implementation": {
+            "package": "Microsoft.AspNetCore.Mvc.Versioning",
+            "strategy": "Header-based versioning: api-version: 1.0",
+            "note": "Mevcut endpoint'ler v1, breaking change'de v2"
+          }
+        },
+        {
+          "id": "IMP-008",
+          "type": "improvement",
+          "title": "Structured logging (Serilog) eklenmeli",
+          "priority": "MEDIUM",
+          "layer": "backend_api",
+          "description": "Default ASP.NET logging var ama kritik olaylar trace edilemiyor.",
+          "critical_log_events": [
+            "TaskCompleted: userId, taskId, xpGained, duration",
+            "LevelUp: userId, oldLevel, newLevel",
+            "BadgeEarned: userId, badgeId",
+            "AIServiceError: message, fallback_used",
+            "RecommendationGenerated: userId, taskIds, scores",
+            "DailyWorkerCompleted: userCount, taskCount, duration"
+          ],
+          "packages": [
+            "Serilog.AspNetCore",
+            "Serilog.Sinks.Console",
+            "Serilog.Sinks.File"
+          ]
+        },
+        {
+          "id": "IMP-010",
+          "type": "improvement",
+          "title": "Frontend Docker — API URL hardcoded sorunu",
+          "priority": "MEDIUM",
+          "layer": "devops",
+          "description": "VITE_API_BASE_URL container adını hardcode ediyor. Farklı ortamda çalışmaz.",
+          "recommended_fix": "Nginx config'de runtime env injection: envsubst ile ${API_URL}"
+        },
+        {
+          "id": "IMP-011",
+          "type": "improvement",
+          "title": "Error handling — frontend'de tutarsız",
+          "priority": "MEDIUM",
+          "layer": "frontend",
+          "description": "Bazı yerlerde try-catch, bazılarında .catch(), bazılarında hiçbir şey yok.",
+          "fix_steps": [
+            "axiosClient.js response interceptor'da hata logla ve toast göster",
+            "ErrorBoundary.jsx tüm page-level component'leri sarsın",
+            "Network error için özel mesaj: 'Bağlantı sorunu, lütfen tekrar deneyin'",
+            "401 → logout ve login sayfasına yönlendir"
+          ]
+        },
+        {
+          "id": "IMP-012",
+          "type": "improvement",
+          "title": "Responsive UI — mobil optimizasyon yapılmamış",
+          "priority": "HIGH",
+          "layer": "frontend",
+          "description": "Kişisel gelişim uygulamaları ağırlıklı mobilde kullanılır. TODO'da var ama somutlaşmamış.",
+          "required_changes": [
+            "MainLayout.jsx — hamburger menu, bottom navigation (mobil)",
+            "DashBoard.jsx — tek kolon layout",
+            "TaskList.jsx — swipe action (sağa=tamamla, sola=ertele)",
+            "TaskTimer.jsx — büyük timer display",
+            "ChatBot.jsx — full-screen modal",
+            "Tailwind sm:, md:, lg: breakpoint review"
+          ]
+        },
+        {
+          "id": "IMP-014",
+          "type": "improvement",
+          "title": "UserTask.DueDate — günlük görev süresi belirsiz",
+          "priority": "MEDIUM",
+          "layer": "backend_domain",
+          "description": "Expire olan görevler için tetikleme mekanizması yok.",
+          "fix_steps": [
+            "DueDate = DateTime.Today.AddDays(1).AddTicks(-1) (bugün 23:59:59)",
+            "DailyQuestWorker: dünkü Pending/Selected görevleri Expired yap",
+            "Postponed: DueDate = PostponedTo date + 23:59:59",
+            "Frontend TaskList'te expire görevleri kırmızı göster"
+          ]
+        },
+        {
+          "id": "IMP-005",
+          "type": "improvement",
+          "title": "AI intent sınıfı artışı için model mimarisi güncellenmeli",
+          "priority": "MEDIUM",
+          "layer": "ai_service",
+          "description": "7 intent'ten 17'ye çıkarken Naive Bayes accuracy düşer.",
+          "recommended_approach": "Keyword rule-based ön filtre + ML fallback",
+          "keyword_rules": {
+            "gorev_baslat": ["başlat", "timer aç", "start", "başlıyorum"],
+            "gorev_tamamla": ["bitti", "tamamladım", "done", "yaptım"],
+            "gorev_ertele": ["ertele", "yarına bırak", "sonraya at"],
+            "gorev_vazgec": ["vazgeç", "iptal", "bırakıyorum"]
+          }
+        },
+        {
+          "id": "IMP-013",
+          "type": "improvement",
+          "title": "Hata mesajları tutarsız — lokalizasyon stratejisi yok",
+          "priority": "LOW",
+          "layer": "backend_application",
+          "description": "Bazı mesajlar Türkçe, bazıları İngilizce.",
+          "fix_steps": [
+            "Kullanıcıya dönen tüm mesajlar Türkçe olsun",
+            "Error code'lar İngilizce kalsın: VALIDATION_ERROR, NOT_FOUND",
+            "Frontend error_code → Türkçe mesaj map helper",
+            "İleride react-i18next kurulumu planlanabilir"
+          ]
+        }
+      ]
+    },
+
+    {
+      "phase": 4,
+      "title": "Yeni Özellikler & Büyüme",
+      "description": "Kullanıcı bağlılığını artıracak yeni özellikler. Önceki phase'ler tamamlandıktan sonra ele alınmalı.",
+      "priority": "MEDIUM-LOW",
+      "estimated_weeks": 6,
+      "items": [
+        {
+          "id": "FEAT-003",
+          "type": "new_feature",
+          "title": "Görev Şablonları (Preset Paketleri)",
+          "priority": "HIGH",
+          "description": "Yeni kullanıcı ne ekleyeceğini bilememe sorunu. Hazır paketler onboarding'i kolaylaştırır.",
+          "implementation": {
+            "new_entity": "TaskTemplate { Id, Name, Description, CategoryId, Tasks: List<AppTask>, IsPublic, CreatedBy }",
+            "new_endpoints": [
+              "GET /api/task-templates",
+              "POST /api/task-templates/{id}/apply"
+            ],
+            "seed_templates": [
+              "Sabah Rutini (3 görev)",
+              "Çalışma Seansı (3 görev)",
+              "Fitness Başlangıcı (5 görev)"
+            ]
+          }
+        },
+        {
+          "id": "FEAT-006",
+          "type": "new_feature",
+          "title": "Akıllı Görev Hatırlatma",
+          "priority": "HIGH",
+          "description": "DayTimeSlot zaten var, SignalR altyapısı hazır. Doğru zamanda bildirim.",
+          "implementation": {
+            "new_service": "TaskReminderWorker — her saat başı çalışır",
+            "logic": [
+              "Şu anki DayTimeSlot hesapla",
+              "Bu slotta görevi olan ve henüz tamamlamamış kullanıcıları bul",
+              "SignalR ile bildirim gönder",
+              "Günde max 1 hatırlatma per görev"
+            ],
+            "opt_out": "AppUser.NudgeEnabled field'ını kullan"
+          }
+        },
+        {
+          "id": "FEAT-007",
+          "type": "new_feature",
+          "title": "Onboarding Turu (İlk Kullanım Rehberi)",
+          "priority": "HIGH",
+          "description": "Kayıt sonrası ilk girişte interaktif rehber. Yeni kullanıcı kaybını azaltır.",
+          "implementation": {
+            "new_field": "AppUser.OnboardingCompleted bool = false",
+            "frontend": "OnboardingTour.jsx — step-by-step overlay/modal",
+            "steps": [
+              "Hoşgeldin! Adın: {name}",
+              "Bugünkü modunu seç → DailyMoodSelector",
+              "İlk görevini seç → TaskPoolSelector",
+              "Timer'ı başlat → TaskTimer",
+              "Tamamla ve ilk XP'ni kazan!",
+              "Tebrikler! Rozetler ve leaderboard'a göz at"
+            ]
+          }
+        },
+        {
+          "id": "FEAT-004",
+          "type": "new_feature",
+          "title": "Haftalık Özet Email'i",
+          "priority": "MEDIUM",
+          "description": "WeeklyReportWorker zaten var. Motivasyonel haftalık özet maili.",
+          "implementation": {
+            "new_interface": "IEmailService.SendWeeklyReportAsync(AppUser, WeeklyReport)",
+            "providers": "SmtpEmailService veya SendGrid/Mailgun",
+            "opt_out": "AppUser.EmailNotificationsEnabled bool"
+          }
+        },
+        {
+          "id": "FEAT-009",
+          "type": "new_feature",
+          "title": "Admin Davranışsal Analitik Dashboard",
+          "priority": "MEDIUM",
+          "description": "Hangi görevler en çok abandon edildi, hangi kategoride dropout yüksek.",
+          "new_endpoints": [
+            "GET /api/admin/analytics/task-dropout",
+            "GET /api/admin/analytics/category-performance",
+            "GET /api/admin/analytics/hourly-completions",
+            "GET /api/admin/analytics/user-retention"
+          ],
+          "frontend": "AdminPage.jsx'e 'Analitik' tab'ı ekle, Recharts ile görselleştir"
+        },
+        {
+          "id": "FEAT-002",
+          "type": "new_feature",
+          "title": "Micro-journaling — Görev Sonrası Reflection",
+          "priority": "MEDIUM",
+          "description": "Görev tamamlanınca opsiyonel 1-2 cümlelik reflection. Hem ML eğitim verisi hem bağlılık.",
+          "implementation": {
+            "new_field": "UserTask.ReflectionText string?",
+            "new_endpoint": "POST /api/ai/analyze-reflection",
+            "gamification": "Reflection yazana +5 XP bonus"
+          }
+        },
+        {
+          "id": "FEAT-001",
+          "type": "new_feature",
+          "title": "Görev Paylaşım Linki (Social Proof)",
+          "priority": "MEDIUM",
+          "description": "Tamamlanan görevi sosyal medyayla paylaşmak için public link.",
+          "implementation": {
+            "new_endpoint": "POST /api/user-tasks/{id}/share → ShareToken (UUID, 7 gün)",
+            "public_endpoint": "GET /share/{token} → public sayfa (login gerekmez)",
+            "frontend": "TaskItem'e 'Paylaş' butonu, Open Graph meta tag'ları"
+          }
+        },
+        {
+          "id": "FEAT-005",
+          "type": "new_feature",
+          "title": "Kudos Sistemi (Sosyal Güçlendirme)",
+          "priority": "LOW",
+          "description": "Arkadaşın görev tamamladığında 'Tebrikler!' butonu.",
+          "implementation": {
+            "new_entity": "Kudos { Id, SenderId, ReceiverId, UserTaskId, CreatedAt }",
+            "new_endpoint": "POST /api/Social/kudos",
+            "gamification": "+2 XP, günde max 3 kudos alınabilsin"
+          }
+        },
+        {
+          "id": "FEAT-008",
+          "type": "new_feature",
+          "title": "Görev Etiket (Tag) Sistemi",
+          "priority": "LOW",
+          "description": "Görevlere custom tag ekleme (#sabah, #hafif, #outdoor). Kişisel filtreleme.",
+          "implementation": {
+            "apptask_field": "Tags List<string>? — jsonb kolonu",
+            "usertask_field": "CustomTags List<string>?",
+            "frontend": "TaskItem'e tag chip'leri, TaskList'te tag filtresi"
+          }
+        }
+      ]
+    }
+  ],
+
+  "security_audit": {
+    "critical": [
+      { "issue": "JWT secret hardcoded", "cve_class": "CWE-798", "reference": "BUG-002" },
+      { "issue": "localStorage JWT storage", "cve_class": "CWE-359", "reference": "BUG-004" },
+      { "issue": "CORS allow-all on internal AI service", "cve_class": "CWE-942", "reference": "BUG-007" },
+      { "issue": "Admin endpoints without authorization", "cve_class": "CWE-285", "reference": "MISS-009" }
+    ],
+    "medium": [
+      {
+        "issue": "No rate limiting on auth endpoints",
+        "fix": "/api/auth/* endpoint'lerine IP bazlı rate limiting (IpRateLimitMiddleware)"
+      },
+      {
+        "issue": "No refresh token — JWT revocation impossible",
+        "fix": "Access token 15-30dk, httpOnly cookie'de refresh token (MISS-001)"
+      },
+      {
+        "issue": "No email verification — fake account spam",
+        "fix": "OTP/link ile email doğrulama zorunlu, doğrulanmamış hesaplar kısıtlı (MISS-002)"
+      }
+    ]
+  },
+
+  "dependency_review": {
+    "frontend": {
+      "missing_recommended": [
+        "@tanstack/react-query — server state management (IMP-004)",
+        "zustand veya jotai — client state",
+        "date-fns veya dayjs — tarih formatlama (moment.js yerine)"
+      ],
+      "version_concerns": [
+        "React 19.2.0 — bazı 3rd party kütüphaneler henüz uyumlu olmayabilir",
+        "React Router 7.11.0 — v7 büyük breaking change"
+      ]
+    },
+    "backend": {
+      "missing_recommended": [
+        "Polly — resilience ve retry (MISS-010)",
+        "Serilog.AspNetCore — structured logging (IMP-008)",
+        "Microsoft.AspNetCore.Mvc.Versioning — API versioning (IMP-007)"
+      ]
+    }
+  },
+
+  "quick_wins": [
+    {
+      "id": "QW-001",
+      "description": "BUG-001 derleme hatası düzelt — 1-2 saat, proje çalışmaya başlar",
+      "effort": "1-2 saat"
+    },
+    {
+      "id": "QW-002",
+      "description": "BUG-002 JWT secret → .env — 30 dakika, kritik güvenlik",
+      "effort": "30 dakika"
+    },
+    {
+      "id": "QW-003",
+      "description": "MISS-009 Admin [Authorize] attribute — 30 dakika",
+      "effort": "30 dakika"
+    },
+    {
+      "id": "QW-004",
+      "description": "IMP-006 Index'ler — 1 migration dosyası, büyük performans kazancı",
+      "effort": "2-3 saat"
+    },
+    {
+      "id": "QW-005",
+      "description": "IMP-009 TensorFlow kaldır — 2GB image küçülür, 30 dakika",
+      "effort": "30 dakika"
+    }
+  ]
+}

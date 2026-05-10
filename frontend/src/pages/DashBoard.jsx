@@ -179,22 +179,43 @@ const DashBoard = () => {
 
         {/* Günlük Özet Bar */}
         {todayMood && (
-          <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{todayMood.moodMode === 0 ? '⚡' : todayMood.moodMode === 1 ? '😊' : todayMood.moodMode === 2 ? '😴' : todayMood.moodMode === 3 ? '😰' : '⏰'}</span>
+          <div className="bg-slate-900/60 p-5 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-4 shadow-xl backdrop-blur-md">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
+                {todayMood.moodMode === 0 ? '⚡' : todayMood.moodMode === 1 ? '😊' : todayMood.moodMode === 2 ? '😴' : todayMood.moodMode === 3 ? '😰' : '⏰'}
+              </div>
               <div>
-                <p className="text-xs text-slate-400">Bugünkü Enerjin</p>
-                <p className="text-sm font-bold text-white">{todayMood.energyLevel}/5 Seviye</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Günün Modu</p>
+                <p className="text-sm font-bold text-white">Enerji: {todayMood.energyLevel}/5</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 border-l border-slate-700 pl-4">
-              <span className="text-xl">⏱️</span>
+            
+            <div className="flex items-center gap-4 border-l border-slate-800 pl-6 h-10 hidden md:flex">
+              <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center text-xl">💤</div>
               <div>
-                <p className="text-xs text-slate-400">Müsait Süren</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Uyku Kalitesi</p>
+                <p className="text-sm font-bold text-amber-400">{todayMood.sleepQuality || '?'}/5</p>
+              </div>
+            </div>
+
+            <div className="flex-1 border-l border-slate-800 pl-6 h-10 hidden lg:flex">
+              <div>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Günün Niyeti</p>
+                <p className="text-xs text-slate-300 italic line-clamp-1 max-w-[200px]">
+                  {todayMood.journalEntry ? `"${todayMood.journalEntry}"` : 'Henüz bir not bırakılmadı.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 border-l border-slate-800 pl-6 h-10 hidden md:flex mr-4">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center text-xl">⏱️</div>
+              <div>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Müsaitlik</p>
                 <p className="text-sm font-bold text-white">{todayMood.availableMinutes} dk</p>
               </div>
             </div>
-            <button onClick={() => navigate('/task-pool')} className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-4 py-2 rounded-lg font-bold transition-colors">
+
+            <button onClick={() => navigate('/task-pool')} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-6 py-3 rounded-xl font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-900/40">
               Görev Havuzuna Git
             </button>
           </div>

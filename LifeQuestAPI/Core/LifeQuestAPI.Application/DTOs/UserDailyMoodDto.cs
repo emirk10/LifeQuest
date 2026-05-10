@@ -10,5 +10,7 @@ public class UserDailyMoodDto
     public MoodMode MoodMode { get; set; }
     public int AvailableMinutes { get; set; }
     public int EnergyLevel { get; set; }
+    public string? JournalEntry { get; set; }
+    public int? SleepQuality { get; set; }
     public DateTime RecordedAt { get; set; }
 }

@@ -21,6 +21,12 @@ public sealed class UserDailyMood : BaseEntity
     /// <summary>Enerji seviyesi 1-5</summary>
     public int EnergyLevel { get; set; } = 3;
 
+    /// <summary>Phase 4: Günlük not / günlük kaydı</summary>
+    public string? JournalEntry { get; set; }
+
+    /// <summary>Phase 4: Uyku kalitesi (1-5)</summary>
+    public int? SleepQuality { get; set; }
+
     /// <summary>Mood kaydedildiği zaman</summary>
     public DateTime RecordedAt { get; set; } = DateTime.UtcNow;
 }

@@ -78,5 +78,9 @@ public static class ServiceRegistration
         services.AddScoped<IPostLikeWriteRepository, PostLikeWriteRepository>();
         services.AddScoped<IPostCommentReadRepository, PostCommentReadRepository>();
         services.AddScoped<IPostCommentWriteRepository, PostCommentWriteRepository>();
+        
+        // Kudos — FEAT-005
+        services.AddScoped<IKudosReadRepository, KudosReadRepository>();
+        services.AddScoped<IKudosWriteRepository, KudosWriteRepository>();
     }
 }

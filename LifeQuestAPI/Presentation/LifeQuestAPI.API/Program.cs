@@ -7,8 +7,19 @@ using LifeQuestAPI.Persistence;
 using LifeQuestAPI.Persistence.Contexts.SeedData;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog Yapılandırması
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/lifequest-.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddPersistenceServices(builder.Configuration);
@@ -19,6 +30,23 @@ builder.Services.AddHostedService<NudgeWorker>(); // SP-03
 builder.Services.AddHostedService<GoalRevisionWorker>(); // SP-04
 builder.Services.AddHostedService<GoalReminderWorker>(); // SP-05
 builder.Services.AddHostedService<ChallengeExpiryWorker>(); // SP-05
+
+// API Versioning (Phase 3)
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+    options.ApiVersionReader = Asp.Versioning.ApiVersionReader.Combine(
+        new Asp.Versioning.UrlSegmentApiVersionReader(),
+        new Asp.Versioning.QueryStringApiVersionReader("api-version"),
+        new Asp.Versioning.HeaderApiVersionReader("X-Version")
+    );
+}).AddMvc().AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -59,10 +87,13 @@ builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.I
 // CORS Politikası
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration.GetSection("AppSettings:AllowedOrigins").Get<string[]>() 
+                         ?? new[] { "http://localhost:5173" };
+
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.SetIsOriginAllowed(origin => true) // Tüm originlere izin ver
+            policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials(); // SignalR için gerekli
@@ -82,6 +113,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
+
+    options.AddPolicy("AuthRateLimit", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "global",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+
     options.RejectionStatusCode = 429;
 });
 
@@ -111,6 +154,11 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
+            if (context.Request.Cookies.TryGetValue("accessToken", out var cookieToken))
+            {
+                context.Token = cookieToken;
+            }
+
             var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
@@ -123,11 +171,16 @@ builder.Services.AddAuthentication(options =>
 });
 
 var app = builder.Build();
+app.UseSerilogRequestLogging();
 app.UseMiddleware<LifeQuestAPI.API.Middlewares.GlobalExceptionMiddleware>();
 
 app.UseSwagger();
 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LifeQuest API v1"));
 
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 // app.UseHttpsRedirection(); // Dev ortamında (Docker) localhost mixed-content ve sertifika sorunlarını önlemek için kapatıldı
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();

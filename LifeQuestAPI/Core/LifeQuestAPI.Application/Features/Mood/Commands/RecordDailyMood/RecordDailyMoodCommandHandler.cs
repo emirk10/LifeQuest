@@ -39,6 +39,8 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
             existing.MoodMode = request.MoodMode;
             existing.AvailableMinutes = request.AvailableMinutes;
             existing.EnergyLevel = request.EnergyLevel;
+            existing.JournalEntry = request.JournalEntry;
+            existing.SleepQuality = request.SleepQuality;
             existing.RecordedAt = DateTime.UtcNow;
             _moodWriteRepository.Update(existing);
         }
@@ -51,6 +53,8 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
                 MoodMode = request.MoodMode,
                 AvailableMinutes = request.AvailableMinutes,
                 EnergyLevel = request.EnergyLevel,
+                JournalEntry = request.JournalEntry,
+                SleepQuality = request.SleepQuality,
                 RecordedAt = DateTime.UtcNow
             };
             await _moodWriteRepository.AddAsync(existing);
@@ -74,6 +78,8 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
             MoodMode = existing.MoodMode,
             AvailableMinutes = existing.AvailableMinutes,
             EnergyLevel = existing.EnergyLevel,
+            JournalEntry = existing.JournalEntry,
+            SleepQuality = existing.SleepQuality,
             RecordedAt = existing.RecordedAt
         };
     }

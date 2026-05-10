@@ -20,21 +20,21 @@ const LoginPage = () => {
     try {
       const response = await authService.login({ email, password });
 
-      if (response && response.token) {
-        sessionStorage.setItem("token", response.token);
-
-        const derivedName = getUserNameFromToken();
+      if (response && response.isSuccess) {
         const userData = {
-          name: derivedName,
-          ...response.user,
+          userId: response.userId,
+          userName: response.userName,
+          role: response.role
         };
+        sessionStorage.setItem("user_data", JSON.stringify(userData));
 
         const acceptTask = searchParams.get("acceptTask");
         if (acceptTask) {
           sessionStorage.setItem("acceptTask", acceptTask);
         }
 
-        login(userData, response.token);
+        // We pass userData to the context login method
+        login(userData);
       } else {
         setError("Beklenmedik bir sunucu yanıtı alındı.");
       }

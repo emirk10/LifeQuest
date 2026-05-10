@@ -6,4 +6,6 @@ public class CompleteUserTaskCommandRequest : IRequest<CompleteUserTaskCommandRe
 {
     public Guid UserTaskId { get; set; }
     public Guid UserId { get; set; }
+    public string? ReflectionText { get; set; }
+    public List<string>? CustomTags { get; set; }
 }

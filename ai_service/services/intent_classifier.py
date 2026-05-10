@@ -64,35 +64,52 @@ class IntentClassifier:
     # ------------------------------------------------------------------ #
 
     def predict(self, text: str) -> dict:
-        """Verilen metni sınıflandır.
-
-        Returns:
-            {
-                "intent": str,          # Tahmin edilen niyet
-                "confidence": float,    # Güven skoru (0-1)
-                "all_scores": dict      # Tüm sınıfların skorları
-            }
-        """
-        if self.model is None:
-            # Model henüz yüklenmemişse eğit
-            self.train()
-
+        """Verilen metni sınıflandır. (Hibrit: Keyword + ML)"""
         cleaned = text.lower().strip()
+
+        # 1. Keyword Rule-based Filtre (Hızlı & Kesin)
+        keyword_intent = self._check_keywords(cleaned)
+        if keyword_intent:
+            return {
+                "intent": keyword_intent,
+                "confidence": 1.0,
+                "method": "keyword"
+            }
+
+        # 2. ML Fallback
+        if self.model is None:
+            self.train()
 
         intent = self.model.predict([cleaned])[0]
         probas = self.model.predict_proba([cleaned])[0]
         confidence = float(max(probas))
 
-        all_scores = {
-            cls: round(float(prob), 4)
-            for cls, prob in zip(self.model.classes_, probas)
-        }
-
         return {
             "intent": intent,
             "confidence": round(confidence, 4),
-            "all_scores": all_scores,
+            "method": "ml"
         }
+
+    def _check_keywords(self, text: str) -> str | None:
+        """Kritik anahtar kelimelere göre anında niyet tespiti."""
+        rules = {
+            "gorev_baslat": ["başlat", "başla", "start", "timer aç", "odağa geç"],
+            "gorev_tamamla": ["bitirdim", "bitti", "tamamladım", "check", "onayla", "done"],
+            "gorev_ertele": ["ertele", "yarına al", "sonra yapacağım", "postpone"],
+            "gorev_vazgec": ["vazgeç", "iptal et", "yapmayacağım", "sil bunu"],
+            "gorev_sec": ["seç", "havuzdan al", "listeme ekle"],
+            "hafif_mod": ["yoruldum", "hafif olsun", "enerjim düşük", "zorlama"],
+            "istatistik": ["rapor", "grafik", "analiz", "nasılım", "gelişim"],
+            "rozet": ["rozetler", "başarılar", "ödüller", "medal"],
+            "selamlama": ["selam", "merhaba", "hey", "naber", "günaydın", "iyi akşamlar"],
+            "yardim": ["yardım", "ne yapabilirsin", "nasıl kullanılır", "help"],
+            "oneri_iste": ["öner", "ne yapayım", "görev ver", "tavsiye"],
+        }
+
+        for intent, keywords in rules.items():
+            if any(kw in text for kw in keywords):
+                return intent
+        return None
 
     # ------------------------------------------------------------------ #
     #  YARDIMCI METODLAR

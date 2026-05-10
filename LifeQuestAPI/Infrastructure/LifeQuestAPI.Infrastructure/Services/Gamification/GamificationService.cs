@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LifeQuestAPI.Application.Abstractions.Gamification;
+using LifeQuestAPI.Application.Abstractions.Notifications;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
 using LifeQuestAPI.Domain.Entities.Identity;
+using LifeQuestAPI.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.Infrastructure.Services.Gamification;
@@ -19,6 +21,7 @@ public sealed class GamificationService : IGamificationService
     private readonly IUserBadgeWriteRepository _userBadgeWriteRepository;
     private readonly IUserCategoryProgressReadRepository _categoryProgressReadRepository;
     private readonly IUserCategoryProgressWriteRepository _categoryProgressWriteRepository;
+    private readonly IAppNotificationService _notificationService;
 
     public GamificationService(
         IAppUserReadRepository userReadRepository,
@@ -27,7 +30,8 @@ public sealed class GamificationService : IGamificationService
         IUserBadgeReadRepository userBadgeReadRepository,
         IUserBadgeWriteRepository userBadgeWriteRepository,
         IUserCategoryProgressReadRepository categoryProgressReadRepository,
-        IUserCategoryProgressWriteRepository categoryProgressWriteRepository)
+        IUserCategoryProgressWriteRepository categoryProgressWriteRepository,
+        IAppNotificationService notificationService)
     {
         _userReadRepository = userReadRepository;
         _userWriteRepository = userWriteRepository;
@@ -36,6 +40,7 @@ public sealed class GamificationService : IGamificationService
         _userBadgeWriteRepository = userBadgeWriteRepository;
         _categoryProgressReadRepository = categoryProgressReadRepository;
         _categoryProgressWriteRepository = categoryProgressWriteRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<AppUser> AddExperienceAsync(Guid userId, int xpAmount, Guid? categoryId = null)
@@ -64,7 +69,7 @@ public sealed class GamificationService : IGamificationService
             userTask.EarnedXp = finalXp;
 
         user.TotalXP += finalXp;
-        user.GeneralLevel = 1 + (user.TotalXP / 1000.0);
+        user.GeneralLevel = CalculateLevel(user.TotalXP);
         user.LastActiveAt = DateTime.UtcNow;
 
         // Seviye arttıkça günlük görev limitini güncelle (Max 10)
@@ -113,18 +118,38 @@ public sealed class GamificationService : IGamificationService
 
     private async Task CheckAndAwardBadges(Guid userId, int currentLevel)
     {
-        var eligibleBadges = await _badgeReadRepository
-            .GetWhere(b => b.RequiredLevel <= currentLevel, tracking: false)
-            .ToListAsync();
+        var user = await _userReadRepository.Table
+            .Include(u => u.UserTasks)
+            .Include(u => u.CategoryProgresses)
+            .FirstOrDefaultAsync(u => u.Id == userId);
+            
+        if (user == null) return;
 
-        var ownedBadges = await _userBadgeReadRepository
-            .GetWhere(ub => ub.AppUserId == userId, tracking: false)
+        var eligibleBadges = await _badgeReadRepository.GetAll(tracking: false).ToListAsync();
+        
+        var ownedBadgeIds = await _userBadgeReadRepository.Table
+            .Where(ub => ub.AppUserId == userId)
             .Select(ub => ub.BadgeId)
             .ToListAsync();
 
+        var completedTasksCount = user.UserTasks?.Count(ut => ut.Status == Domain.Enums.AppTaskStatus.Completed) ?? 0;
+
         foreach (var badge in eligibleBadges)
         {
-            if (!ownedBadges.Contains(badge.Id))
+            if (ownedBadgeIds.Contains(badge.Id)) continue;
+
+            bool isEarned = badge.Type switch
+            {
+                BadgeType.Level => currentLevel >= badge.RequiredValue,
+                BadgeType.Streak => user.CurrentStreak >= badge.RequiredValue,
+                BadgeType.TaskCount => completedTasksCount >= badge.RequiredValue,
+                BadgeType.CategoryMaster => badge.CategoryId.HasValue && 
+                    (user.CategoryProgresses?.FirstOrDefault(cp => cp.CategoryId == badge.CategoryId.Value)?.Level ?? 0) >= badge.RequiredValue,
+                BadgeType.FirstTime => completedTasksCount >= 1,
+                _ => false
+            };
+
+            if (isEarned)
             {
                 var newUserBadge = new UserBadge
                 {
@@ -133,6 +158,12 @@ public sealed class GamificationService : IGamificationService
                     EarnedAt = DateTime.UtcNow
                 };
                 await _userBadgeWriteRepository.AddAsync(newUserBadge);
+                
+                await _notificationService.SendNotificationAsync(
+                    userId,
+                    "Yeni Rozet Kazanıldı! 🏆",
+                    $"Tebrikler! '{badge.Name}' rozetini kazandın!",
+                    "BadgeEarned");
             }
         }
 
@@ -151,5 +182,17 @@ public sealed class GamificationService : IGamificationService
         {
             user.DailyTaskLimit = calculatedLimit;
         }
+    }
+
+    private double CalculateLevel(int totalXp)
+    {
+        // L1: 0, L2: 500, L3: 1500, L5: 4000, L10: 15000, 10+ için her +5000 XP
+        if (totalXp < 500) return 1.0 + (totalXp / 500.0);
+        if (totalXp < 1500) return 2.0 + ((totalXp - 500) / 1000.0);
+        if (totalXp < 4000) return 3.0 + ((totalXp - 1500) / 1250.0); // L3->L5 arası (2 level fark, 2500 XP)
+        if (totalXp < 15000) return 5.0 + ((totalXp - 4000) / 2200.0); // L5->L10 arası (5 level fark, 11000 XP)
+        
+        // 10+ seviye: 15000 + (level - 10) * 5000
+        return 10.0 + ((totalXp - 15000) / 5000.0);
     }
 }

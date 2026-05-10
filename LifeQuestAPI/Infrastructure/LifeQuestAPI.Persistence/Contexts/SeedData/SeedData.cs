@@ -44,94 +44,98 @@ public static class SeedData
             context.Categories.Add(sosyal);
         }
 
+        var kisiselGelisim = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Kişisel Gelişim");
+        if (kisiselGelisim == null)
+        {
+            kisiselGelisim = new Category { Name = "Kişisel Gelişim", Description = "Kişisel farkındalık ve gelişim", IconPath = "🌱" };
+            context.Categories.Add(kisiselGelisim);
+        }
+
+        var yaraticilik = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Yaratıcılık");
+        if (yaraticilik == null)
+        {
+            yaraticilik = new Category { Name = "Yaratıcılık", Description = "Yaratıcı projeler ve hobiler", IconPath = "🎨" };
+            context.Categories.Add(yaraticilik);
+        }
+
         await context.SaveChangesAsync();
 
-        // ---- ROZETLER ----
-        if (!await context.Badges.AnyAsync())
+        // ---- ROZETLER (Min 20) ----
+        if (await context.Badges.CountAsync() < 20)
         {
-            var badges = new List<Badge>
-            {
-                new Badge { Name = "Yeni Başlayan", Description = "İlk adımı attın! (Level 1)", IconPath = "🌱", RequiredLevel = 1, CategoryId = null },
-                new Badge { Name = "Hırslı", Description = "Artık durdurulamazsın! (Level 2)", IconPath = "⚡", RequiredLevel = 2, CategoryId = null },
-                new Badge { Name = "Kararlı", Description = "Tutarlı ilerliyorsun. (Level 5)", IconPath = "🎯", RequiredLevel = 5, CategoryId = null },
-                new Badge { Name = "Uzman", Description = "Gerçek bir uzman oldun! (Level 10)", IconPath = "🏆", RequiredLevel = 10, CategoryId = null },
-                new Badge { Name = "Efsane", Description = "Efsanevi seviyeye ulaştın! (Level 20)", IconPath = "👑", RequiredLevel = 20, CategoryId = null },
-            };
-            await context.Badges.AddRangeAsync(badges);
-            await context.SaveChangesAsync();
+            var existingNames = await context.Badges.Select(b => b.Name).ToListAsync();
+            var newBadges = new List<Badge>();
+
+            void AddBadge(string name, string desc, string icon, int level, Guid? catId = null) {
+                if (!existingNames.Contains(name)) newBadges.Add(new Badge { Name = name, Description = desc, IconPath = icon, RequiredLevel = level, CategoryId = catId });
+            }
+
+            AddBadge("Yeni Başlayan", "İlk adımı attın! (Level 1)", "🌱", 1);
+            AddBadge("Hırslı", "Artık durdurulamazsın! (Level 2)", "⚡", 2);
+            AddBadge("Kararlı", "Tutarlı ilerliyorsun. (Level 5)", "🎯", 5);
+            AddBadge("Uzman", "Gerçek bir uzman oldun! (Level 10)", "🏆", 10);
+            AddBadge("Efsane", "Efsanevi seviyeye ulaştın! (Level 20)", "👑", 20);
+            AddBadge("Bilge", "Büyük bir zihinsel olgunluğa ulaştın (Level 12)", "🧠", 12);
+            AddBadge("Şampiyon", "Kendi sınırlarını aştın (Level 15)", "🏅", 15);
+            AddBadge("Demir İrade", "Eğilmez, bükülmez bir disiplin sahibisin (Level 25)", "🛡️", 25);
+            AddBadge("Vizyoner", "Hayallerini gerçeğe dönüştürdün (Level 30)", "👁️‍🗨️", 30);
+            
+            // Kategori Spesifik Rozetler
+            AddBadge("Sağlık Gurusu", "Sağlık kategorisinde uzmanlaştın", "🥗", 10, saglik.Id);
+            AddBadge("Bilgi Avcısı", "Eğitim görevlerinde sınır tanımıyorsun", "📖", 10, egitim.Id);
+            AddBadge("Kariyer Mimarı", "Profesyonel hayatını ilmek ilmek dokuyorsun", "🏗️", 10, kariyer.Id);
+            AddBadge("Hayırsever", "Başkalarına yardım etmek senin doğanda var", "❤️", 10, sosyal.Id);
+            AddBadge("Sanatçı", "Yaratıcılığınla dünyayı renklendiriyorsun", "🎭", 10, yaraticilik.Id);
+            AddBadge("Gelişim Öncüsü", "Her gün biraz daha iyileşiyorsun", "🔝", 10, kisiselGelisim.Id);
+
+            // Seri Rozetleri
+            AddBadge("7 Günlük Ateş", "7 günlük seri yakaladın", "🔥", 3);
+            AddBadge("Ay Tutulması", "30 günlük seriyle imkansızı başardın", "🌑", 15);
+            AddBadge("Yıllık Abide", "365 gün kesintisiz LifeQuest!", "🏛️", 50);
+
+            // Sosyal Rozetler
+            AddBadge("Popüler", "Geniş bir arkadaş çevresine sahipsin", "👥", 5);
+            AddBadge("Lider", "Başkalarına ilham veriyorsun", "📣", 15);
+
+            if (newBadges.Any()) {
+                await context.Badges.AddRangeAsync(newBadges);
+                await context.SaveChangesAsync();
+            }
         }
 
-        if (!await context.Badges.AnyAsync(b => b.Name == "Bilge"))
+        // ---- GÖREVLER (Min 150) ----
+        if (await context.AppTasks.CountAsync() < 150)
         {
-            var extraBadges = new List<Badge>
+            var tasks = new List<AppTask>();
+            
+            // Sabit görevler (Bazı örnekler)
+            tasks.Add(new AppTask { Title = "Kişisel Vizyon Panosu", Description = "Gelecekteki hedeflerini görselleştiren bir pano oluştur.", CategoryId = kisiselGelisim.Id, BaseXP = 200, MinLevel = 2, Difficulty = DifficultyLevel.Medium, IsActive = true });
+            tasks.Add(new AppTask { Title = "Yeni Bir Hobiyi Araştır", Description = "Her zaman yapmak istediğin o hobi için ilk araştırmanı yap.", CategoryId = yaraticilik.Id, BaseXP = 50, MinLevel = 1, Difficulty = DifficultyLevel.Easy, IsActive = true });
+            
+            // Dinamik Görev Üretimi (Tüm kategoriler için)
+            var categoryList = new[] { egitim, saglik, kariyer, sosyal, kisiselGelisim, yaraticilik };
+            
+            for (int i = 1; i <= 25; i++)
             {
-                new Badge { Name = "Bilge", Description = "Büyük bir zihinsel olgunluğa ulaştın (Level 12)", IconPath = "🧠", RequiredLevel = 12, CategoryId = null },
-                new Badge { Name = "Şampiyon", Description = "Kendi sınırlarını aştın (Level 15)", IconPath = "🏅", RequiredLevel = 15, CategoryId = null },
-                new Badge { Name = "Demir İrade", Description = "Eğilmez, bükülmez bir disiplin sahibisin (Level 25)", IconPath = "🛡️", RequiredLevel = 25, CategoryId = null },
-                new Badge { Name = "Vizyoner", Description = "Hayallerini gerçeğe dönüştürdün (Level 30)", IconPath = "👁️‍🗨️", RequiredLevel = 30, CategoryId = null }
-            };
-            await context.Badges.AddRangeAsync(extraBadges);
-            await context.SaveChangesAsync();
-        }
-
-        // ---- GÖREVLER ----
-        if (!await context.AppTasks.AnyAsync())
-        {
-            var tasks = new List<AppTask>
-            {
-                // Eğitim Görevleri
-                new AppTask { Title = "Kitap Oku", Description = "En az 20 sayfa kitap oku. Sevdiğin bir konudan başlayabilirsin.", CategoryId = egitim.Id, BaseXP = 50, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Makale İncele", Description = "Alanında bir adet akademik veya popüler makale oku.", CategoryId = egitim.Id, BaseXP = 100, MinLevel = 2, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Online Kurs Dersi", Description = "Online bir eğitim platformunda en az bir ders tamamla.", CategoryId = egitim.Id, BaseXP = 120, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Dil Çalışması", Description = "Yabancı dil uygulamasında 15 dakika çalış.", CategoryId = egitim.Id, BaseXP = 40, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Günlük Tutma", Description = "Bugünün değerlendirmesini yaz. Öğrendiklerini ve hedeflerini not al.", CategoryId = egitim.Id, BaseXP = 40, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Podcast Dinle", Description = "Kişisel gelişim veya eğitim temalı bir podcast dinle.", CategoryId = egitim.Id, BaseXP = 60, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
-
-                // Sağlık Görevleri
-                new AppTask { Title = "Su İç", Description = "Günde 2 litre su hedefini tamamla. Sağlıklı bir vücut için su şart!", CategoryId = saglik.Id, BaseXP = 20, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Yürüyüş Yap", Description = "En az 5000 adım at. Hafif tempo yeterli!", CategoryId = saglik.Id, BaseXP = 80, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Spor Yap", Description = "En az 45 dakika egzersiz yap. Kardiyo veya ağırlık çalışması.", CategoryId = saglik.Id, BaseXP = 150, MinLevel = 2, MaxLevel = 99, Difficulty = DifficultyLevel.Hard, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Meditasyon Yap", Description = "30 dakika meditasyon veya nefes egzersizi yap.", CategoryId = saglik.Id, BaseXP = 120, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = true, IsActive = true },
-                new AppTask { Title = "Sağlıklı Yemek Pişir", Description = "Evde sağlıklı bir öğün hazırla. Sebze ağırlıklı tercih et.", CategoryId = saglik.Id, BaseXP = 90, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Erken Uyan", Description = "Sabah 7'den önce uyan ve güne enerjik başla.", CategoryId = saglik.Id, BaseXP = 60, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = true, IsActive = true },
-
-                // Kariyer Görevleri
-                new AppTask { Title = "LinkedIn Güncelle", Description = "LinkedIn profilini veya portföyünü güncelle.", CategoryId = kariyer.Id, BaseXP = 80, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Haftalık Plan Yap", Description = "Bu haftaki hedef ve görevlerini belirle, önceliklendir.", CategoryId = kariyer.Id, BaseXP = 60, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Networking Yap", Description = "Alanından biriyle iletişime geç veya yeni bir bağlantı kur.", CategoryId = kariyer.Id, BaseXP = 100, MinLevel = 3, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Proje Çalışması", Description = "Kişisel veya profesyonel bir projen üzerinde en az 1 saat çalış.", CategoryId = kariyer.Id, BaseXP = 150, MinLevel = 2, MaxLevel = 99, Difficulty = DifficultyLevel.Hard, IsDaily = true, IsActive = true },
-
-                // Sosyal Sorumluluk Görevleri
-                new AppTask { Title = "Sokak Hayvanlarını Besle", Description = "Sokak hayvanları için bir kap mama veya su bırak.", CategoryId = sosyal.Id, BaseXP = 150, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Gönüllü Çalışma", Description = "Bir sivil toplum kuruluşuna destek ver veya gönüllü çalışmaya katıl.", CategoryId = sosyal.Id, BaseXP = 300, MinLevel = 3, MaxLevel = 99, Difficulty = DifficultyLevel.Hard, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Komşuna Yardım Et", Description = "Bir komşuna veya aile büyüğüne yardım et.", CategoryId = sosyal.Id, BaseXP = 100, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Easy, IsDaily = false, IsActive = true },
-                new AppTask { Title = "Çevre Temizliği", Description = "Bulunduğun çevrenin temizliğine katkı sağla.", CategoryId = sosyal.Id, BaseXP = 120, MinLevel = 1, MaxLevel = 99, Difficulty = DifficultyLevel.Medium, IsDaily = false, IsActive = true },
-            };
-
-            for (int i = 1; i <= 35; i++)
-            {
-                tasks.Add(new AppTask { Title = $"Eğitim Çalışması {i}", Description = $"Akademik/Kişisel gelişim eğitimi çalışması {i}.", CategoryId = egitim.Id, BaseXP = 40 + (i % 3) * 20, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
-                tasks.Add(new AppTask { Title = $"Sağlık Egzersizi {i}", Description = $"Fiziksel/Zihinsel sağlık ve zindelik egzersizi {i}.", CategoryId = saglik.Id, BaseXP = 40 + (i % 3) * 25, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
-                tasks.Add(new AppTask { Title = $"Kariyer Gelişimi {i}", Description = $"Profesyonel iş veya kariyer geliştirme çalışması {i}.", CategoryId = kariyer.Id, BaseXP = 50 + (i % 3) * 30, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
-                tasks.Add(new AppTask { Title = $"Sosyal Sorumluluk Adımı {i}", Description = $"Topluma fayda veya yardımlaşma görevi {i}.", CategoryId = sosyal.Id, BaseXP = 60 + (i % 3) * 35, MinLevel = 1 + (i % 5), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true });
+                foreach (var cat in categoryList)
+                {
+                    tasks.Add(new AppTask 
+                    { 
+                        Title = $"{cat.Name} Görevi #{i}", 
+                        Description = $"{cat.Name} alanında gelişmeni sağlayacak {i}. adım görevi.", 
+                        CategoryId = cat.Id, 
+                        BaseXP = 40 + (i % 5) * 15, 
+                        MinLevel = 1 + (i % 7), 
+                        MaxLevel = 99, 
+                        Difficulty = (DifficultyLevel)(i % 3), 
+                        IsDaily = i % 2 == 0, 
+                        IsActive = true,
+                        EstimatedMinutes = 10 + (i % 4) * 10
+                    });
+                }
             }
 
             await context.AppTasks.AddRangeAsync(tasks);
-            await context.SaveChangesAsync();
-        }
-
-        // ---- EKSTRA PRODUCTION GÖREVLERİ ----
-        if (await context.AppTasks.CountAsync() < 200)
-        {
-            var productionTasks = new List<AppTask>();
-            for (int i = 1; i <= 40; i++)
-            {
-                productionTasks.Add(new AppTask { Title = $"Stratejik Okuma {i}", Description = $"Kişisel gelişim veya sektörel ilerleme için stratejik odaklı okuma {i}.", CategoryId = egitim.Id, BaseXP = 50 + (i % 4) * 15, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 15 + (i % 3) * 15 });
-                productionTasks.Add(new AppTask { Title = $"Fonksiyonel Antrenman {i}", Description = $"Zindeliği ve dayanıklılığı artıran fonksiyonel sağlık çalışması {i}.", CategoryId = saglik.Id, BaseXP = 60 + (i % 4) * 20, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 20 + (i % 4) * 10 });
-                productionTasks.Add(new AppTask { Title = $"Kariyer İlerlemesi {i}", Description = $"Profesyonel yetkinliklerini artıracak özel kariyer geliştirme çalışması {i}.", CategoryId = kariyer.Id, BaseXP = 70 + (i % 4) * 25, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 30 + (i % 3) * 15 });
-                productionTasks.Add(new AppTask { Title = $"Toplumsal Dayanışma {i}", Description = $"Çevrene ve topluma fayda sağlayacak gönüllülük adımı {i}.", CategoryId = sosyal.Id, BaseXP = 80 + (i % 4) * 30, MinLevel = 1 + (i % 6), MaxLevel = 99, Difficulty = (DifficultyLevel)(i % 3), IsDaily = i % 2 == 0, IsActive = true, EstimatedMinutes = 45 + (i % 4) * 20 });
-            }
-            await context.AppTasks.AddRangeAsync(productionTasks);
             await context.SaveChangesAsync();
         }
 
