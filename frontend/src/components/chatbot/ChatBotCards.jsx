@@ -21,14 +21,23 @@ const energyBar = (level) => {
 };
 
 // ─── Görev Kartı ─────────────────────────────────────────────────────────────
-export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor = "indigo" }) => {
+export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor = "indigo", actions = [] }) => {
   const colors = {
     indigo: "bg-indigo-600 hover:bg-indigo-500",
     emerald: "bg-emerald-600 hover:bg-emerald-500",
     amber: "bg-amber-600 hover:bg-amber-500",
+    slate: "bg-slate-700 hover:bg-slate-600",
+    rose: "bg-rose-600 hover:bg-rose-500",
   };
+
+  // Tekil action prop'u varsa array'e çevir
+  const allActions = [...actions];
+  if (onAction && actionLabel) {
+    allActions.push({ onAction, actionLabel, actionIcon, actionColor });
+  }
+
   return (
-    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-3 flex flex-col gap-2">
+    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-3 flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-white leading-tight truncate">{task.title}</p>
@@ -49,20 +58,23 @@ export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor 
         {task.estimatedMinutes > 0 && (
           <span className="text-[10px] text-slate-400">⏱️ {task.estimatedMinutes} dk</span>
         )}
-        {task.status && (
-          <span className="text-[10px] text-slate-500">{task.status}</span>
-        )}
       </div>
       {task.whyThisTask && (
-        <p className="text-[11px] text-indigo-300 italic">"{ task.whyThisTask}"</p>
+        <p className="text-[11px] text-indigo-300 italic leading-snug">"{task.whyThisTask}"</p>
       )}
-      {onAction && (
-        <button
-          onClick={() => onAction(task)}
-          className={`w-full text-xs font-bold text-white py-2 rounded-lg transition-colors ${colors[actionColor]}`}
-        >
-          {actionIcon} {actionLabel}
-        </button>
+      {allActions.length > 0 && (
+        <div className="flex gap-2 mt-1">
+          {allActions.map((act, i) => (
+            <button
+              key={i}
+              onClick={() => act.onAction(task)}
+              className={`flex-1 text-[10px] font-bold text-white py-2 rounded-lg transition-all active:scale-95 flex items-center justify-center gap-1 ${colors[act.actionColor || "indigo"]}`}
+            >
+              <span>{act.actionIcon}</span>
+              <span>{act.actionLabel}</span>
+            </button>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -378,3 +390,11 @@ export const GoalsDashboardCard = ({ dashboard }) => {
     </div>
   );
 };
+// ─── Yazıyor... Göstergesi ───────────────────────────────────────────────────
+export const TypingIndicator = () => (
+  <div className="flex gap-1 py-1 px-2">
+    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />
+    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
+    <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce" />
+  </div>
+);

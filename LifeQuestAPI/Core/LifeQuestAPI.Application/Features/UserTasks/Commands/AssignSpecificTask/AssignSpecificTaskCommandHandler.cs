@@ -39,7 +39,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse { Success = false, Message = "Kullanıcı bulunamadı." };
         }
 
-        // ─── Lazy Reset Logic (Timezone & DB Check) ────────────────────
+        // ─── Lazy Reset Logic (Timezone Adjusted) ──────────────────────
         TimeZoneInfo tz;
         try
         {
@@ -52,17 +52,12 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
         
         var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
         var today = DateOnly.FromDateTime(nowInLocal);
-        var utcMidnight = TimeZoneInfo.ConvertTimeToUtc(nowInLocal.Date, tz);
 
-        // Kullanıcının bugün aldığı görev sayısını DB'den dinamik hesapla
-        var tasksTakenToday = await _userTaskReadRepository.Table
-            .CountAsync(ut => ut.AppUserId == user.Id && ut.AssignedAt >= utcMidnight, cancellationToken);
-
-        // Günlük sayaç senkronizasyonu
-        if (user.TodayTaskCount != tasksTakenToday || !user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+        // Günlük sayaç sıfırlama
+        if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
         {
-            user.TodayTaskCount = tasksTakenToday;
-            if (tasksTakenToday == 0) user.OverLimitWarningShown = false;
+            user.TodayTaskCount = 0;
+            user.OverLimitWarningShown = false;
             user.LastCounterResetDate = today;
         }
 

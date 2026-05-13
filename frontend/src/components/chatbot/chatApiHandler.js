@@ -46,7 +46,8 @@ export async function executeApiAction(apiAction, context = {}) {
 
     // ── Görev Sorgulama ────────────────────────────────────────────────────────
     case "get_active_tasks": {
-      const tasks = await taskService.getAllTasks();
+      const res = await taskService.getAllTasks(null, 1, 100);
+      const tasks = Array.isArray(res) ? res : (res.tasks || []);
       const active = tasks.filter(t =>
         t.status === "Selected" || t.status === "InProgress" || t.status === "Suggested"
       );
@@ -54,7 +55,8 @@ export async function executeApiAction(apiAction, context = {}) {
     }
 
     case "get_completed_today": {
-      const tasks = await taskService.getAllTasks();
+      const res = await taskService.getAllTasks(null, 1, 100);
+      const tasks = Array.isArray(res) ? res : (res.tasks || []);
       const today = new Date().toDateString();
       const completed = tasks.filter(t => {
         if (t.status !== "Completed") return false;
@@ -65,7 +67,8 @@ export async function executeApiAction(apiAction, context = {}) {
     }
 
     case "get_postponed_tasks": {
-      const tasks = await taskService.getAllTasks();
+      const res = await taskService.getAllTasks(null, 1, 100);
+      const tasks = Array.isArray(res) ? res : (res.tasks || []);
       const postponed = tasks.filter(t => t.status === "Postponed");
       return { tasks: postponed };
     }
@@ -301,4 +304,17 @@ export async function assignTask(taskId) {
 // ─── Görev Havuzdan Seç (daily-pool → select) ────────────────────────────────
 export async function selectTask(taskId) {
   return await taskService.selectTask(taskId);
+}
+
+// ─── Görev Tamamla ───────────────────────────────────────────────────────────
+export async function completeTask(userTaskId, reflectionText = "") {
+  return await taskService.completeTask(userTaskId, reflectionText);
+}
+
+// ─── Görev Ertele ────────────────────────────────────────────────────────────
+export async function postponeTask(userTaskId) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+  return await taskService.postponeTask(userTaskId, dateStr, "Chatbot üzerinden ertelendi");
 }

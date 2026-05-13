@@ -40,7 +40,7 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             .Include(ub => ub.Badge)
             .ToListAsync(cancellationToken);
 
-        // ─── Timezone & DB Check for Dynamic TodayTaskCount ────────────────
+        // ─── Timezone Adjusted Lazy Reset Logic for UI ───────────────────────
         TimeZoneInfo tz;
         try
         {
@@ -51,10 +51,12 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
         }
         var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-        var utcMidnight = TimeZoneInfo.ConvertTimeToUtc(nowInLocal.Date, tz);
+        var today = DateOnly.FromDateTime(nowInLocal);
 
-        var tasksTakenToday = await _userTaskReadRepository.Table
-            .CountAsync(ut => ut.AppUserId == request.UserId && ut.AssignedAt >= utcMidnight, cancellationToken);
+        // Eğer bugün için henüz sıfırlama yapılmamışsa UI'da 0 göster
+        var displayTodayTaskCount = (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+            ? 0
+            : user.TodayTaskCount;
 
         var completedTaskCount = await _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId && ut.CompletedAt.HasValue, tracking: false)
@@ -70,7 +72,7 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             CreatedAt = user.CreatedAt,
             CompletedTaskCount = completedTaskCount,
             DailyTaskLimit = user.DailyTaskLimit,
-            TodayTaskCount = tasksTakenToday,
+            TodayTaskCount = displayTodayTaskCount,
             ActiveTaskCount = user.ActiveTaskCount,
 
             EarnedBadges = userBadges.Select(ub => new UserBadgeDto
