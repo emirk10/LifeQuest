@@ -40,6 +40,22 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             .Include(ub => ub.Badge)
             .ToListAsync(cancellationToken);
 
+        // ─── Timezone & DB Check for Dynamic TodayTaskCount ────────────────
+        TimeZoneInfo tz;
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+        var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        var utcMidnight = TimeZoneInfo.ConvertTimeToUtc(nowInLocal.Date, tz);
+
+        var tasksTakenToday = await _userTaskReadRepository.Table
+            .CountAsync(ut => ut.AppUserId == request.UserId && ut.AssignedAt >= utcMidnight, cancellationToken);
+
         var completedTaskCount = await _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId && ut.CompletedAt.HasValue, tracking: false)
             .CountAsync(cancellationToken);
@@ -54,7 +70,7 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             CreatedAt = user.CreatedAt,
             CompletedTaskCount = completedTaskCount,
             DailyTaskLimit = user.DailyTaskLimit,
-            TodayTaskCount = user.TodayTaskCount,
+            TodayTaskCount = tasksTakenToday,
             ActiveTaskCount = user.ActiveTaskCount,
 
             EarnedBadges = userBadges.Select(ub => new UserBadgeDto

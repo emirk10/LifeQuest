@@ -39,19 +39,35 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse { Success = false, Message = "Kullanıcı bulunamadı." };
         }
 
-        // ─── Lazy Reset Logic ──────────────────────────────────────────
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        
-        // Günlük sayaç sıfırlama
-        if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+        // ─── Lazy Reset Logic (Timezone & DB Check) ────────────────────
+        TimeZoneInfo tz;
+        try
         {
-            user.TodayTaskCount = 0;
-            user.OverLimitWarningShown = false;
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+        
+        var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        var today = DateOnly.FromDateTime(nowInLocal);
+        var utcMidnight = TimeZoneInfo.ConvertTimeToUtc(nowInLocal.Date, tz);
+
+        // Kullanıcının bugün aldığı görev sayısını DB'den dinamik hesapla
+        var tasksTakenToday = await _userTaskReadRepository.Table
+            .CountAsync(ut => ut.AppUserId == user.Id && ut.AssignedAt >= utcMidnight, cancellationToken);
+
+        // Günlük sayaç senkronizasyonu
+        if (user.TodayTaskCount != tasksTakenToday || !user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+        {
+            user.TodayTaskCount = tasksTakenToday;
+            if (tasksTakenToday == 0) user.OverLimitWarningShown = false;
             user.LastCounterResetDate = today;
         }
 
         // Haftalık sayaç sıfırlama (Pazartesi kontrolü)
-        var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
+        var isMonday = nowInLocal.DayOfWeek == DayOfWeek.Monday;
         if (isMonday && (!user.LastWeeklyResetDate.HasValue || user.LastWeeklyResetDate.Value < today))
         {
             user.WeeklyCompletedCount = 0;
