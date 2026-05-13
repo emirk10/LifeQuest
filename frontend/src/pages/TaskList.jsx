@@ -17,6 +17,9 @@ const TaskList = () => {
   const [requesting, setRequesting] = useState(false);
   const [toast, setToast] = useState(null);
   const [activeTimerTask, setActiveTimerTask] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 1;
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -40,8 +43,9 @@ const TaskList = () => {
     try {
       const selectedCategory = categories.find((c) => c.name === currentCategoryName);
       const categoryId = selectedCategory ? selectedCategory.id : null;
-      const data = await taskService.getAllTasks(categoryId);
-      setTasks(Array.isArray(data) ? data : data?.tasks || []);
+      const data = await taskService.getAllTasks(categoryId, page, pageSize);
+      setTasks(data.tasks || []);
+      setTotalCount(data.totalCount || 0);
     } catch (err) {
       console.error(err);
     } finally {
@@ -53,10 +57,29 @@ const TaskList = () => {
     if (categories.length > 0 || !currentCategoryName) {
       fetchTasks();
     }
-  }, [currentCategoryName, categories]);
+  }, [currentCategoryName, categories, page]);
+
+  // Yardımcı: Görevleri tarihe göre grupla
+  const groupTasksByDate = (tasks) => {
+    const groups = {};
+    tasks.forEach((task) => {
+      const date = new Date(task.assignedAt).toLocaleDateString("tr-TR", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      if (!groups[date]) groups[date] = [];
+      groups[date].push(task);
+    });
+    return groups;
+  };
+
+  const taskGroups = groupTasksByDate(tasks);
+  const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleCategoryChange = (e) => {
     const selectedName = e.target.value;
+    setPage(1); // Kategori değişince başa dön
     if (selectedName === "all") {
       setSearchParams({});
     } else {
@@ -110,7 +133,6 @@ const TaskList = () => {
   };
 
   const completedCount = tasks.filter((t) => t.isCompleted).length;
-  const totalCount = tasks.length;
   const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -189,25 +211,37 @@ const TaskList = () => {
         )}
 
         {/* Task List */}
-        <div className="grid gap-4">
+        <div className="space-y-12">
           {!loading ? (
             tasks.length > 0 ? (
-              tasks.map((task) => (
-                <TaskItem
-                  key={task.id}
-                  id={task.id}
-                  title={task.title}
-                  description={task.description}
-                  xp={task.baseXP || task.xp}
-                  difficulty={task.difficulty}
-                  isCompleted={task.isCompleted}
-                  status={task.status}
-                  postponedTo={task.postponedTo}
-                  onComplete={handleCompleteTask}
-                  onPostpone={handlePostponeTask}
-                  onCancelPostpone={handleCancelPostponeTask}
-                  onFocus={handleFocusTask}
-                />
+              Object.keys(taskGroups).map((date) => (
+                <div key={date} className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                      {date === new Date().toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" }) ? "BUGÜN" : date}
+                    </h3>
+                    <div className="h-px w-full bg-slate-800"></div>
+                  </div>
+                  <div className="grid gap-4">
+                    {taskGroups[date].map((task) => (
+                      <TaskItem
+                        key={task.id}
+                        id={task.id}
+                        title={task.title}
+                        description={task.description}
+                        xp={task.baseXP || task.xp}
+                        difficulty={task.difficulty}
+                        isCompleted={task.isCompleted}
+                        status={task.status}
+                        postponedTo={task.postponedTo}
+                        onComplete={handleCompleteTask}
+                        onPostpone={handlePostponeTask}
+                        onCancelPostpone={handleCancelPostponeTask}
+                        onFocus={handleFocusTask}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))
             ) : (
               <div className="text-center py-16 border-2 border-slate-800/50 rounded-[2rem] bg-slate-900/20 border-dashed flex flex-col items-center gap-6">
@@ -235,6 +269,37 @@ const TaskList = () => {
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-6 pt-10 border-t border-slate-800/50">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1 || loading}
+              className="group px-6 py-3 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center gap-2"
+            >
+              <span>←</span>
+              <span className="text-xs font-bold uppercase tracking-tighter">Önceki</span>
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-500 uppercase">SAYFA</span>
+              <span className="text-lg font-black text-white bg-indigo-600/20 border border-indigo-500/30 w-10 h-10 flex items-center justify-center rounded-lg shadow-lg shadow-indigo-500/10">
+                {page}
+              </span>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">/ {totalPages}</span>
+            </div>
+
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages || loading}
+              className="group px-6 py-3 bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-indigo-500 rounded-xl transition-all disabled:opacity-30 disabled:pointer-events-none flex items-center gap-2"
+            >
+              <span className="text-xs font-bold uppercase tracking-tighter">Sonraki</span>
+              <span>→</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {activeTimerTask && (

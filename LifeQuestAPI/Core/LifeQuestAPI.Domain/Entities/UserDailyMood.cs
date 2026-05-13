@@ -18,7 +18,7 @@ public sealed class UserDailyMood : BaseEntity
     /// <summary>Bugün kaç dakika müsait? (5-480)</summary>
     public int AvailableMinutes { get; set; } = 30;
 
-    /// <summary>Enerji seviyesi 1-5</summary>
+    /// <summary>Enerji seviyesi 1-10</summary>
     public int EnergyLevel { get; set; } = 3;
 
     /// <summary>Phase 4: Günlük not / günlük kaydı</summary>

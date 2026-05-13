@@ -1,0 +1,330 @@
+================================================================================
+PARAGRAPH ANALYSIS
+================================================================================
+  [   0] Style: Normal                              | T.C.
+  [   1] Style: Normal                              | SAKARYA ÜNİVERSİTESİ
+  [   2] Style: Normal                              | BİLGİSAYAR VE BİLİŞİM BİLİMLERİ FAKÜLTESİ
+  [  10] Style: Normal                              | BSM 401 BİLGİSAYAR MÜHENDİSLİĞİ TASARIMI
+  [  18] Style: Kapak_Makale_Basligi_Sau            | “Yaşam Pusulası” Adında Yapay Zeka Destekli Kişisel Gelişim Ve Toplum Bilinci Asistanı
+  [  20] Style: Kapak_Isim_Soyisim                  | B231210355 – Emir KIR
+  [  21] Style: Kapak_Isim_Soyisim                  | G231210355 – Metehan GÜLŞER
+  [  31] Style: Kapak_Bilimdali_Yazı_Stili_Sau      | 2025 - 2026 Güz Dönemi
+  [  32] Style: Normal                              | ÖNSÖZ
+  [  36] Style: Ana_Paragraf_Yazi_Stili_Sau         | Günümüzün hızlı dijital dünyasında bireylerin motivasyon kaybı ve odaklanma sorunlarına yenilikçi bir çözüm sunmayı hede
+  [  37] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin fikir aşamasından tasarımına kadar olan süreçte, akademik bilgisini ve tecrübesini bizden esirgemeyen, vizyonuy
+  [  38] Style: Ana_Paragraf_Yazi_Stili_Sau         | Ayrıca, projemizin araştırma ve geliştirme süreçlerinde belirlediğimiz standartların oluşmasına katkı sağlayan TÜBİTAK 2
+  [  39] Style: Ana_Paragraf_Yazi_Stili_Sau         | Son olarak, bu yoğun ve zorlu çalışma temposunda maddi ve manevi desteklerini her zaman hissettiğimiz, sabır ve anlayışl
+  [  41] Style: Normal                              | İÇİNDEKİLER
+  [  43] Style: Normal                              | ÖNSÖZ ..................................................................................................................
+  [  44] Style: Normal                              | İÇİNDEKİLER ........................................................................................................ iii
+  [  45] Style: Normal                              | SİMGELER VE KISALTMALAR LİSTESİ ................................................ v ŞEKİLLER LİSTESİ ....................
+  [  46] Style: Normal                              | ÖZET ...................................................................................................................
+  [  48] Style: Normal                              | BÖLÜM 1.
+  [  49] Style: Normal                              | GİRİŞ ..................................................................................................................
+  [  50] Style: Normal                              | 1.1. Çalışma Konusunun Tanımı ...................................................................  1
+  [  51] Style: Normal                              | 1.2. Ön Bilgiler ve Literatür Taraması ..........................................................   1
+  [  52] Style: Normal                              | 1.3. Yöntem ve Seçim Sebepleri ...................................................................   4
+  [  53] Style: Normal                              | 1.4. Raporun Akışı ........................................................................................   4
+  [  55] Style: Normal                              | BÖLÜM 2.
+  [  56] Style: Normal                              | SİSTEMATİK YAKLAŞIM...................................................................................   6
+  [  57] Style: Normal                              | 2.1. Formülasyon (Seviye ve XP Hesaplama) ..............................................   6
+  [  58] Style: Normal                              | 2.2. Donanım Mimarisi .................................................................................   7
+  [  59] Style: Normal                              | 2.3. Yazılım Mimarisi (Clean Architecture) .................................................   8
+  [  60] Style: Normal                              | 2.3.1 Sistem Mimarisi ………………………………………………  8
+  [  61] Style: Normal                              | 2.3.2 Veritabanı Tasarımı ve Varlık İlişkileri……………………… 11
+  [  62] Style: Normal                              | 2.3.3. API Uçlarının Tasarımı ……………………………………..  13
+  [  63] Style: Normal                              | 2.3.3.1. AuthController ……………………………………  13
+  [  64] Style: Normal                              | 2.3.3.2. BadgesController …………………………………  14
+  [  65] Style: Normal                              | 2.3.3.3. CategoriesController ……………………………...  15
+  [  66] Style: Normal                              | 2.3.3.4. RolesController …………………………………..   16
+  [  67] Style: Normal                              | 2.3.3.3. TasksController ……………………………..........   17
+  [  68] Style: Normal                              | 2.3.3.4. UsersController …………………………………..   18
+  [  73] Style: Normal                              | BÖLÜM 3.
+  [  74] Style: Normal                              | TASARIM DETAYLARI VE İŞ AKIŞLARI ...................................................... 19
+  [  75] Style: Normal                              | 3.1. Görev Tamamlama ve Puanlama Mekanizması ................................................ 19
+  [  76] Style: Normal                              | 3.2. Kural Tabanlı Görev Atama Algoritması .............................................. 22
+  [  77] Style: Normal                              | 3.3 CQRS Süreci ve MediatR Kütühanesi ………………...……………… 24
+  [  78] Style: Normal                              | 3.4. Proje İş-Zaman Çizelgesi ...................................................................... 25
+  [  79] Style: Normal                              | 3.5. Risk Yönetimi ve B Planları ................................................................. 26
+  [  80] Style: Normal                              | 3.6. Maliyet ve Kaynak Analizi ................................................................... 27
+  [  82] Style: Normal                              | BÖLÜM 4.
+  [  83] Style: Normal                              | VERİ GÜVENLİĞİ DEĞERLENDİRMESİ ..................................................... 28
+  [  84] Style: Normal                              | 4.1. Kimlik Doğrulama ve Yetkilendirme Mimarisi (JWT) ................................... 28
+  [  85] Style: Normal                              | 4.1.1 JWT Kod Yapısı …………………………………………………… 29
+  [  86] Style: Normal                              | 4.2. Veri Şifreleme ve Mahremiyet Stratejileri ...................................................... 29
+  [  87] Style: Normal                              | 4.3. Veritabanı Erişim Kontrolü ve Yedekleme ..................................................... 30
+  [  88] Style: Normal                              | 4.4. KVKK Uyumu ve Yasal Yükümlülükler ........................................................ 30
+  [  90] Style: Normal                              | BÖLÜM 5.
+  [  91] Style: Normal                              | SONUÇLAR VE ÖNERİLER .............................................................................. 32
+  [  92] Style: Normal                              | 5.1. Çalışmanın Konusu ve Yöntem Özeti .............................................................. 32
+  [  93] Style: Normal                              | 5.2. Test ve Elde Edilen Sonuçlar ........................................................................... 32
+  [  94] Style: Normal                              | 5.3. Hedeflere Ulaşma Durumu ve Değerlendirme ................................................. 33
+  [  95] Style: Normal                              | 5.4. Öneriler ..........................................................................................................
+  [  97] Style: Normal                              | KAYNAKLAR ....................................................................................................... 35
+  [  98] Style: Normal                              | ÖZGEÇMİŞ ........................................................................................................... 37
+  [ 103] Style: Ilk_Sayfalar_Basligi_Sau            | SİMGELER VE KISALTMALAR LİSTESİ
+  [ 109] Style: Normal                              | ŞEKİLLER LİSTESİ
+  [ 114] Style: Normal                              | ÖZET
+  [ 117] Style: Normal                              | Anahtar Kelimeler: Oyunlaştırma, Yapay Zeka, Kişisel Gelişim, Temiz Mimari, Sosyal Sorumluluk
+  [ 119] Style: Ozet_Yazi_Stili_Sau                 | Günümüzün hızlı tempolu dijital dünyası, bireylerin dikkat dağınıklığı yaşamasına ve uzun vadeli kişisel gelişim hedefle
+  [ 121] Style: Ozet_Yazi_Stili_Sau                 | Projenin temel amacı, kullanıcıların hedeflerini (eğitim, sağlık, kariyer ve sosyal sorumluluk gibi) görevlere bölmeleri
+  [ 123] Style: Ozet_Yazi_Stili_Sau                 | Yöntem olarak, kullanıcının mevcut seviyesine göre kural tabanlı (rule-based) bir sistem görev ataması yapacaktır. Geliş
+  [ 125] Style: Ozet_Yazi_Stili_Sau                 | Bu proje, Birleşmiş Milletler Sürdürülebilir Kalkınma Amaçları (SKA) arasında yer alan SKA 3 (Sağlıklı ve Kaliteli Yaşam
+  [ 127] Style: Ozet_Yazi_Stili_Sau                 | Sonuç olarak, bu uygulama bireysel hedef belirleme sürecini toplumsal bilinçle birleştirerek dijitalleştirmekte; kullanı
+  [ 129] Style: Heading 1                           | GİRİŞ
+  [ 132] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu bölümde, "Yaşam Pusulası" projesinin tanımı, çalışmanın anlaşılabilmesi için gerekli temel bilgiler, literatürdeki be
+  [ 134] Style: Alt_Baslık_Sau                      | Çalışma Konusunun Tanımı
+  [ 136] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" bireylerin eğitim, sağlık, kariyer ve sosyal sorumluluk alanlarındaki hedeflerini oyunlaştırma (gamific
+  [ 138] Style: Alt_Baslık_Sau                      | Ön Bilgiler ve Literatür Taraması
+  [ 140] Style: Ana_Paragraf_Yazi_Stili_Sau         | Dijital çağda bireylerin motivasyon ve özdisiplin süreçleri giderek çevrim içi ortamlarda şekillenmektedir. Çevrim içi ö
+  [ 142] Style: Ana_Paragraf_Yazi_Stili_Sau         | Son yıllarda yapılan araştırmalar, oyunlaştırma temelli sistemlerin kullanıcı motivasyonunu artırmada etkili olabileceği
+  [ 144] Style: Ana_Paragraf_Yazi_Stili_Sau         | Yaşam Pusulası projesi, oyunlaştırma ilkelerini temel alarak kullanıcıların kişisel gelişimini teşvik ederken aynı zaman
+  [ 146] Style: Ana_Paragraf_Yazi_Stili_Sau         | Yaşam Pusulası, kural tabanlı (rule-based) bir görev öneri sistemiyle çalışacak olup aynı zamanda kullanıcıya yapay zekâ
+  [ 148] Style: Ana_Paragraf_Yazi_Stili_Sau         | Literatürde dijital platformların büyük kısmı bireysel hedef takibi ve kişisel gelişime odaklanırken, dijital vatandaşlı
+  [ 150] Style: Ana_Paragraf_Yazi_Stili_Sau         | Yaşam Pusulası projesi, yalnızca bireysel gelişimi değil, aynı zamanda Dijital Dönüşüm, Eğitimde Teknoloji Kullanımı ve
+  [ 152] Style: Ana_Paragraf_Yazi_Stili_Sau         | Proje On İkinci Kalkınma Planı kapsamında aşağıdaki maddelerle doğrudan ilişkilidir.
+  [ 153] Style: Ana_Paragraf_Yazi_Stili_Sau         | Madde 675: Hayat boyu öğrenme sisteminin, işgücü piyasasının talep ettiği becerileri (dijital ve sosyal beceriler) kazan
+  [ 154] Style: Ana_Paragraf_Yazi_Stili_Sau         | Madde 658: Bireylerin analitik düşünme, finansal okuryazarlık ve işbirlikçi çalışma alanlarında yetkinlik sahibi olmalar
+  [ 156] Style: Ana_Paragraf_Yazi_Stili_Sau         | Proje 2030 Sanayi ve Teknoloji Stratejisinde değinilen yapay zeka alanında araştırma, girişimcilik ve yenilikçiliği dest
+  [ 158] Style: Ana_Paragraf_Yazi_Stili_Sau         | Ayrıca proje, Toplum 5.0 yaklaşımıyla da uyumludur. Bu yaklaşım, teknolojiyi yalnızca ekonomik verimlilik aracı olarak d
+  [ 160] Style: Alt_Baslık_Sau                      | 1.3 Yöntem ve Seçim Sebepleri
+  [ 162] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu çalışmada yazılım mimarisi olarak "Temiz Mimari" (Clean Architecture) yaklaşımı benimsenmiştir. Bu yöntemin seçilme s
+  [ 164] Style: Ana_Paragraf_Yazi_Stili_Sau         | Veri tabanı yönetiminde PostgreSQL, nesne-ilişkisel eşleme aracı olarak Entity Framework Core tercih edilmiştir. İstemci
+  [ 166] Style: Alt_Baslık_Sau                      | 1.4. Raporun Akışı
+  [ 168] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu bitirme çalışması raporunun sonraki bölümleri, okuyucunun sistemi teknik ve işlevsel açıdan değerlendirebilmesi için
+  [ 171] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bölüm 2 (Sistematik Yaklaşım): Projenin gereksinim analizi, kullanılan donanım ve yazılım mimarisi detayları, veritabanı
+  [ 173] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bölüm 3 (Tasarım Detayları ve İş Akışları): Geliştirilen mobil ve web arayüz tasarımları, kodlama süreçleri, sistemin ku
+  [ 175] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bölüm 4 (Veri Güvenliği Değerlendirmesi): Kullanıcı verilerinin güvenliği, JWT tabanlı kimlik doğrulama mekanizmasının g
+  [ 177] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bölüm 5 (Sonuçlar ve Öneriler): Çalışmadan elde edilen çıktılar özetlenmiş, projenin güçlü yönleri değerlendirilmiştir.
+  [ 196] Style: Heading 1                           | SİSTEMATİK YAKLAŞIM
+  [ 201] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu bölümde, "Yaşam Pusulası" projesinin gerçekleştirilmesinde kullanılan matematiksel modeller, donanım gereksinimleri v
+  [ 203] Style: Alt_Baslık_Sau                      | Formülasyon
+  [ 205] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin temel mekanizması olan "Genel Seviye" (General Level) hesaplaması, kullanıcının farklı kategorilerdeki (Eğitim,
+  [ 207] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu işlem aşağıdaki denklem ile ifade edilmiştir:
+  [ 209] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 211] Style: Ana_Paragraf_Yazi_Stili_Sau         | Burada; Lgenel​: Kullanıcının genel gelişim seviyesini, Lci​: i. kategorideki mevcut seviyeyi, N: Toplam kategori sayısı
+  [ 219] Style: Ana_Paragraf_Yazi_Stili_Sau         | Ayrıca bir üst seviyeye geçmek için gereken deneyim puanı (XPgerekli​) oyunlaştırma dinamiklerinde sıkça kullanılan arta
+  [ 220] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 224] Style: Ana_Paragraf_Yazi_Stili_Sau         | Burada; XPtaban sabit bir başlangıç değerini (örn: 100), k ise zorluk katsayısını temsil eder. Bu formülasyon, kullanıcı
+  [ 226] Style: Alt_Baslık_Sau                      | Donanım Mimarisi
+  [ 228] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" projesi, istemci-sunucu (client-server) mimarisi üzerinde çalıştığından, donanım gereksinimleri sunucu
+  [ 230] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sunucu Tarafı: Uygulamanın arka ucu (Backend) ve veritabanı hizmetleri için yüksek işlem gücüne ve veri bütünlüğüne sahi
+  [ 232] Style: Ana_Paragraf_Yazi_Stili_Sau         | İstemci Tarafı: Son kullanıcılar sisteme iki farklı donanım türü üzerinden erişebilmektedir:
+  [ 233] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1. Mobil Cihazlar: Android ve IOS işletim sistemine sahip, internet erişimi olan akıllı telefonlar.
+  [ 234] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Web İstemcileri: Modern web tarayıcılarını (Chrome, Firefox, Safari vb.) çalıştırabilen masaüstü veya dizüstü bilgisa
+  [ 239] Style: Alt_Baslık_Sau                      | Yazılım Mimarisi
+  [ 242] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" projesinin yazılım mimarisinin, sürdürülebilirlik, esneklik ve test edilebilirlik gereksinimleri doğrul
+  [ 243] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.1. Sistem Mimarisi
+  [ 245] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sistemin genel yapısını ve katmanlar arasındaki ilişkini içeren sistem mimarisi Şekil 2.1’de sunulmuştur.
+  [ 248] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 251] Style: Normal                              | Şekil 2.1: Sistem Mimarisi
+  [ 260] Style: Ana_Paragraf_Yazi_Stili_Sau         | Şekil 2.1’de görüldüğü üzere sistem dört ana katman üzerinde kurgulanmıştır:
+  [ 262] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1. Core (Çekirdek) Katmanı: Projenin merkezi olması planlanan bu katman, diğer tüm katmanlardan bağımsızdır. İki alt bil
+  [ 263] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Domain: Veritabanı tablolarına karşılık gelen varlıkların (User, Task, Category vb.) ve sistemin değişmez iş kuralları
+  [ 264] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Application: Sistemin senaryolarını (Use Cases) içerecek olan iş mantığı katmanıdır. Burada karmaşıklığı yönetmek amac
+  [ 266] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Infrastructure (Altyapı) Katmanı: Çekirdek katmanda tanımlanan soyut arayüzlerin somutlaştırılacağı (implementation)
+  [ 268] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3.  Persistence (Veri Erişim) Katmanı: Veri kalıcılığının ve veritabanı işlemlerinin yönetileceği katmandır. Nesne-İlişk
+  [ 270] Style: Ana_Paragraf_Yazi_Stili_Sau         | 4.  Presentation (Sunum) Katmanı: İstemcilerin sisteme erişim sağlayacağı kapıdır. ASP.NET Core Web API teknolojisi ile
+  [ 276] Style: Ana_Paragraf_Yazi_Stili_Sau         | İstemci Uygulamaları (Clients): Son kullanıcı arayüzlerinde kullanıcı deneyimini, erişilebilirliği ve performans kriterl
+  [ 278] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Web Arayüzü: Kullanıcıların masaüstü, tablet ve mobil cihaz tarayıcılarından sisteme sorunsuz erişebilmesi için "Duyar
+  [ 280] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Mobil Uygulama: Android ve iOS işletim sistemlerinde ayrı ayrı geliştirme maliyetini ortadan kaldırmak ve tek bir kod
+  [ 295] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.2. Veritabanı Tasarımı ve Varlık İlişkileri
+  [ 297] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sistemin veri tutarlılığını sağlamak amacıyla PostgreSQL veritabanı yönetim sistemi üzerinde ilişkisel bir yapı (Relatio
+  [ 300] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 303] Style: Ana_Paragraf_Yazi_Stili_Sau         | Şekil 2.2: Varlık-İlişki (ER) diyagramı
+  [ 307] Style: Ana_Paragraf_Yazi_Stili_Sau         | Şekil 2.2’deki tasarımda yer alan temel tabloların işlevleri şunlardır:
+  [ 309] Style: Ana_Paragraf_Yazi_Stili_Sau         | User: Platformun ana aktörü olan kullanıcıların verilerini yönetmek için tasarlanmıştır. Bu tablonun; güvenli kimlik doğ
+  [ 311] Style: Ana_Paragraf_Yazi_Stili_Sau         | Task & UserTask: Görev yönetim mekanizmasının merkezini oluşturması planlanan bu ikiliden 'Task' tablosu; görev tanımlar
+  [ 313] Style: Ana_Paragraf_Yazi_Stili_Sau         | Category & UserCategoryProgress: Kullanıcının çok yönlü gelişimini takip etmek amacıyla kurgulanmıştır. 'Category' tablo
+  [ 315] Style: Ana_Paragraf_Yazi_Stili_Sau         | Badge & UserBadge: Oyunlaştırma kurgusunu desteklemek üzere tasarlanan 'Badge' tablosunda, rozetlerin görselleri (IconPa
+  [ 317] Style: Ana_Paragraf_Yazi_Stili_Sau         | ChatBotMessage: Yapay zeka asistanı ile kullanıcı arasındaki etkileşimin sürekliliğini sağlamak amacıyla oluşturulmuştur
+  [ 318] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3. API Uçlarının Tasarımı
+  [ 319] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.1. AuthController
+  [ 321] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin dış dünyaya açılan kapısı olan Sunum (Presentation) katmanında, tüm kimlik doğrulama ve yetkilendirme işlemleri
+  [ 323] Style: Ana_Paragraf_Yazi_Stili_Sau         | Kullanıcı kayıt süreçlerinin yönetilmesi adına sisteme /register uç noktasının (endpoint) entegre edilmesi öngörülmüştür
+  [ 325] Style: Ana_Paragraf_Yazi_Stili_Sau         | Mevcut kullanıcıların sisteme güvenli erişim sağlayabilmesi için ise /login uç noktasının kullanılması planlanmıştır. Bu
+  [ 327] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.2. BadgesController
+  [ 329] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin oyunlaştırma altyapısının temel taşlarından biri olan ödül ve rozet sisteminin yönetimi amacıyla, Sunum (Presen
+  [ 331] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sisteme tekil olarak yeni bir başarı rozeti tanımlanması süreci için /create-badge uç noktasının geliştirilmesi hedeflen
+  [ 333] Style: Ana_Paragraf_Yazi_Stili_Sau         | Ayrıca, sistemin ilk kurulum aşamasında veya kapsamlı güncellemelerde operasyonel verimliliği artırmak amacıyla, çok say
+  [ 336] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.3. CategoriesController
+  [ 338] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin içerik yönetimini sağlayan ve kullanıcıların gelişim göstereceği temel alanları (domain) tanımlayan CategoriesC
+  [ 340] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sisteme yeni bir gelişim alanının tekil olarak eklenmesi süreci için /create-category uç noktasının (endpoint) geliştiri
+  [ 342] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sistemin ilk kurulum aşamasında veya içerik havuzunun genişletildiği dönemlerde operasyonel hızı artırmak amacıyla /crea
+  [ 347] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.4. RolesController
+  [ 349] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin güvenlik katmanında, kullanıcıların sistem üzerindeki erişim haklarını denetlemek ve Rol Tabanlı Erişim Kontrol
+  [ 351] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sisteme yeni yetki tanımlarının (Rollerin) eklenmesi süreci için /create-role uç noktasının (endpoint) geliştirilmesi ön
+  [ 353] Style: Ana_Paragraf_Yazi_Stili_Sau         | Mevcut kullanıcıların yetki seviyelerinin dinamik olarak güncellenebilmesi adına /assign-user uç noktasının HTTP PUT met
+  [ 358] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.5. TasksController
+  [ 360] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin temel işlevi olan kişisel gelişim görevlerinin yaşam döngüsünü yönetmek amacıyla, Sunum (Presentation) katmanın
+  [ 362] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sisteme yeni görev içeriklerinin eklenmesi sürecinin, yalnızca yetkili yöneticiler tarafından gerçekleştirilebilmesi içi
+  [ 364] Style: Ana_Paragraf_Yazi_Stili_Sau         | Son kullanıcıların sistemdeki aktif görevleri görüntüleyebilmesi için /getall uç noktasının HTTP GET metodu ile yapıland
+  [ 368] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2.3.3.6. UsersController
+  [ 370] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin sosyal etkileşim ve kişisel takip modüllerini yönetmek amacıyla, Sunum (Presentation) katmanında UsersControlle
+  [ 372] Style: Ana_Paragraf_Yazi_Stili_Sau         | Kullanıcıların kendi gelişim süreçlerini, kazandıkları puanları ve başarı rozetlerini görüntüleyebilmeleri için /profile
+  [ 374] Style: Ana_Paragraf_Yazi_Stili_Sau         | Oyunlaştırma dinamiklerini güçlendirmek ve kullanıcılar arasında tatlı bir rekabet ortamı yaratmak amacıyla, sistem gene
+  [ 377] Style: Heading 1                           | TASARIM DETAYLARI VE İŞ AKIŞLARI
+  [ 379] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu bölümde, "Yaşam Pusulası" projesinin temelini oluşturan algoritmik karar mekanizmaları, veri akış süreçleri ve projen
+  [ 381] Style: Alt_Baslık_Sau                      | Görev Tamamlama ve Puanlama Mekanizması
+  [ 382] Style: Bolum_Ilk_Paragraf_Sau              | Oyunlaştırma tabanlı sistemlerde kullanıcı motivasyonunun sürdürülebilirliği, eylemlerin sonucunda alınan anlık geri bil
+  [ 383] Style: Bolum_Ilk_Paragraf_Sau              | Tasarlanan mekanizmanın teknik işleyişi şu adımlardan oluşmaktadır:
+  [ 385] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1.  İstemci İsteği (Client Request): Süreç, kullanıcının mobil veya web arayüzünde     bir görevi tamamlamasıyla başlar.
+  [ 387] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Veri Doğrulama ve Güncelleme: Sunucu (Backend), gelen isteği karşılayarak UserTask tablosunda ilgili kaydı bulur. Gör
+  [ 389] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3. Kategori Bazlı İlerleme Hesaplaması: Sistem, tamamlanan görevin hangi kategoriye (Eğitim, Sağlık vb.) ait olduğunu Ta
+  [ 391] Style: Ana_Paragraf_Yazi_Stili_Sau         | 4. Seviye Atlama Kontrolü (Level Up Logic): Her puan güncellemesinin ardından sistem, kullanıcının mevcut puanının bir ü
+  [ 392] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Eğer eşik aşılmışsa: Kullanıcının o kategorideki seviyesi (Level) bir artırılır, mevcut puanı sıfırlanır (veya artan p
+  [ 394] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5. Genel Seviye ve Rozet Tetikleyicisi: Kategori bazlı güncellemeler tamamlandıktan sonra, kullanıcının tüm kategorilerd
+  [ 396] Style: Ana_Paragraf_Yazi_Stili_Sau         | 6. Yanıt (Response): Tüm işlemler başarılı olduğunda API, istemciye güncel puan durumunu, atlanan seviyeyi ve kazanılan
+  [ 399] Style: Ana_Paragraf_Yazi_Stili_Sau         | Söz konusu akışın görselleştirilmiş algoritması Şekil 3.1’de sunulmuştur.
+  [ 406] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 407] Style: Ana_Paragraf_Yazi_Stili_Sau         | Şekil 3.1: Görev Tamamlama Sonrası İş Akış Diyagramı
+  [ 411] Style: Alt_Baslık_Sau                      | Kural Tabanlı Görev Atama Algoritması
+  [ 413] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin en özgün bileşenlerinden biri olan "Görev Atama Motoru", kullanıcının statik bir listeyi takip etmesi yerine, k
+  [ 415] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sistemin arka planında çalışan algoritmanın teknik işleyiş adımları aşağıda detaylandırılmıştır:
+  [ 417] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1. Zamanlayıcı Tetikleyicisi (Scheduler Trigger): Algoritma, kullanıcı etkileşiminden bağımsız olarak sunucu tarafında ç
+  [ 419] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Kullanıcı Profil Analizi: Sistem, aktif kullanıcıların UserCategoryProgress tablosundaki güncel verilerini çeker. Bu
+  [ 421] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3. Kural Tabanlı Filtreleme (Rule-Based Filtering): Her kategori için veritabanındaki görev havuzu (Task tablosu) taranı
+  [ 422] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Kural: Görevin aktif olması (IsActive=True) VE Görevin zorluk aralığının kullanıcının seviyesini kapsaması (MinLev
+  [ 423] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Bu filtreleme, kullanıcının henüz yetkin olmadığı zor görevlerin veya seviyesinin çok altında kalan basit görevler
+  [ 425] Style: Ana_Paragraf_Yazi_Stili_Sau         | 4. Tekrarlılığı Önleme (Exclusion Logic): Filtrelenen aday görevler arasından, kullanıcının UserTask tablosunda daha önc
+  [ 426] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5. Atama ve Veritabanı Kaydı: Kalan uygun görevler, UserTask tablosuna 'Assigned' (Atandı) statüsüyle toplu olarak (Bulk
+  [ 428] Style: Ana_Paragraf_Yazi_Stili_Sau         | 6.   Bildirim Servisi: Yeni görevler atandığında, kullanıcının cihazına "Yeni günlük görevlerin hazır!" içeriğine sahip
+  [ 430] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu sürecin görselleştirilmiş akış diyagramı Şekil 3.2’de verilmiştir.
+  [ 432] Style: Ana_Paragraf_Yazi_Stili_Sau         | (empty) [IMAGE x1]
+  [ 434] Style: Ana_Paragraf_Yazi_Stili_Sau         | Şekil 3.2: Kural Tabanlı Görev Atama Algoritması
+  [ 437] Style: Alt_Baslık_Sau                      | CQRS Süreci ve MediatR Kütüphanesi
+  [ 439] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" projesinin yazılım mimarisinde, veri işleme süreçlerini optimize etmek ve kodun bakımını kolaylaştırmak
+  [ 441] Style: Ana_Paragraf_Yazi_Stili_Sau         | Sistemde yeni bir görevin tanımlanması süreci, "CreateTaskCommandRequest" adı verilen ve mühürlenmiş bir kayıt yapısı ol
+  [ 443] Style: Ana_Paragraf_Yazi_Stili_Sau         | Oluşturulan bu komut talebi, uygulama katmanındaki "CreateTaskCommandHandler" tarafından asenkron olarak ele alınır ve i
+  [ 445] Style: Alt_Baslık_Sau                      | Proje İş-Zaman Çizelgesi
+  [ 447] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" projesinin tasarım aşamasından nihai ürün haline gelmesi sürecinde, kaynakların verimli kullanımı ve ge
+  [ 449] Style: Ana_Paragraf_Yazi_Stili_Sau         | Planlanan geliştirme takvimi ve iş paketlerinin detayları şu şekildedir:
+  [ 451] Style: Ana_Paragraf_Yazi_Stili_Sau         | • 1. Faz: Altyapı ve Veritabanı Mimarisi (01/12/2025 - 01/02/2026): Projenin temelini oluşturan bu aşamada, sistemin omu
+  [ 452] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Clean Architecture katmanlarının (Domain, Application, Infrastructure, Presentation) oluşturulması.
+  [ 453] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ PostgreSQL veritabanı şemasının kodlanması ve Entity Framework Core entegrasyonu.
+  [ 454] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Güvenlik katmanı için JWT (JSON Web Token) tabanlı kimlik doğrulama altyapısının hazırlanması hedeflenmektedir.
+  [ 456] Style: Ana_Paragraf_Yazi_Stili_Sau         | • 2. Faz: İş Mantığı ve Algoritma Geliştirme (01/02/2026 - 15/03/2026): Sistemin beyni olan algoritmaların kodlanacağı s
+  [ 457] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Bölüm 3.1'de detaylandırılan "Görev Tamamlama ve Puanlama" servislerinin yazılması.
+  [ 458] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Bölüm 3.2'de açıklanan "Kural Tabanlı Görev Atama Motoru"nun geliştirilmesi.
+  [ 459] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Oyunlaştırma mantığının (Rozet kazanma, Seviye atlama) birim testlerle (Unit Tests) doğrulanması planlanmaktadır.
+  [ 461] Style: Ana_Paragraf_Yazi_Stili_Sau         | • 3. Faz: İstemci Arayüzleri ve Entegrasyon (15/03/2026 - 01/05/2026): Kullanıcı etkileşiminin sağlanacağı arayüzlerin g
+  [ 462] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Web Arayüzü: Bootstrap kütüphanesi kullanılarak duyarlı (responsive) tasarımın kodlanması ve Backend API ile enteg
+  [ 463] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Mobil Uygulama: React Native teknolojisi ile Android/iOS platformları için ortak arayüzlerin oluşturulması ve göre
+  [ 464] Style: Ana_Paragraf_Yazi_Stili_Sau         | • 4. Faz: Yapay Zeka Entegrasyonu (01/05/2026 - 01/06/2026): Projeyi rakiplerinden ayıran akıllı asistanın devreye alına
+  [ 465] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Doğal Dil İşleme (NLP) tabanlı Chatbot servisinin Infrastructure katmanına entegre edilmesi.
+  [ 466] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Botun, "görev öner", "motivasyon ver" gibi belirlenen 30+ temel senaryoya %90 doğrulukla yanıt vermesi için senary
+  [ 468] Style: Ana_Paragraf_Yazi_Stili_Sau         | • 5. Faz: Test, Güvenlik ve Final (01/06/2026 - 01/08/2026):
+  [ 469] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Tüm modüllerin (Web, Mobil, API, Chatbot) entegrasyon testlerinin gerçekleştirilmesi.
+  [ 470] Style: Ana_Paragraf_Yazi_Stili_Sau         | ◦ Kullanıcı Kabul Testleri (UAT) ile sistemin kararlılığının doğrulanması ve pilot kullanıcı grubundan geri bildirim
+  [ 472] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3.5. Risk Yönetimi ve B Planları
+  [ 473] Style: Ana_Paragraf_Yazi_Stili_Sau         | Yazılım geliştirme süreçlerinde karşılaşılabilecek teknik ve operasyonel riskler analiz edilmiş ve projenin sürekliliğin
+  [ 474] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Veri Güvenliği Riski: Kullanıcı verilerinin sızdırılması riskine karşı, veritabanında hassas verilerin (şifre vb.) şif
+  [ 475] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Performans Sorunları: Artan kullanıcı sayısı ile sistemin yavaşlaması riskine karşı, veritabanı sorgularının optimize
+  [ 476] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Motivasyon Kaybı: Kullanıcıların statik görevlerden sıkılması riskine karşı, görev havuzunun ve ödül sisteminin kullan
+  [ 482] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3.6. Maliyet ve Kaynak Analizi
+  [ 483] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin gerçekleştirilmesinde açık kaynak kodlu (Open Source) teknolojilerin tercih edilmesi, lisans maliyetlerini mini
+  [ 484] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Yazılım Maliyetleri: Projenin sunucu tarafında .NET Core (ücretsiz), veritabanı tarafında PostgreSQL (ücretsiz) ve ist
+  [ 485] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Donanım Kaynakları: Geliştirme ve test süreçleri için Sakarya Üniversitesi Bilgisayar Mühendisliği laboratuvar altyapı
+  [ 486] Style: Ana_Paragraf_Yazi_Stili_Sau         | • İnsan Kaynağı: Projenin en büyük maliyet kalemi, planlanan takvimdeki yaklaşık 8 aylık geliştirme sürecinde harcanacak
+  [ 495] Style: Heading 1                           | VERİ GÜVENLİĞİ DEĞERLENDİRMESİ
+  [ 499] Style: Ana_Paragraf_Yazi_Stili_Sau         | "Yaşam Pusulası" projesi; kullanıcıların kişisel gelişim seviyelerini, davranış alışkanlıklarını ve özel iletişim bilgil
+  [ 501] Style: Normal                              | 4.1. Kimlik Doğrulama ve Yetkilendirme Mimarisi (JWT)
+  [ 502] Style: Normal                              | Modern web uygulamalarında güvenliğin ilk katmanı, sisteme kimin erişmeye çalıştığının doğrulanmasıdır. Projede, sunucu
+  [ 503] Style: Normal                              | Tasarlanan kimlik doğrulama akışı (Authentication Flow) şu teknik adımlarla işlemektedir:
+  [ 505] Style: Normal                              | 1. Kimlik İbrazı (Credential Submission): Kullanıcı, istemci arayüzleri (Web veya Mobil) üzerinden e-posta ve şifresini
+  [ 507] Style: Normal                              | 2. Kriptografik Doğrulama: Sunucu, gelen şifreyi veritabanındaki User tablosunda saklanan özetlenmiş (hashed) şifre ile
+  [ 509] Style: Normal                              | 3. Token Üretimi (Token Generation): Doğrulama başarılı ise sunucu, kullanıcıya özel dijital imzalı bir Erişim Anahtarı
+  [ 511] Style: Normal                              | 4. Durumsuz İletişim (Stateless Communication): İstemci, sonraki her API isteğinde (Örn: "Görevi Tamamla") bu token'ı HT
+  [ 513] Style: Ikincil_Alt_Baslik_Sau              | JWT Kod Yapısı
+  [ 515] Style: Normal                              | Projenin güvenlik mimarisinde, kullanıcıların sisteme güvenli erişimini sağlamak ve durumsuz (stateless) bir oturum yöne
+  [ 517] Style: Normal                              | Token güvenliğinin ve bütünlüğünün sağlanması amacıyla, uygulama konfigürasyonunda saklanacak gizli bir anahtarın (AppSe
+  [ 519] Style: Normal                              | Bu mimari sayesinde, sunucu belleğinde oturum bilgisi tutulmasına gerek kalmaz ve sistem aynı anda binlerce kullanıcıya
+  [ 521] Style: Normal                              | 4.2. Veri Şifreleme ve Mahremiyet Stratejileri
+  [ 522] Style: Normal                              | Veri güvenliği, verinin sadece saklandığı yerde değil, transfer edildiği ağ üzerinde de korunmasını gerektirir. Projede
+  [ 524] Style: Normal                              | • Durağan Veri Güvenliği (Data at Rest): Veritabanı tasarımında belirtildiği üzere, kullanıcı parolaları asla açık metin
+  [ 526] Style: Normal                              | • Hareket Halindeki Veri Güvenliği (Data in Transit): React tabanlı istemciler ile .NET Core API arasındaki tüm veri tra
+  [ 528] Style: Normal                              | 4.3. Veritabanı Erişim Kontrolü ve Yedekleme (Disaster Recovery)
+  [ 529] Style: Normal                              | Sistemin kalbi olan PostgreSQL veritabanının bütünlüğünü korumak ve olası felaket senaryolarına hazırlıklı olmak amacıyl
+  [ 531] Style: Normal                              | 1. Ağ İzolasyonu: Veritabanı sunucusu, doğrudan internet erişimine kapatılarak sadece Uygulama Sunucusunun (Application
+  [ 533] Style: Normal                              | 2. En Az Yetki Prensibi (Least Privilege): Veritabanına bağlanan uygulamanın, tablolarda sadece ihtiyacı olan işlemleri
+  [ 534] Style: Normal                              | 3. Periyodik Yedekleme: Fidye yazılımı (Ransomware) saldırıları veya donanım arızalarına karşı, veritabanının günlük tam
+  [ 536] Style: Normal                              | 4.4. KVKK Uyumu ve Yasal Yükümlülükler
+  [ 537] Style: Normal                              | Proje, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) gerekliliklerine teknik ve idari açıdan uyum sağlamayı hede
+  [ 544] Style: Heading 1                           | SONUÇLAR VE ÖNERİLER
+  [ 548] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu bölümde; "Yaşam Pusulası" projesinin tasarım sürecinde elde edilen teknik ve kavramsal sonuçlar değerlendirilmiş, baş
+  [ 550] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5.1. Çalışmanın Konusu ve Yöntem Özeti
+  [ 551] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu çalışmanın konusu; dijital çağda bireylerin yaşadığı motivasyon kaybı ve hedef belirleme sorunlarına çözüm olarak, oy
+  [ 553] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin gerçekleştirilmesinde, yazılımın sürdürülebilirliğini sağlamak amacıyla Temiz Mimari (Clean Architecture) yönte
+  [ 555] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5.2. Elde Edilen Sonuçlar
+  [ 556] Style: Ana_Paragraf_Yazi_Stili_Sau         | Gerçekleştirilen tasarım ve analiz çalışmaları neticesinde elde edilen temel sonuçlar şunlardır:
+  [ 558] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1. Bağımsız Mimari Yapısı: İş kurallarının (Core katmanı) dış dünyadan (Veritabanı, Arayüz) izole edildiği bir mimari ya
+  [ 560] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Kategori Bazlı İlerleme Modeli: Geleneksel "tekil puan" sistemlerinin aksine; kullanıcının Sağlık, Eğitim ve Sosyal S
+  [ 562] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3. Dinamik Görev Atama Başarısı: Statik bir görev listesi yerine, kullanıcının o anki seviyesine (MinLevel - MaxLevel) u
+  [ 565] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5.3. Hedeflere Ulaşma Durumu ve Değerlendirme
+  [ 566] Style: Ana_Paragraf_Yazi_Stili_Sau         | Projenin başlangıcında belirlenen "Bireysel gelişimi toplumsal fayda ile bütünleştiren bir platform tasarlama" hedefine,
+  [ 568] Style: Ana_Paragraf_Yazi_Stili_Sau         | Çalışmanın üstün yönleri şunlardır:
+  [ 570] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Toplumsal Entegrasyon: Mevcut kişisel gelişim uygulamalarının aksine, bu projenin "Sosyal Sorumluluk" kategorisi ile b
+  [ 572] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Esneklik: Tasarlanan kural tabanlı yapının, kod değişikliği gerektirmeden yeni görev türlerinin ve rozet kriterlerinin
+  [ 574] Style: Ana_Paragraf_Yazi_Stili_Sau         | Çalışmanın eksik yönleri ve kısıtları:
+  [ 576] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Bu çalışma şu aşamada bir Tasarım ve Mimari Öneri niteliğindedir. Sistemin gerçek kullanıcı verileriyle (Büyük Veri) b
+  [ 578] Style: Ana_Paragraf_Yazi_Stili_Sau         | • Yapay zeka asistanı (Chatbot), şu an için kural tabanlı senaryolarla sınırlandırılmıştır; tam anlamıyla öğrenen bir ya
+  [ 586] Style: Ana_Paragraf_Yazi_Stili_Sau         | 5.4. Öneriler
+  [ 588] Style: Ana_Paragraf_Yazi_Stili_Sau         | Bu alanda çalışmak isteyen araştırmacılara ve projenin sonraki geliştirme süreçlerine yönelik öneriler şunlardır:
+  [ 590] Style: Ana_Paragraf_Yazi_Stili_Sau         | 1. Pilot Uygulama ve Veri Analizi: Tasarlanan sistemin kodlanarak ilk etapta üniversite öğrencileri üzerinde test edilme
+  [ 592] Style: Ana_Paragraf_Yazi_Stili_Sau         | 2. Yapay Zeka Derinliği: Kural tabanlı öneri sisteminin, kullanıcı davranışlarını analiz eden Derin Öğrenme (Deep Learni
+  [ 594] Style: Ana_Paragraf_Yazi_Stili_Sau         | 3. Kurumsal Yaygınlaştırma: Projenin sadece bireysel kullanıcıya değil; eğitim kurumlarına veya şirketlere entegre edile
+  [ 597] Style: Normal                              | KAYNAKLAR
+  [ 599] Style: Normal                              | Guetzoian, E. (2021). Academic motivation and self-discipline strategies for online learners (pp. 111–128). IGI Global.
+  [ 601] Style: Normal                              | Waschull, S. (2005). Predicting success in online psychology courses: Self-discipline and motivation. Teaching of Psycho
+  [ 603] Style: Normal                              | Dichev, C., & Dicheva, D. (2017). Gamifying education: What is known, what is believed and what remains uncertain. Inter
+  [ 605] Style: Normal                              | Wang, Y., Li, Y., & Chen, L. (2022). How rewards in exercise games affect intrinsic motivation. Frontiers in Artificial
+  [ 607] Style: Normal                              | Deci, E. L., & Ryan, R. M. (2000). Self-determination theory and the facilitation of intrinsic motivation, social develo
+  [ 609] Style: Normal                              | Alazraki, L., Ghachem, A., Polydorou, N., Khosmood, F., & Edalat, A. (2021). An empathetic AI coach for self-attachment
+  [ 611] Style: Normal                              | Schlicher, M. (2025). Emotionally adaptive support: A narrative review of affective computing for mental health. Frontie
+  [ 613] Style: Normal                              | Saini, A., Hassan, A., Awasthi, A., & Baiswar, A. (2024). Enhancing self-assessment through AI-driven Questioner: A stud
+  [ 615] Style: Normal                              | Eden, C., Adeleye, O., & Adeniyi, I. (2024). A review of AI-driven pedagogical strategies for equitable access to scienc
+  [ 617] Style: Normal                              | Rowe, J., & Lester, J. (2020). Artificial intelligence for personalized preventive adolescent healthcare.Journal of Adol
+  [ 619] Style: Normal                              | Subrahmanyam, S. (2025). Developing digital citizenship skills (pp. 357–390). IGI Global. https://doi.org/10.4018/979-8-
+  [ 621] Style: Normal                              | Yao, X. (2024). The impact of ideological and political education on students’ personal development and social responsib
+  [ 623] Style: Normal                              | Birleşmiş Milletler. (2015). Sürdürülebilir Kalkınma Amaçları. United Nations Publications.
+  [ 625] Style: Normal                              | Kalkınma Bakanlığı. (2023). On İkinci Kalkınma Planı (2024–2028). T.C. Cumhurbaşkanlığı Strateji ve  Bütçe Başkanlığı Ya
+  [ 627] Style: Normal                              | Sadiq, S., Sıngh, I., Ahmad, M., & Usman, U. (2023). Society 5.0 (pp. 17–51). IGI Global.  https://doi.org/10.4018/979-8
+  [ 629] Style: Normal                              | Salgues, B. (2018). Society 5.0. https://doi.org/10.1002/9781119507314
+  [ 634] Style: Normal                              | ÖZGEÇMİŞ
+  [ 638] Style: Ozgecmis_Yazi_Stili_Sau             | Emir Kır, 22.08.2003 tarihinde Sakarya’da doğdu. İlk ve ortaöğrenimini Sakarya’da tamamladı. Tesiş Anadolu Lisesi’nden m
+  [ 642] Style: Ozgecmis_Yazi_Stili_Sau             | Metehan Gülşer, 25.05.2004 tarihinde Düzce’de doğdu. İlk ve ortaöğrenimini Düzce’de tamamladı. Düzce Borsa İstanbul Mesl
+  [ 644] Style: Normal                              | BSM 401 BİLGİSAYAR MÜHENDİSLİĞİ TASARIMI
+  [ 645] Style: Normal                              | Değerlendİrme ve Sözlü Sınav Tutanağı
+  [ 647] Style: Normal                              | KONU :
+  [ 648] Style: Normal                              | ÖĞRENCİLER (Öğrenci No/AD/SOYAD):
+  [ 653] Style: Normal                              | Danışman :
+  [ 654] Style: Normal                              | danışman imzası:
+
+================================================================================
+ALL STYLES USED
+================================================================================
+  - Alt_Baslık_Sau
+  - Ana_Paragraf_Yazi_Stili_Sau
+  - Baslik_Bosluklari
+  - Bolum_Ilk_Paragraf_Sau
+  - Heading 1
+  - Ikincil_Alt_Baslik_Sau
+  - Ilk_Sayfalar_Basligi_Sau
+  - Kapak_Bilimdali_Yazı_Stili_Sau
+  - Kapak_Bosluk_Yazi_Stili_Sau
+  - Kapak_Fen_Bilimleri_Yazisi_Sau
+  - Kapak_Isim_Soyisim
+  - Kapak_Makale_Basligi_Sau
+  - Normal
+  - Ozet_Yazi_Stili_Sau
+  - Ozgecmis_Yazi_Stili_Sau
+
+================================================================================
+IMAGES/RELATIONSHIPS
+================================================================================
+  rId: rId12, Target: media/image4.png
+  rId: rId11, Target: media/image3.png
+  rId: rId10, Target: media/image2.png
+  rId: rId9, Target: media/image1.png
+
+Total paragraphs: 655

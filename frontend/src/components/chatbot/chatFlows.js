@@ -12,7 +12,7 @@ export const FLOWS = {
   main_menu: {
     id: "main_menu",
     type: "options",
-    message: "Merhaba! 👋 Ben LifeQuest asistanın. Sana nasıl yardımcı olabilirim?",
+    message: "Merhaba! 👋 Ben LifeQuest asistanın. Aşağıdaki seçeneklere tıklayabilir veya istediğini yazabilirsin!",
     options: [
       { label: "📋 Görevlerim", icon: "📋", nextNode: "tasks_menu" },
       { label: "🎯 Hedeflerim", icon: "🎯", nextNode: "goals_menu" },

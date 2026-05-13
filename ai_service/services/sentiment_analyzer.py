@@ -4,19 +4,40 @@ LifeQuest AI - Sentiment Analyzer (Duygu Analizi)
 Kullanıcı mesajlarının duygusal tonunu analiz eder:
   positive, negative, neutral
 
-Algoritma: TF-IDF (char n-gram) + SVM (Linear Kernel)
+Algoritma: Custom Preprocessing + TF-IDF (char_wb) + LogisticRegression
 """
 
 import os
 import json
 import pickle
+import re
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, "data", "sentiments_tr.json")
 MODEL_PATH = os.path.join(BASE_DIR, "models", "sentiment_model.pkl")
+
+
+def turkish_preprocess(text: str) -> str:
+    """Türkçe özel karakterleri ve noktalama işaretlerini temizler."""
+    if not isinstance(text, str):
+        return ""
+    text = text.replace("I", "ı").replace("İ", "i").lower()
+    text = re.sub(r"[^\w\s]", " ", text)
+    
+    words = text.split()
+    cleaned = []
+    # Duygu analizinde 'değil', 'yok' gibi kelimeler çok kritik olduğu için stopword listesini çok kısa tutuyoruz
+    stopwords = {"bir", "ve", "ile", "için", "mı", "mi", "mu", "mü"}
+    
+    for w in words:
+        if w in stopwords:
+            continue
+        cleaned.append(w)
+        
+    return " ".join(cleaned)
 
 
 class SentimentAnalyzer:
@@ -31,23 +52,17 @@ class SentimentAnalyzer:
     # ------------------------------------------------------------------ #
 
     def train(self) -> dict:
-        """Eğitim verisini yükle, modeli eğit ve diske kaydet."""
-
         texts, labels = self._load_training_data()
 
         self.model = Pipeline([
             ("tfidf", TfidfVectorizer(
+                preprocessor=turkish_preprocess,
                 analyzer="char_wb",
-                ngram_range=(2, 4),
-                max_features=3000,
+                ngram_range=(2, 6),
+                max_features=10000,
                 sublinear_tf=True,
             )),
-            ("svc", SVC(
-                kernel="linear",
-                probability=True,
-                C=1.0,
-                class_weight="balanced",
-            )),
+            ("clf", LogisticRegression(C=2.0, class_weight="balanced", max_iter=1000)),
         ])
 
         self.model.fit(texts, labels)
@@ -62,65 +77,59 @@ class SentimentAnalyzer:
             "classes": list(set(labels)),
         }
 
-    # ------------------------------------------------------------------ #
-    #  ANALİZ
-    # ------------------------------------------------------------------ #
-
-    def analyze(self, text: str) -> dict:
-        """Verilen metnin duygusunu analiz et.
-
-        Returns:
-            {
-                "label": str,        # positive | negative | neutral
-                "confidence": float, # Güven skoru (0-1)
-                "scores": dict       # Tüm sınıf olasılıkları
-            }
-        """
-        if self.model is None:
-            self.train()
-
-        cleaned = text.lower().strip()
-
-        label = self.model.predict([cleaned])[0]
-        probas = self.model.predict_proba([cleaned])[0]
-        confidence = float(max(probas))
-
-        scores = {
-            cls: round(float(prob), 4)
-            for cls, prob in zip(self.model.classes_, probas)
-        }
-
-        return {
-            "label": label,
-            "confidence": round(confidence, 4),
-            "scores": scores,
-        }
-
-    # ------------------------------------------------------------------ #
-    #  YARDIMCI METODLAR
-    # ------------------------------------------------------------------ #
-
     def _load_training_data(self) -> tuple[list[str], list[str]]:
-        """sentiments_tr.json dosyasından eğitim verisini yükle."""
+        if not os.path.exists(DATA_PATH):
+            raise FileNotFoundError(f"Eğitim verisi bulunamadı: {DATA_PATH}")
 
         with open(DATA_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        texts: list[str] = []
-        labels: list[str] = []
-
-        for sentiment_label, examples in data["sentiments"].items():
-            for example in examples:
-                texts.append(example.lower().strip())
-                labels.append(sentiment_label)
+        texts = []
+        labels = []
+        for sentiment, examples in data.get("sentiments", {}).items():
+            for text in examples:
+                texts.append(text)
+                labels.append(sentiment)
 
         return texts, labels
 
+    # ------------------------------------------------------------------ #
+    #  TAHMİN
+    # ------------------------------------------------------------------ #
+
+    def analyze(self, text: str) -> dict:
+        if not self.model:
+            self.train()
+
+        # Metin çok kısaysa (1 kelime) duygu analizi genelde "neutral" olur.
+        if len(text.split()) < 2:
+            return {"label": "neutral", "confidence": 0.8}
+
+        proba = self.model.predict_proba([text])[0]
+        classes = self.model.classes_
+
+        best_idx = proba.argmax()
+        sentiment = classes[best_idx]
+        confidence = proba[best_idx]
+
+        # Güven skoru düşükse "neutral"
+        if confidence < 0.45:
+            sentiment = "neutral"
+
+        return {
+            "label": sentiment,
+            "confidence": round(confidence, 4)
+        }
+
+    # ------------------------------------------------------------------ #
+    #  YARDIMCI METOTLAR
+    # ------------------------------------------------------------------ #
+
     def _load_model(self):
-        """Daha önce eğitilmiş modeli diskten yükle."""
         if os.path.exists(MODEL_PATH):
             try:
                 with open(MODEL_PATH, "rb") as f:
                     self.model = pickle.load(f)
             except Exception:
                 self.model = None
+

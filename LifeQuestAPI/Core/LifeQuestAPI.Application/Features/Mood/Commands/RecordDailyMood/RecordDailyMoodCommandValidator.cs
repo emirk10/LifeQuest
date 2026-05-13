@@ -10,7 +10,7 @@ public class RecordDailyMoodCommandValidator : AbstractValidator<RecordDailyMood
             .NotEmpty().WithMessage("Kullanıcı kimliği belirtilmelidir.");
 
         RuleFor(x => x.EnergyLevel)
-            .InclusiveBetween(1, 5).WithMessage("Enerji seviyesi 1 ile 5 arasında olmalıdır.");
+            .InclusiveBetween(1, 10).WithMessage("Enerji seviyesi 1 ile 10 arasında olmalıdır.");
 
         RuleFor(x => x.AvailableMinutes)
             .InclusiveBetween(5, 480).WithMessage("Müsait süre 5 ile 480 dakika arasında olmalıdır.");

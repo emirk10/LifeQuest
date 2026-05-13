@@ -17,6 +17,39 @@ const mkMsg = (sender, content, extras = {}) => ({
   ...extras,
 });
 
+// ─── Intent → Flow Mapping (AI yanıtından sonra doğru flow'a yönlendirme) ─────
+const INTENT_FLOW_MAP = {
+  gorev_sorgula: "tasks_menu",
+  istatistik: "stats_menu",
+  istatistik_sorgula: "stats_menu",
+  motivasyon: null,
+  oneri: "suggest_task_category",
+  oneri_iste: "suggest_task_category",
+  rozet: "badges_show",
+  saglik: "suggest_task_category",
+  selamlama: "main_menu",
+  mood_negatif: null,
+  mood_pozitif: null,
+  hafif_mod: "suggest_task_category",
+  alakasiz: "main_menu",
+  yardim: "main_menu",
+  gorev_baslat: null,
+  gorev_tamamla: null,
+  gorev_ertele: null,
+  gorev_vazgec: null,
+  gorev_sec: null,
+};
+
+const INTENT_LABELS = {
+  motivasyon: "💪 Motivasyon", gorev_sorgula: "📋 Görev", istatistik: "📊 İstatistik",
+  oneri: "🎯 Öneri", oneri_iste: "🎯 Öneri", selamlama: "👋 Selamlama",
+  saglik: "💊 Sağlık", rozet: "🏆 Rozet", gorev_ertele: "📅 Erteleme",
+  gorev_baslat: "▶️ Başlat", gorev_tamamla: "✅ Tamamla", gorev_vazgec: "🚫 Vazgeç",
+  gorev_sec: "🎯 Seç", mood_negatif: "💙 Empati", mood_pozitif: "🔥 Enerji",
+  hafif_mod: "🌿 Hafif Mod", istatistik_sorgula: "📊 İstatistik",
+  alakasiz: "🤔 Genel", yardim: "❓ Yardım",
+};
+
 // ─── Ana Bileşen ──────────────────────────────────────────────────────────────
 const ChatBotFlow = () => {
   const { user } = useAuth();
@@ -25,7 +58,9 @@ const ChatBotFlow = () => {
   const [loading, setLoading] = useState(false);
   const [unread, setUnread] = useState(0);
   const [flowCtx, setFlowCtx] = useState({});
+  const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
   // React Strict Mode çift çalışmayı önlemek için guard
   const initDone = useRef(false);
   // pushNode içinde stale closure'dan kaçınmak için ref
@@ -54,7 +89,10 @@ const ChatBotFlow = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen) setUnread(0);
+    if (isOpen) {
+      setUnread(0);
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
   }, [isOpen]);
 
   const addMsg = useCallback((msg) => {
@@ -340,8 +378,9 @@ const ChatBotFlow = () => {
       await selectTask(task.id || task.taskId);
       addMsg(mkMsg("bot", { type: "text", text: `✅ "${task.title}" seçildi! Görevler sayfasında aktif görünecek.` }));
       addMsg(mkMsg("bot", { type: "options", text: "Başka bir şey yapayım mı?", options: FLOWS.main_menu.options, nodeId: "main_menu" }));
-    } catch {
-      addMsg(mkMsg("bot", { type: "text", text: "⚠️ Görev seçilirken hata oluştu." }));
+    } catch (err) {
+      const errMsg = err.response?.data?.message || err.response?.data || err.message || "Görev seçilirken hata oluştu.";
+      addMsg(mkMsg("bot", { type: "text", text: `⚠️ Hata: ${errMsg}` }));
     } finally {
       setLoading(false);
     }
@@ -352,8 +391,84 @@ const ChatBotFlow = () => {
     setMessages([]);
     setFlowCtx({});
     flowCtxRef.current = {};
+    setInputText("");
     // initDone'u sıfırlamaya gerek yok — manuel reset
     setTimeout(() => pushNode("main_menu"), 50);
+  };
+
+  // ─── Serbest metin gönderimi (AI Chat) ──────────────────────────────────────
+  const handleFreeText = useCallback(async (textOverride) => {
+    const trimmed = (textOverride || inputText).trim();
+    if (!trimmed || loading) return;
+
+    // Kullanıcı mesajını ekle
+    addMsg(mkMsg("user", { type: "text", text: trimmed }));
+    setInputText("");
+
+    // Yükleniyor animasyonu
+    addMsg(mkMsg("bot", { type: "loading", text: "Düşünüyorum..." }));
+    setLoading(true);
+
+    try {
+      const result = await executeApiAction("send_free_text", {
+        ...flowCtxRef.current,
+        freeTextMessage: trimmed,
+      });
+
+      // Loading mesajını kaldır
+      setMessages(prev => prev.filter(m => m.content?.type !== "loading"));
+      setLoading(false);
+
+      // AI yanıtını göster (metadata ile)
+      addMsg(mkMsg("bot", {
+        type: "ai_response",
+        text: result.aiResponse,
+        ...result
+      }));
+
+      // Flow yönlendirmesi varsa, ilgili node'un butonlarını göster
+      const flowTarget = result.flowRedirect || INTENT_FLOW_MAP[result.intent];
+      if (flowTarget && FLOWS[flowTarget]) {
+        const targetNode = FLOWS[flowTarget];
+        // Kısa gecikme ile butonları göster (doğal his vermesi için)
+        setTimeout(() => {
+          if (targetNode.type === "api_call") {
+            // API call node ise direkt çalıştır
+            pushNode(flowTarget, flowCtxRef.current);
+          } else {
+            // Options node ise butonları göster
+            addMsg(mkMsg("bot", {
+              type: "options",
+              text: null, // AI yanıtı zaten gösterildi
+              options: targetNode.options,
+              nodeId: flowTarget,
+            }));
+          }
+        }, 300);
+      } else {
+        // Flow yönlendirmesi yoksa (görev aksiyon intent'leri) ana menü butonlarını göster
+        setTimeout(() => {
+          addMsg(mkMsg("bot", {
+            type: "options",
+            text: "Başka bir şey yapmak ister misin?",
+            options: FLOWS.main_menu.options,
+            nodeId: "main_menu",
+          }));
+        }, 300);
+      }
+    } catch {
+      setMessages(prev => prev.filter(m => m.content?.type !== "loading"));
+      setLoading(false);
+      addMsg(mkMsg("bot", { type: "text", text: "⚠️ AI servisine bağlanamadı. Lütfen tekrar deneyin." }));
+      addMsg(mkMsg("bot", { type: "options", text: "Ne yapmak istersin?", options: FLOWS.main_menu.options, nodeId: "main_menu" }));
+    }
+  }, [inputText, loading, addMsg, pushNode]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleFreeText();
+    }
   };
 
   // ─── Mesaj render ────────────────────────────────────────────────────────
@@ -396,10 +511,54 @@ const ChatBotFlow = () => {
             <span className="text-[9px] text-slate-500">{msg.time}</span>
           </div>
 
-          {/* Metin */}
-          {content.text && (
+          {/* Metin (ai_response hariç — kendi render'ı var) */}
+          {content.text && content.type !== "ai_response" && (
             <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
               <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
+            </div>
+          )}
+
+          {/* AI Yanıtı (metadata ile) */}
+          {content.type === "ai_response" && (
+            <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
+              <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
+              <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-1.5 text-[10px]">
+                <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">
+                  {INTENT_LABELS[content.intent] || content.intent}
+                </span>
+                <span className="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full">
+                  %{((content.confidence ?? 0) * 100).toFixed(0)} güven
+                </span>
+                {content.urgencyLevel > 0 && (
+                  <span className={`px-2 py-0.5 rounded-full font-bold ${
+                    content.urgencyLevel >= 3 ? "bg-red-500/20 text-red-300"
+                      : content.urgencyLevel === 2 ? "bg-orange-500/20 text-orange-300"
+                        : "bg-yellow-500/20 text-yellow-300"
+                  }`}>
+                    ⚠️ Aciliyet {content.urgencyLevel}
+                  </span>
+                )}
+              </div>
+
+              {/* Tekil görev önerisi (eski uyumluluk) */}
+              {content.suggestedTaskId && (
+                <div className="mt-3 bg-indigo-500/10 rounded-xl p-3 border border-indigo-500/30">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="text-white font-bold text-sm">{content.suggestedTaskTitle}</h4>
+                    <span className="text-xs font-bold text-amber-400">+{content.suggestedTaskXp} XP</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleAssign({ id: content.suggestedTaskId, title: content.suggestedTaskTitle });
+                      // Atandıktan sonra butonu gizle (opsiyonel)
+                      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: { ...m.content, suggestedTaskId: null } } : m));
+                    }}
+                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                  >
+                    ✅ Görevi Kabul Et
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -543,9 +702,28 @@ const ChatBotFlow = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Alt bilgi */}
-          <div className="px-4 py-3 border-t border-slate-800 bg-slate-900/80 text-center shrink-0">
-            <p className="text-[10px] text-slate-600">Seçeneklere tıklayarak ilerleyebilirsin</p>
+          {/* Mesaj Giriş Alanı */}
+          <div className="p-3 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm shrink-0">
+            <div className="flex gap-2">
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Mesajını yaz veya seçeneklere tıkla..."
+                className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500"
+                disabled={loading}
+              />
+              <button
+                onClick={() => handleFreeText()}
+                disabled={loading || !inputText.trim()}
+                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all active:scale-95 shrink-0"
+              >
+                ➤
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-600 mt-1.5 text-center">AI destekli asistan • Yazı yazabilir veya butonlara tıklayabilirsin</p>
           </div>
         </div>
       )}

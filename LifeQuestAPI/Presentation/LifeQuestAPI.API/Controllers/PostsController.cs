@@ -96,6 +96,7 @@ public class PostsController : ControllerBase
                 {
                     id = t.Id,
                     taskId = t.AppTaskId,
+                    userTaskId = t.UserTaskId, // P4-T2: Kudos için eklendi
                     taskTitle = t.AppTask.Title,
                     x = t.CoordinateX,
                     y = t.CoordinateY
@@ -213,6 +214,7 @@ public class PostsController : ControllerBase
                 {
                     PostId = post.Id,
                     AppTaskId = ut.AppTaskId,
+                    UserTaskId = ut.Id, // P4-T2: Spesifik görev ID'sini kaydet
                     CoordinateX = 0,
                     CoordinateY = 0
                 });

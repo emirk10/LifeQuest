@@ -39,13 +39,32 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse { Success = false, Message = "Kullanıcı bulunamadı." };
         }
 
+        // ─── Lazy Reset Logic ──────────────────────────────────────────
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        
+        // Günlük sayaç sıfırlama
+        if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+        {
+            user.TodayTaskCount = 0;
+            user.OverLimitWarningShown = false;
+            user.LastCounterResetDate = today;
+        }
+
+        // Haftalık sayaç sıfırlama (Pazartesi kontrolü)
+        var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
+        if (isMonday && (!user.LastWeeklyResetDate.HasValue || user.LastWeeklyResetDate.Value < today))
+        {
+            user.WeeklyCompletedCount = 0;
+            user.LastWeeklyResetDate = today;
+        }
+
         // ─── DailyLimitRule ─────────────────────────────────────────
         if (user.TodayTaskCount >= user.DailyTaskLimit)
         {
             return new AssignSpecificTaskCommandResponse 
             { 
                 Success = false, 
-                Message = $"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yarın yeni görev alabilirsin veya limitini ayarlardan değiştirebilirsin." 
+                Message = $"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yeni hakların gece yarısı (00:00) tanımlanacaktır. İstersen limitini ayarlardan değiştirebilirsin." 
             };
         }
 
@@ -55,7 +74,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse 
             { 
                 Success = false, 
-                Message = $"Henüz tamamlanmamış {user.ActiveTaskCount}/{user.DailyTaskLimit * 2} görevin var. Önce mevcut görevlerini tamamla veya ertele." 
+                Message = $"Henüz tamamlanmamış çok fazla ({user.ActiveTaskCount}/{user.DailyTaskLimit * 2}) görevin var. Yeni görev alabilmek için önce mevcut görevlerini tamamlamalı veya ertelemelisin." 
             };
         }
 

@@ -12,6 +12,7 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
     private readonly IKudosWriteRepository _kudosWriteRepository;
     private readonly IKudosReadRepository _kudosReadRepository;
     private readonly IUserTaskReadRepository _userTaskReadRepository;
+    private readonly IPostTagReadRepository _postTagReadRepository;
     private readonly IGamificationService _gamificationService;
     private readonly IAppNotificationService _notificationService;
 
@@ -19,12 +20,14 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
         IKudosWriteRepository kudosWriteRepository,
         IKudosReadRepository kudosReadRepository,
         IUserTaskReadRepository userTaskReadRepository,
+        IPostTagReadRepository postTagReadRepository,
         IGamificationService gamificationService,
         IAppNotificationService notificationService)
     {
         _kudosWriteRepository = kudosWriteRepository;
         _kudosReadRepository = kudosReadRepository;
         _userTaskReadRepository = userTaskReadRepository;
+        _postTagReadRepository = postTagReadRepository;
         _gamificationService = gamificationService;
         _notificationService = notificationService;
     }
@@ -34,6 +37,26 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
         var userTask = await _userTaskReadRepository.Table
             .Include(ut => ut.AppUser)
             .FirstOrDefaultAsync(ut => ut.Id == request.UserTaskId, cancellationToken);
+
+        // Fallback: Eğer direkt UserTaskId ile bulunamadıysa, belki PostTagId gönderilmiştir (Eski gönderiler için)
+        if (userTask == null)
+        {
+            var postTag = await _postTagReadRepository.Table
+                .Include(pt => pt.Post)
+                    .ThenInclude(p => p.AppUser)
+                .FirstOrDefaultAsync(pt => pt.Id == request.UserTaskId, cancellationToken);
+
+            if (postTag != null)
+            {
+                // Bu AppTaskId ve Post Sahibi için UserTask bulalım
+                userTask = await _userTaskReadRepository.Table
+                    .Include(ut => ut.AppUser)
+                    .OrderByDescending(ut => ut.CompletedAt) // En son tamamlananı al
+                    .FirstOrDefaultAsync(ut => ut.AppUserId == postTag.Post.AppUserId && 
+                                              ut.AppTaskId == postTag.AppTaskId && 
+                                              ut.CompletedAt.HasValue, cancellationToken);
+            }
+        }
 
         if (userTask == null)
             return new() { Success = false, Message = "Görev bulunamadı." };
@@ -59,7 +82,7 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
         {
             SenderId = request.SenderId,
             ReceiverId = userTask.AppUserId,
-            UserTaskId = request.UserTaskId
+            UserTaskId = userTask.Id // P4-T2: request.UserTaskId yerine bulduğumuz asıl ID'yi kullan
         };
 
         await _kudosWriteRepository.AddAsync(kudos);

@@ -10,6 +10,9 @@ public sealed class PostTag : BaseEntity
     public Guid AppTaskId { get; set; }
     public AppTask AppTask { get; set; } = default!;
 
+    public Guid? UserTaskId { get; set; }
+    public UserTask? UserTask { get; set; }
+
     /// <summary>Resim üzerindeki yatay konum, yüzde cinsinden (0–100).</summary>
     public decimal CoordinateX { get; set; }
 

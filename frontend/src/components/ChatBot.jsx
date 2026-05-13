@@ -128,16 +128,17 @@ const ChatBot = () => {
         urgencyLevel: response.urgencyLevel ?? 0,
         suggestions: response.suggestions || [],
         actions: response.actions || [],
-        suggestedTasks: response.suggestedTasks || null,
-        suggestedTaskId: response.suggestedTaskId,
-        suggestedTaskTitle: response.suggestedTaskTitle,
-        suggestedTaskXp: response.suggestedTaskXp,
+        suggestedTasks: response.suggestedTasks || response.SuggestedTasks || null,
+        suggestedTaskId: response.suggestedTaskId || response.SuggestedTaskId,
+        suggestedTaskTitle: response.suggestedTaskTitle || response.SuggestedTaskTitle,
+        suggestedTaskXp: response.suggestedTaskXp || response.SuggestedTaskXp || response.suggestedTaskXP,
         shouldShowMoodSelector: response.shouldShowMoodSelector,
         actionsUsed: false, // henüz kullanılmadı
-        messageId: response.messageId,
+        messageId: response.messageId || response.MessageId,
       };
 
-      addBotMessage(response.response, botExtras);
+      console.log("[ChatBot] AI Response received:", response);
+      addBotMessage(response.response || response.Response, botExtras);
     } catch {
       addBotMessage("⚠️ AI servisine bağlanılamadı. Servisin çalıştığından emin olun (port 5001).", { isError: true });
     } finally {

@@ -678,7 +678,13 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime?>("LastActiveAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("LastCounterResetDate")
+                        .HasColumnType("date");
+
                     b.Property<DateOnly?>("LastTaskCompletedDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("LastWeeklyResetDate")
                         .HasColumnType("date");
 
                     b.Property<string>("LifestyleType")
@@ -1090,11 +1096,16 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("UserTaskId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AppTaskId");
 
                     b.HasIndex("PostId");
+
+                    b.HasIndex("UserTaskId");
 
                     b.ToTable("PostTags");
                 });
@@ -1865,9 +1876,15 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("LifeQuestAPI.Domain.Entities.UserTask", "UserTask")
+                        .WithMany()
+                        .HasForeignKey("UserTaskId");
+
                     b.Navigation("AppTask");
 
                     b.Navigation("Post");
+
+                    b.Navigation("UserTask");
                 });
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.UserAchievement", b =>

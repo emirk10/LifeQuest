@@ -258,6 +258,27 @@ export async function executeApiAction(apiAction, context = {}) {
       }
     }
 
+    // ── Serbest Metin (AI Chat) ────────────────────────────────────────────────
+    case "send_free_text": {
+      const response = await chatService.sendMessage(context.freeTextMessage);
+      return {
+        aiResponse: response.response,
+        intent: response.intent,
+        confidence: response.confidence ?? response.intentConfidence,
+        sentiment: response.sentiment,
+        sentimentConfidence: response.sentimentConfidence,
+        urgencyLevel: response.urgencyLevel ?? 0,
+        suggestions: response.suggestions || [],
+        actions: response.actions || [],
+        flowRedirect: response.flowRedirect || response.flow_redirect || null,
+        shouldShowMoodSelector: response.shouldShowMoodSelector,
+        // Geriye uyumluluk / Tekil görev önerisi
+        suggestedTaskId: response.suggestedTaskId || response.SuggestedTaskId,
+        suggestedTaskTitle: response.suggestedTaskTitle || response.SuggestedTaskTitle,
+        suggestedTaskXp: response.suggestedTaskXp || response.SuggestedTaskXp,
+      };
+    }
+
     default:
       throw new Error(`Bilinmeyen API aksiyonu: ${apiAction}`);
   }

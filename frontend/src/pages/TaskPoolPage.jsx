@@ -267,7 +267,7 @@ const TaskPoolPage = () => {
             <div className="flex-1 text-center md:text-left">
               <h3 className="text-amber-400 font-black text-lg tracking-tight">BUGÜNLÜK BU KADAR!</h3>
               <p className="text-amber-500/80 text-sm font-medium">
-                Günlük görev limitine ({userLimits.daily}) ulaştın. Harika bir iş çıkardın! Yeni görevler için yarını bekleyebilir veya mevcut görevlerini tamamlayabilirsin.
+                Günlük görev limitine ({userLimits.daily}/{userLimits.daily}) ulaştın. Harika bir iş çıkardın! Yeni hakların <strong>gece yarısı (00:00)</strong> otomatik olarak tanımlanacaktır.
               </p>
             </div>
             <button

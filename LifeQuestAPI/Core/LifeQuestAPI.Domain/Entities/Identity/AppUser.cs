@@ -131,6 +131,12 @@ public sealed class AppUser : BaseEntity
     /// <summary>Günlük limit dolduğunda uyarının bugün gösterilip gösterilmediği. Gece sıfırlanır.</summary>
     public bool OverLimitWarningShown { get; set; } = false;
 
+    /// <summary>Sayaçların en son ne zaman sıfırlandığı (Daily)</summary>
+    public DateOnly? LastCounterResetDate { get; set; }
+
+    /// <summary>Haftalık sayaçların en son ne zaman sıfırlandığı (Monday check)</summary>
+    public DateOnly? LastWeeklyResetDate { get; set; }
+
     // ─── SP-05: Onboarding Sistemi ────────────────────────────────────────
     /// <summary>Onboarding tamamlandı mı?</summary>
     public bool OnboardingCompleted { get; set; } = false;

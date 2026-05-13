@@ -28,30 +28,48 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
             query = query.Where(ut => ut.AppTask.CategoryId == request.CategoryId.Value);
         }
 
-        var tasks = await query
-            .OrderBy(ut => ut.CompletedAt.HasValue)
-            .ThenByDescending(ut => ut.AssignedAt)
-            .Select(ut => new UserTaskDto
-            {
-                Id = ut.Id,
-                AppTaskId = ut.AppTaskId,
-                Title = ut.AppTask.Title,
-                Description = ut.AppTask.Description,
-                Xp = ut.AppTask.BaseXP,
-                BaseXP = ut.AppTask.BaseXP,
-                Difficulty = ut.AppTask.Difficulty.ToString(),
-                IsCompleted = ut.CompletedAt.HasValue,
-                CompletedAt = ut.CompletedAt,
-                AssignedAt = ut.AssignedAt,
-                CategoryName = ut.AppTask.Category != null ? ut.AppTask.Category.Name : null,
-                Status = ut.Status.ToString(),
-                PostponedTo = ut.PostponedTo
-            })
+        // Benzersiz tarihleri bul (Görevin atandığı günler)
+        var uniqueDates = await query
+            .Select(ut => ut.AssignedAt.Date)
+            .Distinct()
+            .OrderByDescending(d => d)
             .ToListAsync(cancellationToken);
+
+        var totalCount = uniqueDates.Count;
+        var tasks = new List<UserTaskDto>();
+
+        if (totalCount > 0)
+        {
+            // İlgili sayfadaki (gündeki) tarihi seç
+            var targetIndex = Math.Clamp(request.Page - 1, 0, totalCount - 1);
+            var targetDate = uniqueDates[targetIndex];
+
+            tasks = await query
+                .Where(ut => ut.AssignedAt.Date == targetDate)
+                .OrderByDescending(ut => ut.AssignedAt)
+                .Select(ut => new UserTaskDto
+                {
+                    Id = ut.Id,
+                    AppTaskId = ut.AppTaskId,
+                    Title = ut.AppTask.Title,
+                    Description = ut.AppTask.Description,
+                    Xp = ut.AppTask.BaseXP,
+                    BaseXP = ut.AppTask.BaseXP,
+                    Difficulty = ut.AppTask.Difficulty.ToString(),
+                    IsCompleted = ut.CompletedAt.HasValue,
+                    CompletedAt = ut.CompletedAt,
+                    AssignedAt = ut.AssignedAt,
+                    CategoryName = ut.AppTask.Category != null ? ut.AppTask.Category.Name : null,
+                    Status = ut.Status.ToString(),
+                    PostponedTo = ut.PostponedTo
+                })
+                .ToListAsync(cancellationToken);
+        }
 
         return new GetUserTasksQueryResponse
         {
-            Tasks = tasks
+            Tasks = tasks,
+            TotalCount = totalCount
         };
     }
 }

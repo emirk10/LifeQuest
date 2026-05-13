@@ -1,10 +1,11 @@
 import axiosClient from '../api/axiosClient';
 
 const taskService = {
-  getAllTasks: async (categoryId = null) => {
-    const url = categoryId ? `/user-tasks?categoryId=${categoryId}` : '/user-tasks';
+  getAllTasks: async (categoryId = null, page = 1, pageSize = 10) => {
+    let url = `/user-tasks?page=${page}&pageSize=${pageSize}`;
+    if (categoryId) url += `&categoryId=${categoryId}`;
     const response = await axiosClient.get(url);
-    return response.data.tasks || [];
+    return response.data;
   },
 
   completeTask: async (userTaskId, reflectionText = null, customTags = []) => {

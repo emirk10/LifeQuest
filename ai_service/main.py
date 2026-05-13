@@ -122,6 +122,7 @@ class ChatResponse(BaseModel):
     actions: list[ChatAction] = []
     suggested_tasks: Optional[list[MiniTaskDto]] = None
     should_show_mood_selector: bool = False
+    flow_redirect: Optional[str] = None  # Frontend'e hangi flow node'una yönlendireceğini bildirir
 
     # Geriye uyumluluk
     confidence: float = 0.0
@@ -249,6 +250,16 @@ RESPONSE_TEMPLATES: dict[str, dict[str, list[str]]] = {
         "📊 İstatistiklerini getiriyorum...",
         "📊 Profilini kontrol et, tüm veriler orada!",
     ]},
+    "alakasiz": {"default": [
+        "Bu konu benim uzmanlık alanım dışında, ama unutma ki ne istiyorsan ona ulaşmanın en iyi yolu hedeflerini tamamlamaktan geçer! Hadi, bugün listenden bir görev seçelim! 🎯",
+        "Hmm, bu konuda yardımcı olamam ama LifeQuest'te birçok şey yapabilirsin! 😊\n\n🎯 Görev takibi ve önerileri\n📊 İstatistik ve ilerleme\n💪 Motivasyon desteği\n🏆 Rozet ve başarılar\n😊 Ruh hali takibi\n\nAşağıdaki seçeneklerden birini dene!",
+        "Bu benim uzmanlık alanım dışında 😅 Ama hedeflerine ulaşmak için görevlerini tamamlamaya odaklanabilirsin! Sana bu konuda yardımcı olabilirim. Aşağıdaki seçeneklere göz at.",
+        "Anladım ama bu konuda doğrudan yardımcı olamıyorum. 😊 Ancak hayatta istediğin şeylere ulaşmak için planlı olmak şart! Hadi görevlerinle ilgilenelim.",
+    ]},
+    "yardim": {"default": [
+        "Tabii ki! İşte sana yardımcı olabileceğim konular: 🌟\n\n📋 **Görevlerim** — Aktif, tamamlanan ve ertelenen görevler\n🎯 **Hedeflerim** — Hedef takibi ve dashboard\n📊 **İstatistikler** — XP, seviye, haftalık rapor\n💪 **Motivasyon** — Ruh haline göre kişisel mesajlar\n✨ **Görev Önerisi** — Seviye ve enerjine uygun görevler\n🏆 **Rozetler** — Başarım koleksiyonu\n😊 **Ruh Hali** — Günlük ruh hali kaydı\n\nBir seçenek tıkla veya istediğini yaz!",
+        "Merhaba! 👋 Ben senin kişisel gelişim asistanınım. Görevlerin, istatistiklerin, hedeflerin ve motivasyon hakkında konuşabiliriz. Aşağıdan bir seçenek seç veya bana yaz!",
+    ]},
 }
 
 SUGGESTION_MAP: dict[str, list[str]] = {
@@ -269,6 +280,8 @@ SUGGESTION_MAP: dict[str, list[str]] = {
     "mood_pozitif": ["Zor görev öner", "En fazla XP", "Bugünkü hedefler"],
     "hafif_mod": ["Mini görev öner", "5 dakikalık görev", "En kolay görev"],
     "istatistik_sorgula": ["Streak durumum", "XP geçmişim", "Haftalık rapor"],
+    "alakasiz": ["📋 Görevlerim", "📊 İstatistiklerim", "💪 Motivasyon", "✨ Görev Öner", "🏆 Rozetlerim"],
+    "yardim": ["📋 Görevlerim", "📊 İstatistiklerim", "💪 Motivasyon", "✨ Görev Öner", "😊 Ruh Halim"],
 }
 
 
@@ -306,6 +319,31 @@ def build_actions(intent: str, context: ChatContextPayload | None, task_id: str 
     return actions
 
 
+# ─── Intent → Flow Redirect Haritası ────────────────────────────────────────
+INTENT_FLOW_MAP: dict[str, str | None] = {
+    "gorev_sorgula": "tasks_menu",
+    "istatistik": "stats_menu",
+    "istatistik_sorgula": "stats_menu",
+    "motivasyon": "motivation_check_mood",
+    "oneri": "suggest_task_category",
+    "oneri_iste": "suggest_task_category",
+    "rozet": "badges_show",
+    "saglik": "suggest_task_category",
+    "selamlama": "main_menu",
+    "mood_negatif": "mood_update_intro",
+    "mood_pozitif": "motivation_check_mood",
+    "hafif_mod": "suggest_task_category",
+    "alakasiz": "main_menu",
+    "yardim": "main_menu",
+    # Görev aksiyon intent'leri — flow yönlendirmesi yok, AI yanıtı gösterilir
+    "gorev_baslat": None,
+    "gorev_tamamla": None,
+    "gorev_ertele": None,
+    "gorev_vazgec": None,
+    "gorev_sec": None,
+}
+
+
 def generate_response(
     intent: str,
     confidence: float,
@@ -319,11 +357,11 @@ def generate_response(
 
     # Urgency 3: Sadece empati
     if urgency_level >= 3:
-        return personality_gen.generate("", personality, user_name, is_empathy=True)
+        return personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent)
 
     if confidence < 0.3:
         base = "Tam olarak anlayamadım. Görevlerin, istatistiklerin veya motivasyon hakkında konuşabiliriz. 😊"
-        return personality_gen.generate(base, personality, user_name)
+        return personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent)
 
     intent_responses = RESPONSE_TEMPLATES.get(intent, {})
     if sentiment_label in intent_responses:
@@ -335,9 +373,9 @@ def generate_response(
 
     # Urgency 2: Hafif empati dokunuşu
     if urgency_level == 2:
-        base = personality_gen.generate("", personality, user_name, is_empathy=True)
+        base = personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent)
     else:
-        base = personality_gen.generate(base, personality, user_name)
+        base = personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent)
 
     # Bağlam ekleme (görev varsa)
     if context and intent == "gorev_sorgula" and context.today_tasks:
@@ -397,8 +435,12 @@ async def chat(request: ChatRequest):
 
         should_show_mood = urgency >= 2 or intent_result["intent"] in ("mood_negatif", "hafif_mod")
 
+        # Flow redirect hesapla
+        detected_intent = intent_result["intent"]
+        flow_redirect = INTENT_FLOW_MAP.get(detected_intent)
+
         return ChatResponse(
-            intent=intent_result["intent"],
+            intent=detected_intent,
             intent_confidence=intent_result["confidence"],
             confidence=intent_result["confidence"],  # uyumluluk
             response=response_text,
@@ -408,6 +450,7 @@ async def chat(request: ChatRequest):
             suggestions=suggestions,
             actions=actions,
             should_show_mood_selector=should_show_mood,
+            flow_redirect=flow_redirect,
         )
 
     except Exception as e:

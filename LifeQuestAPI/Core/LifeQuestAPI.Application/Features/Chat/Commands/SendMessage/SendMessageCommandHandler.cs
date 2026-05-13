@@ -47,8 +47,7 @@ public sealed class SendMessageCommandHandler
         var todayTasks = await _userTaskReadRepository.Table
             .Include(ut => ut.AppTask).ThenInclude(t => t!.Category)
             .Where(ut => ut.AppUserId == request.UserId
-                && (ut.Status == AppTaskStatus.Suggested
-                    || ut.Status == AppTaskStatus.Selected
+                && (ut.Status == AppTaskStatus.Selected
                     || ut.Status == AppTaskStatus.InProgress
                     || ut.Status == AppTaskStatus.Paused))
             .ToListAsync(cancellationToken);
@@ -106,7 +105,7 @@ public sealed class SendMessageCommandHandler
         await _chatWriteRepository.SaveAsync();
 
         // ── Öneri intent'i (eski davranış korunuyor) ──────────────────────
-        if (aiResult.Intent is "oneri" or "oneri_iste" && aiResult.SuggestedTasks == null)
+        if (aiResult.Intent is "oneri" or "oneri_iste" && (aiResult.SuggestedTasks == null || !aiResult.SuggestedTasks.Any()))
         {
             var userTaskIds = todayTasks.Select(ut => ut.AppTaskId).ToList();
             var userLevel = user != null ? user.GeneralLevel : 1.0;
