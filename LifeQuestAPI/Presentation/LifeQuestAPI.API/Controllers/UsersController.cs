@@ -205,10 +205,14 @@ public class UpdateGoalsBody { public List<string> NewGoals { get; set; } = new(
 public class UpdatePreferencesBody
 {
     public List<string>? Goals { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Range(0, 1440, ErrorMessage = "Günlük müsaitlik süresi 0 ile 1440 dakika arasında olmalıdır.")]
     public int? DailyAvailableMinutes { get; set; }
     public List<string>? Strengths { get; set; }
     public List<string>? Weaknesses { get; set; }
     public string? MotivationFactor { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Range(0, 100, ErrorMessage = "Haftalık tercih edilen görev sayısı 0 ile 100 arasında olmalıdır.")]
     public int? PreferredTasksPerWeek { get; set; }
     public string? DifficultyPreference { get; set; }
     public string? Bio { get; set; }

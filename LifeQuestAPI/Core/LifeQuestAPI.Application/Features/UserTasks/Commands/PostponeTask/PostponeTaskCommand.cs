@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
@@ -24,17 +25,20 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
     private readonly IUserTaskWriteRepository _userTaskWriteRepository;
     private readonly IAppUserReadRepository _userReadRepository;
     private readonly IAppUserWriteRepository _userWriteRepository;
+    private readonly IUserBehaviorAnalysisService _behaviorAnalysisService;
 
     public PostponeTaskCommandHandler(
         IUserTaskReadRepository userTaskReadRepository,
         IUserTaskWriteRepository userTaskWriteRepository,
         IAppUserReadRepository userReadRepository,
-        IAppUserWriteRepository userWriteRepository)
+        IAppUserWriteRepository userWriteRepository,
+        IUserBehaviorAnalysisService behaviorAnalysisService)
     {
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
         _userReadRepository = userReadRepository;
         _userWriteRepository = userWriteRepository;
+        _behaviorAnalysisService = behaviorAnalysisService;
     }
 
     public async Task<PostponeResultDto> Handle(PostponeTaskCommandRequest request, CancellationToken cancellationToken)
@@ -78,6 +82,16 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
         };
         await _userTaskWriteRepository.AddAsync(tomorrowTask);
         await _userTaskWriteRepository.SaveAsync();
+
+        // Gerçek zamanlı davranış analizi tetikleme
+        try
+        {
+            await _behaviorAnalysisService.AnalyzeAndUpdateUserBehaviorAsync(request.UserId, cancellationToken);
+        }
+        catch
+        {
+            // Analiz hatası ertelemeyi engellemesin
+        }
 
         return new PostponeResultDto
         {

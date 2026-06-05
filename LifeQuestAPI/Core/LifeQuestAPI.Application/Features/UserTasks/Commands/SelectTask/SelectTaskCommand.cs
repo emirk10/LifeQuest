@@ -40,99 +40,110 @@ public class SelectTaskCommandHandler : IRequestHandler<SelectTaskCommandRequest
         _notificationService = notificationService;
     }
 
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, SemaphoreSlim> _locks = new();
+
     public async Task<UserTaskDto> Handle(SelectTaskCommandRequest request, CancellationToken cancellationToken)
     {
-        // Kullanıcıyı çek
-        var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true)
-            ?? throw new Exception("Kullanıcı bulunamadı.");
-
-        // ─── SP-05: Lazy Reset Logic (Timezone Adjusted) ─────────────────
-        TimeZoneInfo tz;
+        var userLock = _locks.GetOrAdd(request.UserId, _ => new SemaphoreSlim(1, 1));
+        await userLock.WaitAsync(cancellationToken);
         try
         {
-            tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+            // Kullanıcıyı çek
+            var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true)
+                ?? throw new Exception("Kullanıcı bulunamadı.");
+
+            // ─── SP-05: Lazy Reset Logic (Timezone Adjusted) ─────────────────
+            TimeZoneInfo tz;
+            try
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+            }
+            catch (TimeZoneNotFoundException)
+            {
+                tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+            }
+            
+            var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+            var today = DateOnly.FromDateTime(nowInLocal);
+
+            // Günlük sayaç sıfırlama
+            if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
+            {
+                user.TodayTaskCount = 0;
+                user.OverLimitWarningShown = false;
+                user.LastCounterResetDate = today;
+            }
+
+            // Haftalık sayaç sıfırlama (Pazartesi kontrolü)
+            var isMonday = nowInLocal.DayOfWeek == DayOfWeek.Monday;
+            if (isMonday && (!user.LastWeeklyResetDate.HasValue || user.LastWeeklyResetDate.Value < today))
+            {
+                user.WeeklyCompletedCount = 0;
+                user.LastWeeklyResetDate = today;
+            }
+
+            // ─── SP-05: DailyLimitRule ─────────────────────────────────────────
+            if (user.TodayTaskCount >= user.DailyTaskLimit)
+            {
+                if (!request.ForceOverLimit || user.OverLimitWarningShown)
+                    throw new Exception($"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yeni hakların gece yarısı (00:00) tanımlanacaktır. İstersen limitini ayarlardan değiştirebilirsin.");
+
+                // İlk kez aşıyor, uyarı flag'ini set et
+                user.OverLimitWarningShown = true;
+            }
+
+            // ─── SP-05: ActiveLimitRule ────────────────────────────────────────
+            if (user.ActiveTaskCount >= user.DailyTaskLimit * 2)
+                throw new Exception($"Henüz tamamlanmamış çok fazla ({user.ActiveTaskCount}/{user.DailyTaskLimit * 2}) görevin var. Yeni görev alabilmek için önce mevcut görevlerini tamamlamalı veya ertelemelisin.");
+
+            var userTask = await _userTaskReadRepository
+                .GetWhere(ut => ut.Id == request.UserTaskId && ut.AppUserId == request.UserId, tracking: true)
+                .Include(ut => ut.AppTask)
+                .FirstOrDefaultAsync(cancellationToken)
+                ?? throw new Exception("Görev bulunamadı.");
+
+            if (userTask.Status != AppTaskStatus.Suggested && userTask.Status != AppTaskStatus.Cancelled)
+                throw new Exception("Yalnızca önerilmiş veya iptal edilmiş görevler seçilebilir.");
+
+            // Bugünkü mood'dan energy ve mood snapshot al
+            var todayMood = await _moodReadRepository
+                .GetWhere(m => m.AppUserId == request.UserId && m.Date == today, tracking: false)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            userTask.Status = AppTaskStatus.Selected;
+            userTask.UserEnergyAtStart = todayMood?.EnergyLevel;
+            userTask.UserMoodAtStart = todayMood?.MoodMode;
+
+            // SP-05: Sayaçları güncelle
+            user.TodayTaskCount++;
+            user.ActiveTaskCount++;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            _userTaskWriteRepository.Update(userTask);
+            _userWriteRepository.Update(user);
+            await _userTaskWriteRepository.SaveAsync();
+
+            await _notificationService.SendNotificationAsync(
+                request.UserId,
+                "Görev seçildi!",
+                $"'{userTask.AppTask?.Title}' görevini seçtin. Hadi başlayalım!",
+                "TaskSelected");
+
+            return new UserTaskDto
+            {
+                Id = userTask.Id,
+                Title = userTask.AppTask?.Title ?? string.Empty,
+                Description = userTask.AppTask?.Description ?? string.Empty,
+                Xp = userTask.EarnedXp,
+                BaseXP = userTask.AppTask?.BaseXP ?? 0,
+                Difficulty = userTask.AppTask?.Difficulty.ToString() ?? string.Empty,
+                IsCompleted = userTask.Status == AppTaskStatus.Completed,
+                AssignedAt = userTask.AssignedAt
+            };
         }
-        catch (TimeZoneNotFoundException)
+        finally
         {
-            tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+            userLock.Release();
         }
-        
-        var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-        var today = DateOnly.FromDateTime(nowInLocal);
-
-        // Günlük sayaç sıfırlama
-        if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
-        {
-            user.TodayTaskCount = 0;
-            user.OverLimitWarningShown = false;
-            user.LastCounterResetDate = today;
-        }
-
-        // Haftalık sayaç sıfırlama (Pazartesi kontrolü)
-        var isMonday = nowInLocal.DayOfWeek == DayOfWeek.Monday;
-        if (isMonday && (!user.LastWeeklyResetDate.HasValue || user.LastWeeklyResetDate.Value < today))
-        {
-            user.WeeklyCompletedCount = 0;
-            user.LastWeeklyResetDate = today;
-        }
-
-        // ─── SP-05: DailyLimitRule ─────────────────────────────────────────
-        if (user.TodayTaskCount >= user.DailyTaskLimit)
-        {
-            if (!request.ForceOverLimit || user.OverLimitWarningShown)
-                throw new Exception($"Bugün için görev limitine ({user.TodayTaskCount}/{user.DailyTaskLimit}) ulaştın. Yeni hakların gece yarısı (00:00) tanımlanacaktır. İstersen limitini ayarlardan değiştirebilirsin.");
-
-            // İlk kez aşıyor, uyarı flag'ini set et
-            user.OverLimitWarningShown = true;
-        }
-
-        // ─── SP-05: ActiveLimitRule ────────────────────────────────────────
-        if (user.ActiveTaskCount >= user.DailyTaskLimit * 2)
-            throw new Exception($"Henüz tamamlanmamış çok fazla ({user.ActiveTaskCount}/{user.DailyTaskLimit * 2}) görevin var. Yeni görev alabilmek için önce mevcut görevlerini tamamlamalı veya ertelemelisin.");
-
-        var userTask = await _userTaskReadRepository
-            .GetWhere(ut => ut.Id == request.UserTaskId && ut.AppUserId == request.UserId, tracking: true)
-            .Include(ut => ut.AppTask)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new Exception("Görev bulunamadı.");
-
-        if (userTask.Status != AppTaskStatus.Suggested)
-            throw new Exception("Yalnızca önerilmiş görevler seçilebilir.");
-
-        // Bugünkü mood'dan energy ve mood snapshot al
-        var todayMood = await _moodReadRepository
-            .GetWhere(m => m.AppUserId == request.UserId && m.Date == today, tracking: false)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        userTask.Status = AppTaskStatus.Selected;
-        userTask.UserEnergyAtStart = todayMood?.EnergyLevel;
-        userTask.UserMoodAtStart = todayMood?.MoodMode;
-
-        // SP-05: Sayaçları güncelle
-        user.TodayTaskCount++;
-        user.ActiveTaskCount++;
-        user.UpdatedAt = DateTime.UtcNow;
-
-        _userTaskWriteRepository.Update(userTask);
-        _userWriteRepository.Update(user);
-        await _userTaskWriteRepository.SaveAsync();
-
-        await _notificationService.SendNotificationAsync(
-            request.UserId,
-            "Görev seçildi!",
-            $"'{userTask.AppTask?.Title}' görevini seçtin. Hadi başlayalım!",
-            "TaskSelected");
-
-        return new UserTaskDto
-        {
-            Id = userTask.Id,
-            Title = userTask.AppTask?.Title ?? string.Empty,
-            Description = userTask.AppTask?.Description ?? string.Empty,
-            Xp = userTask.EarnedXp,
-            BaseXP = userTask.AppTask?.BaseXP ?? 0,
-            Difficulty = userTask.AppTask?.Difficulty.ToString() ?? string.Empty,
-            IsCompleted = userTask.Status == AppTaskStatus.Completed,
-            AssignedAt = userTask.AssignedAt
-        };
     }
 }

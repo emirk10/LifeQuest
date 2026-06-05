@@ -182,7 +182,7 @@ const DashBoard = () => {
           <div className="bg-slate-900/60 p-5 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-4 shadow-xl backdrop-blur-md">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-indigo-600/20 rounded-2xl flex items-center justify-center text-3xl shadow-inner">
-                {todayMood.moodMode === 0 ? '⚡' : todayMood.moodMode === 1 ? '😊' : todayMood.moodMode === 2 ? '😴' : todayMood.moodMode === 3 ? '😰' : '⏰'}
+                {(todayMood.moodMode === 0 || todayMood.moodMode === 'Energetic') ? '⚡' : (todayMood.moodMode === 1 || todayMood.moodMode === 'Normal') ? '😊' : (todayMood.moodMode === 2 || todayMood.moodMode === 'Tired') ? '😴' : (todayMood.moodMode === 3 || todayMood.moodMode === 'Overwhelmed') ? '😰' : '⏰'}
               </div>
               <div>
                 <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Günün Modu</p>

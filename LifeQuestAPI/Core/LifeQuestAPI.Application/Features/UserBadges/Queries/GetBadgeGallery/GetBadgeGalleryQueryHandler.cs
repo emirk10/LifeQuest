@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,7 +27,7 @@ public sealed class GetBadgeGalleryQueryHandler : IRequestHandler<GetBadgeGaller
     public async Task<GetBadgeGalleryQueryResponse> Handle(GetBadgeGalleryQueryRequest request, CancellationToken cancellationToken)
     {
         var allBadges = await _badgeReadRepository.GetAll(tracking: false)
-            .OrderBy(b => b.RequiredLevel)
+            .OrderBy(b => b.RequiredValue)
             .ToListAsync(cancellationToken);
 
         var userEarnedBadges = await _userBadgeReadRepository
@@ -44,7 +44,7 @@ public sealed class GetBadgeGalleryQueryHandler : IRequestHandler<GetBadgeGaller
                 Name = badge.Name,
                 Description = badge.Description,
                 IconPath = badge.IconPath,
-                RequiredLevel = badge.RequiredLevel,
+                RequiredLevel = badge.RequiredValue,
                 IsEarned = earnedRecord != null,
                 EarnedAt = earnedRecord?.EarnedAt
             };

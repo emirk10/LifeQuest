@@ -19,8 +19,13 @@ public class GoalsController : ControllerBase
 
     public GoalsController(IMediator mediator) => _mediator = mediator;
 
-    private Guid GetUserId() =>
-        Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+    private Guid GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim == null || !Guid.TryParse(claim.Value, out var userId))
+            throw new UnauthorizedAccessException("Geçersiz kullanıcı kimliği.");
+        return userId;
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetMyGoals()
@@ -100,6 +105,60 @@ public class GoalsController : ControllerBase
                 GoalId = goalId
             });
             return Ok(new { success = result });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPut("{goalId}")]
+    public async Task<IActionResult> UpdateGoal(Guid goalId, [FromBody] CreateGoalBody body)
+    {
+        try
+        {
+            var response = await _mediator.Send(new LifeQuestAPI.Application.Features.Goals.Commands.UpdateUserGoal.UpdateUserGoalCommandRequest
+            {
+                GoalId = goalId,
+                UserId = GetUserId(),
+                Title = body.Title,
+                Description = body.Description,
+                Type = body.Type,
+                TargetValue = body.TargetValue,
+                CategoryId = body.CategoryId,
+                StartDate = body.StartDate,
+                EndDate = body.EndDate,
+                BonusXP = body.BonusXP,
+                Icon = body.Icon,
+                Color = body.Color,
+                Why = body.Why,
+                ProgressUnit = body.ProgressUnit ?? "görev",
+                AutoTrackByCategory = body.AutoTrackByCategory,
+                AutoTrackByXP = body.AutoTrackByXP,
+                ReminderEnabled = body.ReminderEnabled,
+                ReminderFrequency = body.ReminderFrequency ?? "weekly"
+            });
+            if (!response.IsSuccess) return NotFound(response);
+            return Ok(response);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpDelete("{goalId}")]
+    public async Task<IActionResult> DeleteGoal(Guid goalId)
+    {
+        try
+        {
+            var response = await _mediator.Send(new LifeQuestAPI.Application.Features.Goals.Commands.DeleteUserGoal.DeleteUserGoalCommandRequest
+            {
+                GoalId = goalId,
+                UserId = GetUserId()
+            });
+            if (!response.IsSuccess) return NotFound(response);
+            return Ok(response);
         }
         catch (Exception ex)
         {

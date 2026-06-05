@@ -2,6 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "../../context/authContext";
 import { FLOWS } from "./chatFlows";
 import { executeApiAction, assignTask, selectTask, completeTask, postponeTask } from "./chatApiHandler";
+import chatService from "../../services/chatService";
+import useSignalR from "../../hooks/useSignalR";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   TaskCard, CompletedTaskCard, BadgeCard, ProfileCard,
   MoodSavedCard, MotivationCard, WeeklyStatsCard,
@@ -60,6 +64,10 @@ const ChatBotFlow = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [loading, setLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [activeTab, setActiveTab] = useState("assistant"); // "assistant" | "history"
+  const [historyMessages, setHistoryMessages] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [unread, setUnread] = useState(0);
   const [flowCtx, setFlowCtx] = useState(() => {
     const saved = sessionStorage.getItem(`lq_chat_ctx_${user?.id}`);
@@ -75,6 +83,29 @@ const ChatBotFlow = () => {
   useEffect(() => {
     flowCtxRef.current = flowCtx;
   }, [flowCtx]);
+
+  // Proaktif nudge dinleyici
+  useSignalR({
+    onNotification: (notif) => {
+      if (notif?.type === 'ProactiveNudge') {
+        addMsg(mkMsg("bot", { type: "text", text: notif.message }));
+        toast(
+          <div>
+            <p className="font-bold text-sm mb-1">LifeQuest AI 🤖</p>
+            <p className="text-xs">{notif.message}</p>
+          </div>,
+          {
+            autoClose: 8000,
+            className: 'bg-slate-800 border border-indigo-500/40 text-white rounded-2xl shadow-xl',
+            progressClassName: 'bg-indigo-500',
+            onClick: () => {
+              setIsOpen(true);
+            }
+          }
+        );
+      }
+    }
+  });
 
   // Persistence
   useEffect(() => {
@@ -113,7 +144,7 @@ const ChatBotFlow = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 300);
     return () => clearTimeout(timer);
-  }, [messages]);
+  }, [messages, historyMessages, activeTab, isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -121,6 +152,55 @@ const ChatBotFlow = () => {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
+
+  const loadHistory = useCallback(async () => {
+    if (!user) return;
+    setHistoryLoading(true);
+    try {
+      const historyData = await chatService.getHistory(50);
+      if (historyData && historyData.length > 0) {
+        const uiMessages = historyData.map(m => {
+          const sender = m.senderType?.toLowerCase() === "user" ? "user" : "bot";
+          const time = new Date(m.createdAt).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+          
+          const extras = {};
+          if (m.intent) {
+            extras.intent = m.intent;
+            extras.confidence = m.intentConfidence ?? 1.0;
+            extras.sentiment = m.sentiment ?? "neutral";
+            extras.urgencyLevel = m.urgencyLevel ?? 0;
+            extras.type = "ai_response";
+          }
+          if (m.actionsOffered && m.actionsOffered.length > 0) {
+            extras.options = m.actionsOffered.map(t => ({ label: t, nextNode: "main_menu" }));
+            extras.type = "options";
+          }
+
+          return {
+            id: m.id || (Date.now() + Math.random()),
+            sender,
+            time,
+            content: {
+              type: "text",
+              text: m.content,
+              ...extras
+            }
+          };
+        });
+        setHistoryMessages(uiMessages);
+      }
+    } catch (err) {
+      console.error("Chat history fetch error:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (activeTab === "history") {
+      loadHistory();
+    }
+  }, [activeTab, loadHistory]);
 
   const addMsg = useCallback((msg) => {
     setMessages(prev => [...prev, msg]);
@@ -302,7 +382,7 @@ const ChatBotFlow = () => {
 
       case "badge_gallery": {
         const badges = data.badges || [];
-        const unlocked = badges.filter(b => b.isUnlocked).length;
+        const unlocked = badges.filter(b => b.isEarned).length;
         addMsg(mkMsg("bot", { type: "text", text: `🏆 Toplam ${badges.length} rozetten ${unlocked} tanesini kazandın!` }));
         addMsg(mkMsg("bot", { type: "badge_gallery", badges: badges.slice(0, 8), options: node.options, nodeId: node.id }));
         break;
@@ -376,6 +456,31 @@ const ChatBotFlow = () => {
       await pushNode(opt.nextNode, newCtx);
     }
   }, [loading, addMsg, pushNode]);
+
+  const handleAction = async (action, msgId) => {
+    if (action.type === "update_goal") {
+      addMsg(mkMsg("bot", { type: "text", text: "🎯 Hedeflerini güncellemek için Hedeflerim sayfasına gidebilirsin." }));
+      return;
+    }
+    if (action.type === "keep_goal") {
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: { ...m.content, optionsUsed: true } } : m));
+      addMsg(mkMsg("bot", { type: "text", text: "Harika! Bu hedefle devam ediyoruz. 💪" }));
+      return;
+    }
+    setActionLoading(action.type);
+    try {
+      const res = await chatService.processAction(msgId, action.type, action.taskId || action.task_id, action.payload);
+      setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: { ...m.content, optionsUsed: true } } : m));
+      addMsg(mkMsg("bot", { type: "text", text: res.message || "✅ İşlem tamamlandı!" }));
+      setTimeout(() => {
+        addMsg(mkMsg("bot", { type: "options", text: "Başka bir şey yapmak ister misin?", options: FLOWS.main_menu.options, nodeId: "main_menu" }));
+      }, 500);
+    } catch (err) {
+      addMsg(mkMsg("bot", { type: "text", text: "⚠️ Aksiyon işlenirken bir hata oluştu." }));
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // ─── Görev atama ─────────────────────────────────────────────────────────
   const handleAssign = async (task) => {
@@ -497,6 +602,8 @@ const ChatBotFlow = () => {
 
       // Flow yönlendirmesi varsa, ilgili node'un butonlarını göster
       const flowTarget = result.flowRedirect || INTENT_FLOW_MAP[result.intent];
+      const hasAiOptions = !!(result.suggestedTasks?.length || result.actions?.length || result.suggestions?.length || result.suggestedTaskId);
+
       if (flowTarget && FLOWS[flowTarget]) {
         const targetNode = FLOWS[flowTarget];
         // Kısa gecikme ile butonları göster (doğal his vermesi için)
@@ -514,8 +621,8 @@ const ChatBotFlow = () => {
             }));
           }
         }, 300);
-      } else {
-        // Flow yönlendirmesi yoksa (görev aksiyon intent'leri) ana menü butonlarını göster
+      } else if (!hasAiOptions) {
+        // Flow yönlendirmesi yoksa VE AI tarafında özel seçenek/öneri yoksa ana menü butonlarını göster
         setTimeout(() => {
           addMsg(mkMsg("bot", {
             type: "options",
@@ -585,43 +692,109 @@ const ChatBotFlow = () => {
 
           {/* AI Yanıtı (metadata ile) */}
           {content.type === "ai_response" && (
-            <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
-              <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
-              <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-1.5 text-[10px]">
-                <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">
-                  {INTENT_LABELS[content.intent] || content.intent}
-                </span>
-                <span className="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full">
-                  %{((content.confidence ?? 0) * 100).toFixed(0)} güven
-                </span>
-                {content.urgencyLevel > 0 && (
-                  <span className={`px-2 py-0.5 rounded-full font-bold ${
-                    content.urgencyLevel >= 3 ? "bg-red-500/20 text-red-300"
-                      : content.urgencyLevel === 2 ? "bg-orange-500/20 text-orange-300"
-                        : "bg-yellow-500/20 text-yellow-300"
-                  }`}>
-                    ⚠️ Aciliyet {content.urgencyLevel}
+            <div className="space-y-2 w-full">
+              <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
+                <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
+                <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-1.5 text-[10px]">
+                  <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">
+                    {INTENT_LABELS[content.intent] || content.intent}
                   </span>
+                  <span className="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full">
+                    %{((content.confidence ?? 0) * 100).toFixed(0)} güven
+                  </span>
+                  {content.urgencyLevel > 0 && (
+                    <span className={`px-2 py-0.5 rounded-full font-bold ${
+                      content.urgencyLevel >= 3 ? "bg-red-500/20 text-red-300"
+                        : content.urgencyLevel === 2 ? "bg-orange-500/20 text-orange-300"
+                          : "bg-yellow-500/20 text-yellow-300"
+                    }`}>
+                      ⚠️ Aciliyet {content.urgencyLevel}
+                    </span>
+                  )}
+                </div>
+
+                {/* Tekil görev önerisi (eski uyumluluk) */}
+                {content.suggestedTaskId && (
+                  <div className="mt-3 bg-indigo-500/10 rounded-xl p-3 border border-indigo-500/30">
+                    <div className="flex justify-between items-start mb-2">
+                      <h4 className="text-white font-bold text-sm">{content.suggestedTaskTitle}</h4>
+                      <span className="text-xs font-bold text-amber-400">+{content.suggestedTaskXp} XP</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        handleAssign({ id: content.suggestedTaskId, title: content.suggestedTaskTitle });
+                        // Atandıktan sonra butonu gizle (opsiyonel)
+                        setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: { ...m.content, suggestedTaskId: null } } : m));
+                      }}
+                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors"
+                    >
+                      ✅ Görevi Kabul Et
+                    </button>
+                  </div>
+                )}
+
+                {/* Eylemler / Aksiyonlar (content.actions) */}
+                {content.actions?.length > 0 && !content.optionsUsed && (
+                  <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-slate-700/30">
+                    {content.actions.map((act, i) => {
+                      const label = act.label || act.text || (act.type === "update_goal" ? "🎯 Hedefleri Güncelle" : act.type === "keep_goal" ? "💪 Hedefi Koru" : "Aksiyonu Yürüt");
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => handleAction(act, msg.id)}
+                          disabled={actionLoading === act.type || loading}
+                          className="flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:opacity-50 transition-all"
+                        >
+                          {actionLoading === act.type ? "..." : label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Hızlı Yanıtlar / Öneriler (content.suggestions) */}
+                {content.suggestions?.length > 0 && !content.optionsUsed && (
+                  <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-700/30">
+                    {content.suggestions.map((sug, i) => {
+                      const text = typeof sug === "string" ? sug : (sug.text || sug.label || "");
+                      if (!text) return null;
+                      return (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: { ...m.content, optionsUsed: true } } : m));
+                            handleFreeText(text);
+                          }}
+                          disabled={loading}
+                          className="text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed
+                            bg-slate-700/60 border-slate-600/50 text-slate-200 hover:bg-indigo-600/30 hover:border-indigo-500/50 hover:text-white active:scale-95"
+                        >
+                          {text}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {content.optionsUsed && (content.actions?.length > 0 || content.suggestions?.length > 0) && (
+                  <p className="text-[10px] text-slate-600 italic mt-2">Seçim yapıldı</p>
                 )}
               </div>
 
-              {/* Tekil görev önerisi (eski uyumluluk) */}
-              {content.suggestedTaskId && (
-                <div className="mt-3 bg-indigo-500/10 rounded-xl p-3 border border-indigo-500/30">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="text-white font-bold text-sm">{content.suggestedTaskTitle}</h4>
-                    <span className="text-xs font-bold text-amber-400">+{content.suggestedTaskXp} XP</span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      handleAssign({ id: content.suggestedTaskId, title: content.suggestedTaskTitle });
-                      // Atandıktan sonra butonu gizle (opsiyonel)
-                      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: { ...m.content, suggestedTaskId: null } } : m));
-                    }}
-                    className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors"
-                  >
-                    ✅ Görevi Kabul Et
-                  </button>
+              {/* Önerilen Görevler (content.suggestedTasks) */}
+              {content.suggestedTasks?.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  <p className="text-[11px] text-slate-400 font-bold tracking-wider uppercase pl-1">Önerilen Görevler</p>
+                  {content.suggestedTasks.map((t, idx) => (
+                    <TaskCard
+                      key={t.id || t.taskId || idx}
+                      task={t}
+                      onAction={handleAssign}
+                      actionLabel="Göreve Başla"
+                      actionIcon="🚀"
+                      actionColor="emerald"
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -711,6 +884,46 @@ const ChatBotFlow = () => {
     );
   };
 
+  const renderHistoryMessage = (msg) => {
+    const { content } = msg;
+    const isUser = msg.sender === "user";
+
+    if (isUser) {
+      return (
+        <div key={msg.id} className="flex justify-end mb-3">
+          <div className="max-w-[80%] bg-indigo-600/70 text-white rounded-2xl rounded-br-md px-4 py-2.5">
+            <p className="text-sm">{content.text}</p>
+            <p className="text-[9px] text-indigo-200 mt-1">{msg.time}</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div key={msg.id} className="flex justify-start mb-3">
+        <div className="max-w-[85%] space-y-1.5 w-full">
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 bg-indigo-600/30 rounded-full flex items-center justify-center text-[10px]">🤖</div>
+            <span className="text-[9px] text-slate-500">{msg.time}</span>
+          </div>
+          <div className="bg-slate-800/80 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/30">
+            <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
+            {content.intent && (
+              <div className="mt-2 pt-2 border-t border-slate-700/50 flex flex-wrap gap-1.5 text-[10px]">
+                <span className="bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full font-bold">
+                  {INTENT_LABELS[content.intent] || content.intent}
+                </span>
+                <span className="bg-slate-700/50 text-slate-400 px-2 py-0.5 rounded-full">
+                  %{((content.confidence ?? 0) * 100).toFixed(0)} güven
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Giriş yapılmamışsa chatbot'u tamamen gizle
   if (!user) return null;
 
@@ -768,35 +981,80 @@ const ChatBotFlow = () => {
             </button>
           </div>
 
+          {/* Tab Navigation */}
+          <div className="flex border-b border-slate-800 bg-slate-900 shrink-0">
+            <button
+              onClick={() => setActiveTab("assistant")}
+              className={`flex-1 py-3 text-center text-xs font-bold border-b-2 transition-all ${
+                activeTab === "assistant"
+                  ? "border-indigo-500 text-white bg-indigo-500/5"
+                  : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+              }`}
+            >
+              💬 Asistan Akışı
+            </button>
+            <button
+              onClick={() => setActiveTab("history")}
+              className={`flex-1 py-3 text-center text-xs font-bold border-b-2 transition-all ${
+                activeTab === "history"
+                  ? "border-indigo-500 text-white bg-indigo-500/5"
+                  : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30"
+              }`}
+            >
+              📜 Sohbet Geçmişi
+            </button>
+          </div>
+
           {/* Mesajlar */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-            {messages.map(msg => renderMessage(msg))}
+            {activeTab === "history" ? (
+              historyLoading ? (
+                <div className="flex flex-col items-center justify-center h-full space-y-2 py-10">
+                  <TypingIndicator />
+                  <p className="text-xs text-slate-400">Geçmiş yükleniyor...</p>
+                </div>
+              ) : historyMessages.length === 0 ? (
+                <div className="text-center text-slate-500 text-xs py-10">
+                  Henüz sohbet geçmişi bulunmuyor.
+                </div>
+              ) : (
+                historyMessages.map(msg => renderHistoryMessage(msg))
+              )
+            ) : (
+              messages.map(msg => renderMessage(msg))
+            )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Mesaj Giriş Alanı */}
-          <div className="p-3 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm shrink-0">
-            <div className="flex gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Mesajını yaz veya seçeneklere tıkla..."
-                className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500"
-                disabled={loading}
-              />
-              <button
-                onClick={() => handleFreeText()}
-                disabled={loading || !inputText.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all active:scale-95 shrink-0"
-              >
-                ➤
-              </button>
+          {/* Alt Kısım / Giriş Alanı */}
+          {activeTab === "assistant" ? (
+            <div className="p-3 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm shrink-0">
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Mesajını yaz veya seçeneklere tıkla..."
+                  className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500"
+                  disabled={loading}
+                />
+                <button
+                  onClick={() => handleFreeText()}
+                  disabled={loading || !inputText.trim()}
+                  className="bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-4 py-2.5 rounded-xl font-bold transition-all active:scale-95 shrink-0"
+                >
+                  ➤
+                </button>
+              </div>
+              <p className="text-[9px] text-slate-600 mt-1.5 text-center">AI destekli asistan • Yazı yazabilir veya butonlara tıklayabilirsin</p>
             </div>
-            <p className="text-[9px] text-slate-600 mt-1.5 text-center">AI destekli asistan • Yazı yazabilir veya butonlara tıklayabilirsin</p>
-          </div>
+          ) : (
+            <div className="p-4 border-t border-slate-800 bg-slate-950/40 backdrop-blur-sm shrink-0 text-center">
+              <p className="text-xs text-slate-500">📜 Sohbet geçmişi salt okunurdur. Yeni mesaj yazmak için Asistan Akışı sekmesine geçebilirsin.</p>
+            </div>
+          )}
         </div>
       )}
     </>

@@ -113,6 +113,34 @@ const GoalsPage = () => {
           </div>
         )}
 
+        {/* KPI Özet Paneli */}
+        {!loading && dashboard && (() => {
+          const activeGoals = dashboard.activeGoals || [];
+          const completedGoals = dashboard.completedGoals || [];
+          const allMeasured = [...activeGoals, ...completedGoals];
+          const avgProgress = dashboard.avgProgress ?? dashboard.AvgProgress ??
+            (allMeasured.length > 0
+              ? allMeasured.reduce((acc, g) => acc + (g.progressPercent ?? (g.targetValue > 0 ? Math.round((g.currentValue / g.targetValue) * 100) : 0)), 0) / allMeasured.length
+              : 0);
+
+          const kpis = [
+            { label: "Aktif Hedef", value: dashboard.totalActiveGoals ?? activeGoals.length, icon: "📈", color: "from-indigo-600/20 to-indigo-500/5", border: "border-indigo-500/30", text: "text-indigo-400" },
+            { label: "Bu Ay Tamamlanan", value: dashboard.totalCompletedThisMonth ?? completedGoals.length, icon: "✅", color: "from-emerald-600/20 to-emerald-500/5", border: "border-emerald-500/30", text: "text-emerald-400" },
+            { label: "Ort. İlerleme", value: `%${Math.round(avgProgress)}`, icon: "📊", color: "from-amber-600/20 to-amber-500/5", border: "border-amber-500/30", text: "text-amber-400" },
+          ];
+          return (
+            <div className="grid grid-cols-3 gap-3">
+              {kpis.map(kpi => (
+                <div key={kpi.label} className={`bg-gradient-to-br ${kpi.color} border ${kpi.border} rounded-2xl p-4 flex flex-col gap-1`}>
+                  <span className="text-xl">{kpi.icon}</span>
+                  <p className={`font-black text-2xl ${kpi.text}`}>{kpi.value}</p>
+                  <p className="text-slate-400 text-xs font-semibold">{kpi.label}</p>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+
         {/* Tabs */}
         <div className="flex gap-2">
           {tabs.map(tab => (

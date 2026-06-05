@@ -21,6 +21,8 @@ const TaskItem = ({
   onPostpone,
   onCancelPostpone,
   onFocus,
+  onCancel,
+  onReassign,
   tags = [],
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -120,6 +122,32 @@ const TaskItem = ({
     }
   };
 
+  const handleCancel = async () => {
+    if (isSubmitting || isCompleted) return;
+    const confirmCancel = window.confirm("Bu görevi iptal etmek istediğinize emin misiniz? (Ceza uygulanmaz)");
+    if (!confirmCancel) return;
+    setIsSubmitting(true);
+    try {
+      await onCancel?.(id);
+    } catch (err) {
+      console.error("Görev iptal hatası:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onReassign?.(id);
+    } catch (err) {
+      console.error("Yeniden atama hatası:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   // Swipe Handlers
   const onTouchStart = (e) => {
     setTouchEnd(null);
@@ -161,18 +189,18 @@ const TaskItem = ({
       onTouchEnd={onTouchEnd}
       style={{ transform: `translateX(${swipeOffset}px)`, transition: swipeOffset === 0 ? 'transform 0.3s' : 'none' }}
       className={`rounded-2xl border transition-all duration-300 relative overflow-hidden ${
-        isCompleted
+        isCompleted || status === 'Cancelled' || status === 'Abandoned'
           ? "opacity-50 grayscale border-slate-800 bg-slate-900/20"
           : "border-slate-800 hover:border-indigo-500/40 bg-slate-900/40 hover:bg-slate-900/60 hover:shadow-lg hover:shadow-indigo-500/5"
       }`}
     >
       {/* Swipe Indicators */}
-      {swipeOffset > 20 && !isCompleted && (
+      {swipeOffset > 20 && !isCompleted && status !== 'Cancelled' && status !== 'Abandoned' && (
         <div className="absolute inset-y-0 left-0 w-16 bg-emerald-500/20 flex items-center justify-center text-emerald-500 font-black text-xs animate-pulse">
           BİTİR
         </div>
       )}
-      {swipeOffset < -20 && !isCompleted && !isPostponed && (
+      {swipeOffset < -20 && !isCompleted && !isPostponed && status !== 'Cancelled' && status !== 'Abandoned' && (
         <div className="absolute inset-y-0 right-0 w-16 bg-amber-500/20 flex items-center justify-center text-amber-500 font-black text-xs animate-pulse">
           ERTELE
         </div>
@@ -211,6 +239,16 @@ const TaskItem = ({
                   ERTELENDİ
                 </span>
               )}
+              {status === 'Cancelled' && (
+                <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20 whitespace-nowrap">
+                  İPTAL EDİLDİ
+                </span>
+              )}
+              {status === 'Abandoned' && (
+                <span className="text-[10px] font-bold text-red-500 bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 whitespace-nowrap">
+                  VAZGEÇİLDİ
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider ${DIFFICULTY_COLORS[safeDifficulty]}`}>
@@ -241,7 +279,17 @@ const TaskItem = ({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2 shrink-0 border-l border-slate-800/50 pl-4 py-2">
-          {isPostponed ? (
+          {status === 'Cancelled' ? (
+            <button
+              onClick={handleReassign}
+              disabled={isSubmitting}
+              className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg active:scale-95 ${
+                isSubmitting ? "bg-indigo-800 text-indigo-400 cursor-wait" : ""
+              }`}
+            >
+              {isSubmitting ? "..." : "🔄 Yeniden Ata"}
+            </button>
+          ) : isPostponed ? (
             <button
               onClick={handleCancelPostpone}
               disabled={isSubmitting}
@@ -251,10 +299,25 @@ const TaskItem = ({
                   : "bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
               }`}
             >
-              {isSubmitting ? "..." : "İptal Et"}
+              {isSubmitting ? "..." : "Ertelemeyi Kaldır"}
             </button>
+          ) : status === 'Abandoned' ? (
+            <span className="text-xs text-red-500 font-bold uppercase tracking-widest px-2">Vazgeçildi</span>
           ) : (
             <>
+              {!isCompleted && (
+                <button
+                  onClick={handleCancel}
+                  disabled={isSubmitting}
+                  title="Görevi İptal Et"
+                  className="w-10 h-10 rounded-xl bg-slate-800/50 hover:bg-rose-500/10 text-slate-500 hover:text-rose-500 flex items-center justify-center transition-colors border border-transparent hover:border-rose-500/20 shrink-0"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+
               {!isCompleted && (
                 <button
                   onClick={() => setShowPostpone(!showPostpone)}

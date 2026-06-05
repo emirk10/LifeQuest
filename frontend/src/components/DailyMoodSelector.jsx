@@ -54,6 +54,24 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1); // 1: mood seç, 2: detaylar
 
+  let maxEnergy = 5;
+  let maxMinutes = 240;
+  let limitMessage = '';
+
+  if (selectedMood) {
+    if (selectedMood.key === 3) { // Bunalmış
+      maxEnergy = 2;
+      maxMinutes = 15;
+      limitMessage = 'Bunalmış hissettiğiniz için sadece en kolay ve kısa görevler (maks 15 dk, 2 enerji) seçilebilir.';
+    } else if (selectedMood.key === 2) { // Yorgun
+      maxEnergy = 3;
+      limitMessage = 'Yorgun hissettiğiniz için yüksek enerjili görevler (maks 3 enerji) sınırlandırılmıştır.';
+    } else if (selectedMood.key === 4) { // Vaktim Kısıtlı
+      maxMinutes = 20;
+      limitMessage = 'Zamanınız kısıtlı olduğu için hızlı görevler (maks 20 dk) sınırlandırılmıştır.';
+    }
+  }
+
   const handleMoodSelect = (mood) => {
     setSelectedMood(mood);
     setStep(2);
@@ -68,15 +86,17 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
   const handleSubmit = async () => {
     if (!selectedMood) return;
     setLoading(true);
+    const finalMinutes = Math.min(availableMinutes, maxMinutes);
+    const finalEnergy = Math.min(energyLevel, maxEnergy);
     try {
       await moodApi.recordDailyMood({
         moodMode: selectedMood.key,
-        availableMinutes,
-        energyLevel,
+        availableMinutes: finalMinutes,
+        energyLevel: finalEnergy,
         journalEntry,
         sleepQuality,
       });
-      onMoodRecorded?.({ mood: selectedMood, availableMinutes, energyLevel, journalEntry, sleepQuality });
+      onMoodRecorded?.({ mood: selectedMood, availableMinutes: finalMinutes, energyLevel: finalEnergy, journalEntry, sleepQuality });
     } catch (err) {
       console.error('Mood kaydedilemedi:', err);
     } finally {
@@ -116,15 +136,21 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
             <span>{selectedMood.label}</span>
           </div>
 
+          {limitMessage && (
+            <div className="mood-limit-info-badge">
+              ℹ️ {limitMessage}
+            </div>
+          )}
+
           <div className="mood-slider-group">
             <label>
-              ⚡ Enerji Seviyesi: <strong>{energyLevel}/5</strong>
+              ⚡ Enerji Seviyesi: <strong>{Math.min(energyLevel, maxEnergy)}/5</strong>
             </label>
             <input
               type="range"
               min="1"
-              max="5"
-              value={energyLevel}
+              max={maxEnergy}
+              value={Math.min(energyLevel, maxEnergy)}
               onChange={(e) => setEnergyLevel(Number(e.target.value))}
               className="mood-slider"
             />
@@ -135,19 +161,19 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
 
           <div className="mood-slider-group">
             <label>
-              ⏱️ Bugün müsait olduğun süre: <strong>{availableMinutes} dk</strong>
+              ⏱️ Bugün müsait olduğun süre: <strong>{Math.min(availableMinutes, maxMinutes)} dk</strong>
             </label>
             <input
               type="range"
               min="5"
-              max="240"
+              max={maxMinutes}
               step="5"
-              value={availableMinutes}
+              value={Math.min(availableMinutes, maxMinutes)}
               onChange={(e) => setAvailableMinutes(Number(e.target.value))}
               className="mood-slider"
             />
             <div className="slider-labels">
-              <span>5 dk</span><span>2 saat</span><span>4 saat</span>
+              <span>5 dk</span><span>{maxMinutes >= 60 ? '1 saat' : `${maxMinutes} dk`}</span><span>{maxMinutes >= 120 ? '2 saat' : `${maxMinutes} dk`}</span>
             </div>
           </div>
 

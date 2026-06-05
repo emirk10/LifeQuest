@@ -75,10 +75,19 @@ public sealed class SendMessageCommandHandler
                 EstimatedMinutes = ut.AppTask?.EstimatedMinutes
             }).ToList(),
             CompletedToday = completedToday,
-            CurrentStreak = 0,
+            CurrentStreak = user?.CurrentStreak ?? 0,
             TotalXP = user?.TotalXP ?? 0,
             TodayMood = todayMood?.MoodMode.ToString(),
-            AvailableMinutes = todayMood?.AvailableMinutes ?? 30
+            AvailableMinutes = todayMood?.AvailableMinutes ?? 30,
+            GeneralLevel = user?.GeneralLevel ?? 1.0,
+            MostSkippedCategory = user?.MostSkippedCategory,
+            PreferredMorningTime = user?.PreferredMorningTime?.ToString("HH:mm"),
+            DifficultyPreference = user?.DifficultyPreference,
+            Strengths = user?.Strengths ?? new(),
+            Weaknesses = user?.Weaknesses ?? new(),
+            MotivationFactor = user?.MotivationFactor,
+            LifestyleType = user?.LifestyleType,
+            PrimaryFocusArea = user?.PrimaryFocusArea
         };
 
         // ── AI Servisi çağır ───────────────────────────────────────────────
@@ -86,23 +95,26 @@ public sealed class SendMessageCommandHandler
             request.UserId, request.Message, context);
 
         // ── Mesajı kaydet ──────────────────────────────────────────────────
-        var chatMessage = new ChatBotMessage
+        if (request.SaveToHistory)
         {
-            Id = Guid.NewGuid(),
-            AppUserId = request.UserId,
-            Content = request.Message,
-            SenderType = SenderType.User,
-            Intent = aiResult.Intent,
-            IntentConfidence = aiResult.IntentConfidence,
-            Sentiment = aiResult.Sentiment,
-            SentimentConfidence = aiResult.SentimentConfidence,
-            UrgencyLevel = aiResult.UrgencyLevel,
-            ActionsOfferedJson = aiResult.Actions.Select(a => a.Type).ToList(),
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
-        };
-        await _chatWriteRepository.AddAsync(chatMessage);
-        await _chatWriteRepository.SaveAsync();
+            var chatMessage = new ChatBotMessage
+            {
+                Id = Guid.NewGuid(),
+                AppUserId = request.UserId,
+                Content = request.Message,
+                SenderType = SenderType.User,
+                Intent = aiResult.Intent,
+                IntentConfidence = aiResult.IntentConfidence,
+                Sentiment = aiResult.Sentiment,
+                SentimentConfidence = aiResult.SentimentConfidence,
+                UrgencyLevel = aiResult.UrgencyLevel,
+                ActionsOfferedJson = aiResult.Actions.Select(a => a.Type).ToList(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _chatWriteRepository.AddAsync(chatMessage);
+            await _chatWriteRepository.SaveAsync();
+        }
 
         // ── Öneri intent'i (eski davranış korunuyor) ──────────────────────
         if (aiResult.Intent is "oneri" or "oneri_iste" && (aiResult.SuggestedTasks == null || !aiResult.SuggestedTasks.Any()))
@@ -116,12 +128,35 @@ public sealed class SendMessageCommandHandler
 
             if (suggestedTask != null)
             {
+                var responseText = $"Sana çok güzel bir görev buldum: '{suggestedTask.Title}'\n\nBu görev seviyene çok uygun. Aşağıdaki butona tıklayarak hemen listene ekleyebilirsin!";
+                
+                if (request.SaveToHistory)
+                {
+                    var botMessage = new ChatBotMessage
+                    {
+                        Id = Guid.NewGuid(),
+                        AppUserId = request.UserId,
+                        Content = responseText,
+                        SenderType = SenderType.Bot,
+                        Intent = aiResult.Intent,
+                        IntentConfidence = aiResult.IntentConfidence,
+                        Sentiment = aiResult.Sentiment,
+                        SentimentConfidence = aiResult.SentimentConfidence,
+                        UrgencyLevel = aiResult.UrgencyLevel,
+                        ActionsOfferedJson = aiResult.Actions.Select(a => a.Type).ToList(),
+                        CreatedAt = DateTime.UtcNow.AddMilliseconds(500),
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    await _chatWriteRepository.AddAsync(botMessage);
+                    await _chatWriteRepository.SaveAsync();
+                }
+
                 return new SendMessageCommandResponse
                 {
                     Success = true,
                     Intent = aiResult.Intent,
                     Confidence = aiResult.IntentConfidence,
-                    Response = $"Sana çok güzel bir görev buldum: '{suggestedTask.Title}'\n\nBu görev seviyene çok uygun. Aşağıdaki butona tıklayarak hemen listene ekleyebilirsin!",
+                    Response = responseText,
                     Sentiment = aiResult.Sentiment,
                     SentimentConfidence = aiResult.SentimentConfidence,
                     UrgencyLevel = aiResult.UrgencyLevel,
@@ -130,9 +165,31 @@ public sealed class SendMessageCommandHandler
                     SuggestedTaskId = suggestedTask.Id,
                     SuggestedTaskTitle = suggestedTask.Title,
                     SuggestedTaskXp = suggestedTask.BaseXP,
-                    SuggestedTaskDifficulty = suggestedTask.Difficulty.ToString()
+                    SuggestedTaskDifficulty = suggestedTask.Difficulty.ToString(),
+                    FlowRedirect = aiResult.FlowRedirect
                 };
             }
+        }
+
+        if (request.SaveToHistory)
+        {
+            var botMsg = new ChatBotMessage
+            {
+                Id = Guid.NewGuid(),
+                AppUserId = request.UserId,
+                Content = aiResult.Response,
+                SenderType = SenderType.Bot,
+                Intent = aiResult.Intent,
+                IntentConfidence = aiResult.IntentConfidence,
+                Sentiment = aiResult.Sentiment,
+                SentimentConfidence = aiResult.SentimentConfidence,
+                UrgencyLevel = aiResult.UrgencyLevel,
+                ActionsOfferedJson = aiResult.Actions.Select(a => a.Type).ToList(),
+                CreatedAt = DateTime.UtcNow.AddMilliseconds(500),
+                UpdatedAt = DateTime.UtcNow
+            };
+            await _chatWriteRepository.AddAsync(botMsg);
+            await _chatWriteRepository.SaveAsync();
         }
 
         return new SendMessageCommandResponse
@@ -147,7 +204,8 @@ public sealed class SendMessageCommandHandler
             Suggestions = aiResult.Suggestions,
             Actions = aiResult.Actions,
             SuggestedTasks = aiResult.SuggestedTasks,
-            ShouldShowMoodSelector = aiResult.ShouldShowMoodSelector
+            ShouldShowMoodSelector = aiResult.ShouldShowMoodSelector,
+            FlowRedirect = aiResult.FlowRedirect
         };
     }
 }

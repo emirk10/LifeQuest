@@ -396,11 +396,12 @@ export const FLOWS = {
     type: "options",
     message: "Bugün nasıl hissediyorsun? 🌈",
     options: [
-      { label: "🚀 Harika, Enerji doluyum!", icon: "🚀", nextNode: "mood_update_energy", moodMode: 0 }, // Normal
-      { label: "😊 İyi, motivasyonum var", icon: "😊", nextNode: "mood_update_energy", moodMode: 0 },
-      { label: "😐 Fena değil, idare eder", icon: "😐", nextNode: "mood_update_energy", moodMode: 1 }, // LightMode
-      { label: "😔 Yorgunum, düşük enerjiliyim", icon: "😔", nextNode: "mood_update_energy", moodMode: 1 },
-      { label: "🌧️ Çok zorlu bir gün", icon: "🌧️", nextNode: "mood_update_energy", moodMode: 2 }, // VacationMode
+      { label: "🚀 Harika, Enerji doluyum!", icon: "🚀", nextNode: "mood_update_energy", moodMode: 0 },
+      { label: "😊 İyi, motivasyonum var", icon: "😊", nextNode: "mood_update_energy", moodMode: 1 },
+      { label: "😐 Fena değil, idare eder", icon: "😐", nextNode: "mood_update_energy", moodMode: 1 },
+      { label: "😔 Yorgunum, düşük enerjiliyim", icon: "😔", nextNode: "mood_update_energy", moodMode: 2 },
+      { label: "🌧️ Çok zorlu bir gün", icon: "🌧️", nextNode: "mood_update_energy", moodMode: 3 },
+      { label: "⏱️ Zamanım kısıtlı, acelem var", icon: "⏱️", nextNode: "mood_update_energy", moodMode: 4 },
       { label: "⬅️ Ana Menü", icon: "⬅️", nextNode: "main_menu" },
     ],
   },

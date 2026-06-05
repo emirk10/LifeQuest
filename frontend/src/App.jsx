@@ -15,12 +15,10 @@ import GoalsPage from './pages/GoalsPage';
 import ReportsPage from './pages/ReportsPage';
 import SocialPage from './pages/SocialPage';
 import SocialFeedPage from './pages/SocialFeedPage';
-import DailyTaskPage from './pages/DailyTaskPage';
 import OnboardingPage from './pages/OnboardingPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
-
 import TaskPoolPage from './pages/TaskPoolPage';
 import SharePage from './pages/SharePage';
 
@@ -53,7 +51,6 @@ function App() {
               <Route path="/reports" element={<PrivateRoute><ReportsPage /></PrivateRoute>} />
               <Route path="/social" element={<PrivateRoute><SocialPage /></PrivateRoute>} />
               <Route path="/feed" element={<PrivateRoute><SocialFeedPage /></PrivateRoute>} />
-              <Route path="/daily" element={<PrivateRoute><DailyTaskPage /></PrivateRoute>} />
               <Route path="/admin" element={<PrivateRoute><AdminPage /></PrivateRoute>} />
               <Route path="/onboarding" element={<PrivateRoute><OnboardingPage /></PrivateRoute>} />
             </Routes>

@@ -1,8 +1,7 @@
 """
 LifeQuest AI - Intent Classifier (Niyet Sınıflandırıcı)
 
-Kullanıcı mesajlarını 7 farklı niyete sınıflandırır:
-  motivasyon, gorev_sorgula, istatistik, oneri, selamlama, saglik, rozet
+Kullanıcı mesajlarını 15+ farklı niyete sınıflandırır (örn: motivasyon, gorev_sorgula, istatistik, oneri, selamlama, rozet vb.)
 
 Algoritma: Custom Preprocessing + TF-IDF (char_wb) + LogisticRegression
 """
@@ -155,21 +154,33 @@ class IntentClassifier:
             "yardim": ["yardım", "ne yapabilirsin", "nasıl kullanılır", "help", "menüyü göster",
                         "ana menü", "seçenekler", "komutlar", "neler yapabilirsin", "başa dön"],
             "oneri_iste": ["öner", "ne yapayım", "görev ver", "tavsiye"],
-            "alakasiz": ["oyun oynayacağım", "cs oynayacağım", "para lazım", "zengin", "hava durumu", "futbol", "film izleyeceğim", "dizi izleyeceğim", "çalışmayacağım", "oyun oynayacağım"],
+            "alakasiz": ["oyun oynayacağım", "cs oynayacağım", "para lazım", "zengin", "hava durumu", "futbol", "film izleyeceğim", "dizi izleyeceğim", "çalışmayacağım"],
         }
 
         # text'i kelimelere ayırarak tam eşleşme kontrolü (daha sağlam bir yöntem)
         cleaned_text = turkish_preprocess(text)
+        text_words = text.split()
+        cleaned_text_words = cleaned_text.split()
         
         for intent, keywords in rules.items():
             for kw in keywords:
-                # Tam kelime veya basit parça eşleşmesi
-                if kw in text or kw in cleaned_text:
-                    return {
-                        "intent": intent,
-                        "confidence": 1.0,
-                        "method": "keyword"
-                    }
+                kw_words = kw.split()
+                if len(kw_words) > 1:
+                    # Çoklu kelime ise (örn: "timer aç") alt dize kontrolü
+                    if kw in text or kw in cleaned_text:
+                        return {
+                            "intent": intent,
+                            "confidence": 1.0,
+                            "method": "keyword"
+                        }
+                else:
+                    # Tek kelime ise, kelime listelerinde tam eşleşme kontrolü (false positive engeller)
+                    if kw in text_words or kw in cleaned_text_words:
+                        return {
+                            "intent": intent,
+                            "confidence": 1.0,
+                            "method": "keyword"
+                        }
         return None
 
     # ------------------------------------------------------------------ #

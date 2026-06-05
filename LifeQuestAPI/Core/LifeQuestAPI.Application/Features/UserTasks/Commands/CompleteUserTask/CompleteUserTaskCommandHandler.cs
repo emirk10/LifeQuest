@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.Abstractions.Gamification;
 using LifeQuestAPI.Application.Abstractions.Notifications;
 using LifeQuestAPI.Application.Abstractions.Social;
@@ -25,6 +26,7 @@ public sealed class CompleteUserTaskCommandHandler
     private readonly IAchievementService _achievementService;
     private readonly IChallengeService _challengeService;
     private readonly IAppNotificationService _notificationService;
+    private readonly IUserBehaviorAnalysisService _behaviorAnalysisService;
 
     public CompleteUserTaskCommandHandler(
         IUserTaskReadRepository userTaskReadRepository,
@@ -39,7 +41,8 @@ public sealed class CompleteUserTaskCommandHandler
         IUserTaskInteractionWriteRepository interactionWriteRepository,
         IAchievementService achievementService,
         IChallengeService challengeService,
-        IAppNotificationService notificationService)
+        IAppNotificationService notificationService,
+        IUserBehaviorAnalysisService behaviorAnalysisService)
     {
         _userTaskReadRepository = userTaskReadRepository;
         _userTaskWriteRepository = userTaskWriteRepository;
@@ -54,6 +57,7 @@ public sealed class CompleteUserTaskCommandHandler
         _achievementService = achievementService;
         _challengeService = challengeService;
         _notificationService = notificationService;
+        _behaviorAnalysisService = behaviorAnalysisService;
     }
 
     public async Task<CompleteUserTaskCommandResponse> Handle(
@@ -196,6 +200,16 @@ public sealed class CompleteUserTaskCommandHandler
         // 4. Başarımları ve Mücadeleleri kontrol et
         await _achievementService.CheckAchievementsAsync(request.UserId);
         await _challengeService.UpdateChallengeProgressAsync(request.UserId, task.CategoryId, xpToEarn);
+
+        // 5. Kullanıcı davranış analizi tetikleme (gerçek zamanlı öğrenme)
+        try
+        {
+            await _behaviorAnalysisService.AnalyzeAndUpdateUserBehaviorAsync(request.UserId, cancellationToken);
+        }
+        catch
+        {
+            // Analiz hatası görevin tamamlanmasını engellemesin
+        }
 
         return new()
         {

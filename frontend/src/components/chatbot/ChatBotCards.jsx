@@ -97,7 +97,7 @@ export const CompletedTaskCard = ({ task }) => (
 // ─── Rozet Kartı ─────────────────────────────────────────────────────────────
 export const BadgeCard = ({ badge }) => (
   <div className={`rounded-xl border p-3 flex items-center gap-3 ${
-    badge.isUnlocked
+    badge.isEarned
       ? "bg-amber-500/10 border-amber-500/30"
       : "bg-slate-800/50 border-slate-700/30 opacity-50"
   }`}>
@@ -108,7 +108,7 @@ export const BadgeCard = ({ badge }) => (
       <p className="text-sm font-semibold text-white truncate">{badge.name}</p>
       <p className="text-[11px] text-slate-400 truncate">{badge.description}</p>
     </div>
-    {badge.isUnlocked && (
+    {badge.isEarned && (
       <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full shrink-0">
         ✓ Kazanıldı
       </span>
@@ -120,6 +120,11 @@ export const BadgeCard = ({ badge }) => (
 export const ProfileCard = ({ profile }) => {
   const level = Math.floor(profile?.generalLevel || 1);
   const xpProgress = ((profile?.generalLevel || 1) % 1) * 100;
+  // Backend: TotalXP (PascalCase) → JSON → totalXP (camelCase)
+  const totalXp = profile?.totalXP ?? profile?.totalXp ?? 0;
+  // Backend: CompletedTaskCount (PascalCase) → JSON → completedTaskCount
+  const completedCount = profile?.completedTaskCount ?? profile?.completedTasksCount ?? (Array.isArray(profile?.completedTasks) ? profile.completedTasks.length : 0);
+  const abandonedCount = profile?.abandonedTasksCount ?? (Array.isArray(profile?.abandonedTasks) ? profile.abandonedTasks.length : 0);
 
   return (
     <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4 space-y-3">
@@ -129,7 +134,7 @@ export const ProfileCard = ({ profile }) => {
         </div>
         <div>
           <p className="text-white font-bold">{profile?.userName || "Kullanıcı"}</p>
-          <p className="text-indigo-300 text-xs">Seviye {level} · {profile?.totalXp?.toLocaleString() || 0} XP</p>
+          <p className="text-indigo-300 text-xs">Seviye {level} · {totalXp.toLocaleString("tr-TR")} XP</p>
         </div>
       </div>
       {/* XP Progress */}
@@ -158,16 +163,8 @@ export const ProfileCard = ({ profile }) => {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2">
         {[
-          { 
-            label: "Tamamlanan", 
-            value: profile?.completedTasksCount ?? (Array.isArray(profile?.completedTasks) ? profile.completedTasks.length : 0), 
-            icon: "✅" 
-          },
-          { 
-            label: "Terk Edilen", 
-            value: profile?.abandonedTasksCount ?? (Array.isArray(profile?.abandonedTasks) ? profile.abandonedTasks.length : 0), 
-            icon: "❌" 
-          },
+          { label: "Tamamlanan", value: completedCount, icon: "✅" },
+          { label: "Terk Edilen", value: abandonedCount, icon: "❌" },
         ].map(s => (
           <div key={s.label} className="bg-slate-700/40 rounded-lg p-2 text-center">
             <p className="text-lg">{s.icon}</p>
@@ -277,18 +274,20 @@ export const XPBreakdownChart = ({ breakdown }) => {
   if (!breakdown || breakdown.length === 0) return (
     <p className="text-slate-400 text-sm text-center py-2">Henüz XP verisi yok.</p>
   );
-  const maxXP = Math.max(...breakdown.map(d => d.XPKazanci || 0), 1);
-  const days = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
+  // Backend returns XPKazanci (PascalCase mixed) — support all casings
+  const getXP = (d) => d.xpKazanci ?? d.XPKazanci ?? d.XpKazanci ?? d.xp ?? 0;
+  const maxXP = Math.max(...breakdown.map(getXP), 1);
   return (
     <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4">
       <p className="text-white font-bold text-sm mb-3">🔥 Son 7 Gün XP Kazanımı</p>
       <div className="flex items-end gap-1.5 h-24">
         {breakdown.map((d, i) => {
-          const pct = ((d.XPKazanci || 0) / maxXP) * 100;
+          const xp = getXP(d);
+          const pct = (xp / maxXP) * 100;
           const isToday = i === breakdown.length - 1;
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-[9px] text-slate-400">{d.XPKazanci || 0}</span>
+              <span className="text-[9px] text-slate-400">{xp}</span>
               <div className="w-full flex flex-col justify-end" style={{ height: "60px" }}>
                 <div
                   className={`w-full rounded-t transition-all ${isToday ? "bg-indigo-500" : "bg-slate-600"}`}
@@ -306,22 +305,25 @@ export const XPBreakdownChart = ({ breakdown }) => {
   );
 };
 
+
 // ─── Genel İstatistik Kartı ───────────────────────────────────────────────────
+// Backend: GetUserStatsQueryResponse → { totalCompleted, weeklyGrowth, streakCount, streak: bool[] }
 export const StatsCard = ({ stats }) => {
   if (!stats) return null;
 
-  const totalTasksCount = Array.isArray(stats.totalTasks) ? stats.totalTasks.length : (stats.totalTasks ?? "—");
-  const badgesEarnedCount = Array.isArray(stats.badgesEarned) ? stats.badgesEarned.length : (stats.badgesEarned ?? "—");
+  const totalCompleted = stats.totalCompleted ?? stats.TotalCompleted ?? 0;
+  const weeklyGrowth = stats.weeklyGrowth ?? stats.WeeklyGrowth ?? 0;
+  const streakCount = stats.streakCount ?? stats.StreakCount ?? 0;
+  const streakArr = Array.isArray(stats.streak ?? stats.Streak) ? (stats.streak ?? stats.Streak) : [];
 
   return (
-    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4 space-y-2">
+    <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4 space-y-3">
       <p className="text-white font-bold text-sm">📊 Genel İstatistikler</p>
       <div className="grid grid-cols-2 gap-2">
         {[
-          { label: "Toplam Görev", value: totalTasksCount, icon: "📋" },
-          { label: "Başarı Oranı", value: stats.successRate ? `%${Math.round(stats.successRate)}` : "—", icon: "🎯" },
-          { label: "En Uzun Seri", value: stats.longestStreak ?? "—", icon: "🔥" },
-          { label: "Kazanılan Rozet", value: badgesEarnedCount, icon: "🏆" },
+          { label: "Toplam Tamamlanan", value: totalCompleted, icon: "✅" },
+          { label: "Aktif Seri", value: `${streakCount} gün`, icon: "🔥" },
+          { label: "Haftalık Büyüme", value: weeklyGrowth >= 0 ? `+%${weeklyGrowth}` : `%${weeklyGrowth}`, icon: weeklyGrowth >= 0 ? "📈" : "📉" },
         ].map(s => (
           <div key={s.label} className="bg-slate-700/40 rounded-lg p-2.5 flex items-center gap-2">
             <span className="text-base">{s.icon}</span>
@@ -332,6 +334,22 @@ export const StatsCard = ({ stats }) => {
           </div>
         ))}
       </div>
+      {/* Son 7 gün seri göstergesi */}
+      {streakArr.length > 0 && (
+        <div>
+          <p className="text-slate-400 text-[10px] mb-1.5">Son 7 Gün</p>
+          <div className="flex gap-1">
+            {streakArr.map((done, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-2 rounded-full ${
+                  done ? "bg-indigo-500" : "bg-slate-700"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -366,10 +384,23 @@ export const GoalCard = ({ goal }) => {
 // ─── Hedef Dashboard Özet ─────────────────────────────────────────────────────
 export const GoalsDashboardCard = ({ dashboard }) => {
   if (!dashboard) return null;
-  
-  const activeCount = Array.isArray(dashboard.activeGoals) ? dashboard.activeGoals.length : (dashboard.activeGoals || 0);
-  const completedCount = Array.isArray(dashboard.completedGoals) ? dashboard.completedGoals.length : (dashboard.completedGoals || 0);
-  const progress = dashboard.avgProgress || dashboard.AvgProgress || 0;
+
+  const activeGoals = Array.isArray(dashboard.activeGoals) ? dashboard.activeGoals : [];
+  const completedGoals = Array.isArray(dashboard.completedGoals) ? dashboard.completedGoals : [];
+  const activeCount = dashboard.totalActiveGoals ?? activeGoals.length;
+  const completedCount = dashboard.totalCompletedThisMonth ?? completedGoals.length;
+
+  // AvgProgress: prefer backend-calculated field, fall back to frontend calculation
+  let progress = dashboard.avgProgress ?? dashboard.AvgProgress;
+  if (progress === undefined || progress === null) {
+    const all = [...activeGoals, ...completedGoals];
+    progress = all.length > 0
+      ? all.reduce((acc, g) => {
+          const pct = g.progressPercent ?? g.ProgressPercent ?? (g.targetValue > 0 ? Math.round((g.currentValue / g.targetValue) * 100) : 0);
+          return acc + pct;
+        }, 0) / all.length
+      : 0;
+  }
 
   return (
     <div className="bg-slate-800/80 rounded-xl border border-slate-700/50 p-4 space-y-3">
@@ -390,6 +421,7 @@ export const GoalsDashboardCard = ({ dashboard }) => {
     </div>
   );
 };
+
 // ─── Yazıyor... Göstergesi ───────────────────────────────────────────────────
 export const TypingIndicator = () => (
   <div className="flex gap-1 py-1 px-2">

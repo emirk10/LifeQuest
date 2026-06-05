@@ -45,7 +45,7 @@ public sealed class ChallengeService : IChallengeService
             // CategoryFocus: Sadece hedef kategoride tamamlanan görevler sayılır
             if (challenge.ChallengeType == ChallengeType.CategoryFocus)
             {
-                var targetCat = challenge.TargetCategoryId ?? challenge.CategoryId;
+                var targetCat = challenge.TargetCategoryId;
                 if (targetCat.HasValue && categoryId.HasValue && targetCat != categoryId)
                     continue;
             }

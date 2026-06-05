@@ -30,6 +30,7 @@ const BehaviorInsightCard = ({ summary }) => {
     currentStreak = 0,
     longestStreak = 0,
     insightMessage,
+    aiSystemInsights = [],
   } = summary;
 
   const completionPct = Math.round(completionRateLast30Days * 100);
@@ -159,10 +160,29 @@ const BehaviorInsightCard = ({ summary }) => {
         </div>
       )}
 
-      {/* AI insight mesajı */}
-      {insightMessage && (
-        <div className="bg-indigo-600/10 border border-indigo-600/20 rounded-2xl p-4">
-          <p className="text-sm text-indigo-200 leading-relaxed">🤖 {insightMessage}</p>
+      {/* AI & Chatbot Kapsamlı Öğrenim Analizi */}
+      {((aiSystemInsights && aiSystemInsights.length > 0) || insightMessage) && (
+        <div className="bg-gradient-to-r from-indigo-950/40 to-slate-900/60 border border-indigo-500/20 rounded-[1.5rem] p-6 space-y-4 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full"></div>
+          
+          <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+            🤖 Asistan ve Sistem Öğrenim Raporu
+          </h4>
+          
+          {aiSystemInsights && aiSystemInsights.length > 0 ? (
+            <ul className="space-y-3 text-xs text-slate-300 leading-relaxed">
+              {aiSystemInsights.map((insight, idx) => (
+                <li key={idx} className="flex gap-2.5 items-start">
+                  <span className="text-indigo-400 flex-shrink-0 mt-0.5">•</span>
+                  <span>{insight}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-indigo-200 leading-relaxed">
+              🤖 {insightMessage}
+            </p>
+          )}
         </div>
       )}
     </div>

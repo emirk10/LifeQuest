@@ -17,5 +17,6 @@ public enum AppTaskStatus
     Paused = 7,       // Duraklat
     Postponed = 8,    // Ertelendi
     Compensated = 9,  // Ertelenmiş görev telafi edildi
-    Abandoned = 10    // Vazgeçildi
+    Abandoned = 10,   // Vazgeçildi
+    Cancelled = 11    // İptal edildi
 }

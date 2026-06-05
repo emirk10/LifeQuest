@@ -37,6 +37,7 @@ public class GetGoalDashboardQueryResponse
     public List<GoalDashboardItem> ArchivedGoals { get; set; } = new();
     public int TotalActiveGoals { get; set; }
     public int TotalCompletedThisMonth { get; set; }
+    public double AvgProgress { get; set; }
 }
 
 public sealed class GetGoalDashboardQueryHandler
@@ -97,13 +98,19 @@ public sealed class GetGoalDashboardQueryHandler
         var completedGoals = goals.Where(g => g.IsCompleted).Select(mapGoal).ToList();
         var archivedGoals = goals.Where(g => g.IsArchived && !g.IsCompleted).Select(mapGoal).ToList();
 
+        var allMeasured = activeGoals.Concat(completedGoals).ToList();
+        var avgProgress = allMeasured.Count > 0
+            ? allMeasured.Average(g => (double)g.ProgressPercent)
+            : 0.0;
+
         return new GetGoalDashboardQueryResponse
         {
             ActiveGoals = activeGoals,
             CompletedGoals = completedGoals,
             ArchivedGoals = archivedGoals,
             TotalActiveGoals = activeGoals.Count,
-            TotalCompletedThisMonth = goals.Count(g => g.IsCompleted && g.CompletedAt >= startOfMonth)
+            TotalCompletedThisMonth = goals.Count(g => g.IsCompleted && g.CompletedAt >= startOfMonth),
+            AvgProgress = Math.Round(avgProgress, 1)
         };
     }
 }

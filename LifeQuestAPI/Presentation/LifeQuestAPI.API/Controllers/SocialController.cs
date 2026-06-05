@@ -62,15 +62,21 @@ public class SocialController : ControllerBase
     // ================================================================
 
     [HttpGet("friends")]
-    public async Task<IActionResult> GetFriends()
+    public async Task<IActionResult> GetFriends([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var friendships = await _friendshipRead.GetAll(false)
-            .Where(f => (f.RequesterId == userId || f.AddresseeId == userId) && f.Status == FriendshipStatus.Accepted)
+        var query = _friendshipRead.GetAll(false)
+            .Where(f => (f.RequesterId == userId || f.AddresseeId == userId) && f.Status == FriendshipStatus.Accepted);
+
+        var totalCount = await query.CountAsync();
+
+        var friendships = await query
             .Include(f => f.Requester)
             .Include(f => f.Addressee)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var friends = friendships.Select(f =>
@@ -91,19 +97,25 @@ public class SocialController : ControllerBase
             };
         });
 
-        return Ok(new { success = true, friends });
+        return Ok(new { success = true, friends, totalCount, page, pageSize });
     }
 
     [HttpGet("friend-requests")]
-    public async Task<IActionResult> GetFriendRequests()
+    public async Task<IActionResult> GetFriendRequests([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        var requests = await _friendshipRead.GetAll(false)
-            .Where(f => f.AddresseeId == userId && f.Status == FriendshipStatus.Pending)
+        var query = _friendshipRead.GetAll(false)
+            .Where(f => f.AddresseeId == userId && f.Status == FriendshipStatus.Pending);
+
+        var totalCount = await query.CountAsync();
+
+        var requests = await query
             .Include(f => f.Requester)
             .OrderByDescending(f => f.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(f => new
             {
                 requestId = f.Id,
@@ -116,7 +128,7 @@ public class SocialController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new { success = true, requests });
+        return Ok(new { success = true, requests, totalCount, page, pageSize });
     }
 
     [HttpPost("friend-request/{targetUserId}")]
@@ -139,10 +151,55 @@ public class SocialController : ControllerBase
 
         if (existing != null)
         {
+            if (existing.Status == FriendshipStatus.Rejected)
+            {
+                // Yeniden istek göndermeye izin ver: durumu beklemede yap ve isteği göndereni güncelle
+                existing.RequesterId = userId.Value;
+                existing.AddresseeId = targetUserId;
+                existing.Status = FriendshipStatus.Pending;
+                existing.UpdatedAt = DateTime.UtcNow;
+                _friendshipWrite.Update(existing);
+                await _friendshipWrite.SaveAsync();
+                return Ok(new { success = true, message = "Arkadaşlık isteği gönderildi!" });
+            }
+
+            if (existing.Status == FriendshipStatus.Pending && existing.AddresseeId == userId)
+            {
+                // Karşı taraftan zaten gelen bir beklemedeki istek varsa, doğrudan arkadaşlığı kabul et
+                existing.Status = FriendshipStatus.Accepted;
+                existing.AcceptedAt = DateTime.UtcNow;
+                _friendshipWrite.Update(existing);
+                await _friendshipWrite.SaveAsync();
+                return Ok(new { success = true, message = "Arkadaşlık isteği kabul edildi! 🎉" });
+            }
+
             var msg = existing.Status == FriendshipStatus.Accepted
                 ? "Zaten arkadaşsınız."
                 : "Zaten bir istek gönderilmiş veya mevcut.";
             return BadRequest(new { success = false, message = msg });
+        }
+
+        // Soft-deleted (silinmiş) kayıt var mı? Unique index çakışmasını önlemek için kontrol et
+        var deletedFriendship = await _friendshipRead.GetAll(false)
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(f =>
+                f.IsDeleted &&
+                ((f.RequesterId == userId && f.AddresseeId == targetUserId) ||
+                 (f.RequesterId == targetUserId && f.AddresseeId == userId)));
+
+        if (deletedFriendship != null)
+        {
+            // Yeni kayıt oluşturmak yerine silinmiş kaydı sıfırla ve yeniden kullan
+            deletedFriendship.RequesterId = userId.Value;
+            deletedFriendship.AddresseeId = targetUserId;
+            deletedFriendship.Status = FriendshipStatus.Pending;
+            deletedFriendship.IsDeleted = false;
+            deletedFriendship.DeletedAt = null;
+            deletedFriendship.AcceptedAt = null;
+            deletedFriendship.UpdatedAt = DateTime.UtcNow;
+            _friendshipWrite.Update(deletedFriendship);
+            await _friendshipWrite.SaveAsync();
+            return Ok(new { success = true, message = "Arkadaşlık isteği gönderildi!" });
         }
 
         var friendship = new Friendship
@@ -551,7 +608,7 @@ public class SocialController : ControllerBase
             <p><strong>Açıklama:</strong> {task.Description}</p>
             <p><strong>Zorluk Seviyesi:</strong> {task.Difficulty}</p>
             <p><strong>Kazanılacak XP:</strong> {task.BaseXP} XP</p>
-            {(!string.IsNullOrEmpty(body.Message) ? $"<p><strong>Kullanıcı Mesajı:</strong> {body.Message}</p>" : "")}
+            {(!string.IsNullOrEmpty(body.Message) ? $"<p><strong>Kullanıcı Mesajı:</strong> {System.Text.Encodings.Web.HtmlEncoder.Default.Encode(body.Message)}</p>" : "")}
         ";
 
         await _emailService.SendEmailAsync(body.RecipientEmail, subject, htmlMessage);

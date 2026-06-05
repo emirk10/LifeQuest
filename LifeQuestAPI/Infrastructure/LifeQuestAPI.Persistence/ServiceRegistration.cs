@@ -83,5 +83,8 @@ public static class ServiceRegistration
         // Kudos — FEAT-005
         services.AddScoped<IKudosReadRepository, KudosReadRepository>();
         services.AddScoped<IKudosWriteRepository, KudosWriteRepository>();
+
+        // DbWipeAndSeedService
+        services.AddScoped<LifeQuestAPI.Application.Abstractions.IDbWipeAndSeedService, Services.DbWipeAndSeedService>();
     }
 }

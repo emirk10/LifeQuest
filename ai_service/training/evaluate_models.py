@@ -19,9 +19,11 @@ import numpy as np
 from sklearn.model_selection import cross_val_score, StratifiedKFold
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
+
+# Türkçe metin ön işleme fonksiyonu
+from services.intent_classifier import turkish_preprocess
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -130,12 +132,13 @@ def main():
         texts, labels = load_intent_data()
         intent_pipeline = Pipeline([
             ("tfidf", TfidfVectorizer(
+                preprocessor=turkish_preprocess,
                 analyzer="char_wb",
-                ngram_range=(2, 5),
-                max_features=5000,
+                ngram_range=(2, 6),
+                max_features=15000,
                 sublinear_tf=True,
             )),
-            ("clf", MultinomialNB(alpha=0.1)),
+            ("clf", LogisticRegression(C=2.0, class_weight="balanced", max_iter=1000)),
         ])
         score = evaluate_model("Intent Classifier", texts, labels, intent_pipeline)
         results["intent"] = score
@@ -147,17 +150,13 @@ def main():
         texts, labels = load_sentiment_data()
         sentiment_pipeline = Pipeline([
             ("tfidf", TfidfVectorizer(
+                preprocessor=turkish_preprocess,
                 analyzer="char_wb",
-                ngram_range=(2, 4),
-                max_features=3000,
+                ngram_range=(2, 6),
+                max_features=10000,
                 sublinear_tf=True,
             )),
-            ("svc", SVC(
-                kernel="linear",
-                probability=True,
-                C=1.0,
-                class_weight="balanced",
-            )),
+            ("clf", LogisticRegression(C=2.0, class_weight="balanced", max_iter=1000)),
         ])
         score = evaluate_model("Sentiment Analyzer", texts, labels, sentiment_pipeline)
         results["sentiment"] = score

@@ -27,17 +27,22 @@ public class NotificationsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetMyNotifications()
+    public async Task<IActionResult> GetMyNotifications([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
 
-        var notifications = await _notificationRead.GetAll(false)
-            .Where(n => n.AppUserId == userId)
+        var query = _notificationRead.GetAll(false)
+            .Where(n => n.AppUserId == userId);
+
+        var totalCount = await query.CountAsync();
+
+        var notifications = await query
             .OrderByDescending(n => n.CreatedAt)
-            .Take(100)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         var unreadCount = await _notificationRead.GetAll(false)
@@ -52,7 +57,10 @@ public class NotificationsController : ControllerBase
             success = true, 
             unreadCount,
             notifications, // Düz liste de kalsın
-            grouped 
+            grouped,
+            totalCount,
+            page,
+            pageSize
         });
     }
 
@@ -97,5 +105,23 @@ public class NotificationsController : ControllerBase
         }
 
         return Ok(new { success = true });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteNotification(Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+
+        var notification = await _notificationRead.GetByIdAsync(id.ToString());
+        if (notification == null) return NotFound(new { success = false, message = "Bildirim bulunamadı." });
+        if (notification.AppUserId != userId) return Unauthorized();
+
+        _notificationWrite.Remove(notification);
+        await _notificationWrite.SaveAsync();
+
+        return Ok(new { success = true, message = "Bildirim silindi." });
     }
 }

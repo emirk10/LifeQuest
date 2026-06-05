@@ -13,7 +13,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -22,9 +22,12 @@ from services.sentiment_analyzer import SentimentAnalyzer
 from services.urgency_detector import UrgencyDetector
 from services.action_extractor import ActionExtractor
 from services.personality_response_generator import PersonalityResponseGenerator
+from services.collaborative_filter import get_collaborative_recommendations, build_user_profile_from_context
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 logger = logging.getLogger("lifequest_ai")
+
+CONVERSATION_HISTORY: dict[str, list[dict]] = {}
 
 intent_clf = IntentClassifier()
 sentiment_analyzer = SentimentAnalyzer()
@@ -58,6 +61,11 @@ app = FastAPI(
 
 import os
 
+async def verify_admin_token(x_api_key: Optional[str] = Header(None)):
+    expected_key = os.environ.get("AI_SERVICE_API_KEY", "LifeQuestAiSecretKey123")
+    if not x_api_key or x_api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Yetkisiz erişim: Geçersiz API Key")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.environ.get("ALLOWED_ORIGINS", "http://lifequest-api:5020,http://localhost:5020,http://localhost:3000,http://localhost:5173,https://localhost:5173").split(","),
@@ -86,6 +94,15 @@ class ChatContextPayload(BaseModel):
     total_xp: int = 0
     today_mood: Optional[str] = None
     available_minutes: int = 30
+    general_level: float = 1.0
+    most_skipped_category: Optional[str] = None
+    preferred_morning_time: Optional[str] = None
+    difficulty_preference: Optional[str] = None
+    strengths: list[str] = []
+    weaknesses: list[str] = []
+    motivation_factor: Optional[str] = None
+    lifestyle_type: Optional[str] = None
+    primary_focus_area: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
@@ -134,6 +151,9 @@ class RecommendRequest(BaseModel):
     energy_level: int = 3
     mood: str = "Normal"
     preferred_categories: Optional[list[str]] = None
+    user_profile: Optional[dict] = None
+    all_interactions: Optional[list[dict]] = None
+    available_tasks: Optional[list[dict]] = None
 
 
 class RecommendResponse(BaseModel):
@@ -356,12 +376,12 @@ def generate_response(
     user_name = context.user_name if context else ""
 
     # Urgency 3: Sadece empati
-    if urgency_level >= 3:
-        return personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent)
+    if urgency_detector.should_suppress_tasks(urgency_level):
+        return personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent, urgency_level=urgency_level, context=context)
 
     if confidence < 0.3:
         base = "Tam olarak anlayamadım. Görevlerin, istatistiklerin veya motivasyon hakkında konuşabiliriz. 😊"
-        return personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent)
+        return personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent, urgency_level=urgency_level, context=context)
 
     intent_responses = RESPONSE_TEMPLATES.get(intent, {})
     if sentiment_label in intent_responses:
@@ -372,10 +392,10 @@ def generate_response(
         base = "İsteğini anladım! Hemen yardımcı oluyorum. 😊"
 
     # Urgency 2: Hafif empati dokunuşu
-    if urgency_level == 2:
-        base = personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent)
+    if urgency_detector.should_suggest_light_mode(urgency_level):
+        base = personality_gen.generate("", personality, user_name, is_empathy=True, sentiment=sentiment_label, intent=intent, urgency_level=urgency_level, context=context)
     else:
-        base = personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent)
+        base = personality_gen.generate(base, personality, user_name, sentiment=sentiment_label, intent=intent, urgency_level=urgency_level, context=context)
 
     # Bağlam ekleme (görev varsa)
     if context and intent == "gorev_sorgula" and context.today_tasks:
@@ -403,6 +423,12 @@ async def health_check():
 async def chat(request: ChatRequest):
     """SP-02: Bağlam-duyarlı chat endpoint."""
     try:
+        user_id = request.user_id
+        if user_id not in CONVERSATION_HISTORY:
+            CONVERSATION_HISTORY[user_id] = []
+        CONVERSATION_HISTORY[user_id].append({"sender": "user", "message": request.message})
+        CONVERSATION_HISTORY[user_id] = CONVERSATION_HISTORY[user_id][-10:]
+
         intent_result = intent_clf.predict(request.message)
         sentiment_result = sentiment_analyzer.analyze(request.message)
 
@@ -439,6 +465,9 @@ async def chat(request: ChatRequest):
         detected_intent = intent_result["intent"]
         flow_redirect = INTENT_FLOW_MAP.get(detected_intent)
 
+        CONVERSATION_HISTORY[user_id].append({"sender": "bot", "message": response_text})
+        CONVERSATION_HISTORY[user_id] = CONVERSATION_HISTORY[user_id][-10:]
+
         return ChatResponse(
             intent=detected_intent,
             intent_confidence=intent_result["confidence"],
@@ -455,13 +484,63 @@ async def chat(request: ChatRequest):
 
     except Exception as e:
         logger.error("Chat hatası: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Mesaj işlenirken bir hata oluştu.")
 
 
 @app.post("/api/recommend-tasks", response_model=RecommendResponse, tags=["Recommendations"])
 async def recommend_tasks(request: RecommendRequest):
     """SP-02: Chatbot 'görev öner' intent'i için bağlam bazlı öneriler."""
-    return RecommendResponse(tasks=[], question_to_ask=None)
+    try:
+        recommended_task_ids = []
+        if request.user_profile and request.all_interactions:
+            recommended_task_ids = get_collaborative_recommendations(
+                request.user_profile,
+                request.all_interactions,
+                top_n=3
+            )
+        
+        recommended_tasks = []
+        if recommended_task_ids and request.available_tasks:
+            task_map = {t["id"]: t for t in request.available_tasks}
+            for tid in recommended_task_ids:
+                if tid in task_map:
+                    t = task_map[tid]
+                    recommended_tasks.append(MiniTaskDto(
+                        task_id=t["id"],
+                        title=t["title"],
+                        category_name=t.get("category_name", "Genel"),
+                        estimated_minutes=t.get("estimated_minutes"),
+                        base_xp=t.get("base_xp", 50),
+                        difficulty=t.get("difficulty", "Easy"),
+                        why_this_task=t.get("why_this_task")
+                    ))
+        
+        # Fallback to content-based filtering if no collaborative recommendations
+        if not recommended_tasks and request.available_tasks:
+            filtered = []
+            for t in request.available_tasks:
+                if request.preferred_categories and t.get("category_name") not in request.preferred_categories:
+                    continue
+                if t.get("estimated_minutes") and t["estimated_minutes"] > request.available_minutes:
+                    continue
+                filtered.append(t)
+            
+            # Select top 3 based on XP
+            for t in sorted(filtered, key=lambda x: x.get("base_xp", 0), reverse=True)[:3]:
+                recommended_tasks.append(MiniTaskDto(
+                    task_id=t["id"],
+                    title=t["title"],
+                    category_name=t.get("category_name", "Genel"),
+                    estimated_minutes=t.get("estimated_minutes"),
+                    base_xp=t.get("base_xp", 50),
+                    difficulty=t.get("difficulty", "Easy"),
+                    why_this_task=t.get("why_this_task")
+                ))
+
+        return RecommendResponse(tasks=recommended_tasks, question_to_ask=None)
+    except Exception as e:
+        logger.error("Görev önerme hatası: %s", e)
+        raise HTTPException(status_code=500, detail="Görev önerileri üretilirken bir hata oluştu.")
 
 
 @app.post("/api/ai/analyze-reflection", response_model=ReflectionAnalysisResponse, tags=["Insights"])
@@ -491,11 +570,11 @@ async def analyze_reflection(request: ReflectionAnalysisRequest):
         )
     except Exception as e:
         logger.error("Reflection analiz hatası: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Değerlendirme analiz edilirken bir hata oluştu.")
 
 
 @app.post("/api/train", response_model=TrainResponse, tags=["Admin"])
-async def train_models():
+async def train_models(api_key_valid: bool = Depends(verify_admin_token)):
     try:
         intent_result = intent_clf.train()
         sentiment_result = sentiment_analyzer.train()
@@ -503,7 +582,18 @@ async def train_models():
         return TrainResponse(intent_result=intent_result, sentiment_result=sentiment_result)
     except Exception as e:
         logger.error("Model eğitim hatası: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Model eğitimi sırasında bir hata oluştu.")
+
+
+@app.get("/api/chat/history/{user_id}", tags=["Chatbot"])
+async def get_history(user_id: str):
+    return {"history": CONVERSATION_HISTORY.get(user_id, [])}
+
+
+@app.delete("/api/chat/history/{user_id}", tags=["Chatbot"])
+async def clear_history(user_id: str):
+    CONVERSATION_HISTORY[user_id] = []
+    return {"success": True}
 
 
 if __name__ == "__main__":

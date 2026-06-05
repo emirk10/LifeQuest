@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,7 +25,8 @@ public sealed class CreateBadgeCommandHandler : IRequestHandler<CreateBadgeComma
             Name = request.Name,
             Description = request.Description,
             IconPath = string.IsNullOrEmpty(request.IconPath) ? "default_badge.png" : request.IconPath,
-            RequiredLevel = request.RequiredLevel,
+            RequiredValue = request.RequiredLevel,
+            Type = request.CategoryId.HasValue && request.CategoryId != Guid.Empty ? Domain.Enums.BadgeType.CategoryMaster : Domain.Enums.BadgeType.Level,
             CategoryId = request.CategoryId == Guid.Empty ? null : request.CategoryId,
         };
 

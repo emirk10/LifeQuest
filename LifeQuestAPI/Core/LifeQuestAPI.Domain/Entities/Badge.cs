@@ -22,9 +22,4 @@ public sealed class Badge : BaseEntity
 
     public Guid? CategoryId { get; set; }
     public Category? Category { get; set; } = default!;
-
-    [Obsolete("Use RequiredValue with Type instead")]
-    public int RequiredLevel { get; set; }
-    [Obsolete("Use Type instead")]
-    public int CriteriaType { get; set; }
 }

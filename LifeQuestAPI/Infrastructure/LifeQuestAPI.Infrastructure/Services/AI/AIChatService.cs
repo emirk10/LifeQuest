@@ -82,7 +82,16 @@ public class AIChatService : IAIChatService
                     CurrentStreak = context.CurrentStreak,
                     TotalXp = context.TotalXP,
                     TodayMood = context.TodayMood,
-                    AvailableMinutes = context.AvailableMinutes
+                    AvailableMinutes = context.AvailableMinutes,
+                    GeneralLevel = context.GeneralLevel,
+                    MostSkippedCategory = context.MostSkippedCategory,
+                    PreferredMorningTime = context.PreferredMorningTime,
+                    DifficultyPreference = context.DifficultyPreference,
+                    Strengths = context.Strengths,
+                    Weaknesses = context.Weaknesses,
+                    MotivationFactor = context.MotivationFactor,
+                    LifestyleType = context.LifestyleType,
+                    PrimaryFocusArea = context.PrimaryFocusArea
                 }
             };
 
@@ -118,7 +127,8 @@ public class AIChatService : IAIChatService
                     Difficulty = t.Difficulty,
                     WhyThisTask = t.WhyThisTask
                 }).ToList(),
-                ShouldShowMoodSelector = result.ShouldShowMoodSelector
+                ShouldShowMoodSelector = result.ShouldShowMoodSelector,
+                FlowRedirect = result.FlowRedirect
             };
         }
         catch (Exception ex)
@@ -175,6 +185,15 @@ public class AIChatService : IAIChatService
         [JsonPropertyName("total_xp")] public int TotalXp { get; set; }
         [JsonPropertyName("today_mood")] public string? TodayMood { get; set; }
         [JsonPropertyName("available_minutes")] public int AvailableMinutes { get; set; }
+        [JsonPropertyName("general_level")] public double GeneralLevel { get; set; } = 1.0;
+        [JsonPropertyName("most_skipped_category")] public string? MostSkippedCategory { get; set; }
+        [JsonPropertyName("preferred_morning_time")] public string? PreferredMorningTime { get; set; }
+        [JsonPropertyName("difficulty_preference")] public string? DifficultyPreference { get; set; }
+        [JsonPropertyName("strengths")] public List<string> Strengths { get; set; } = new();
+        [JsonPropertyName("weaknesses")] public List<string> Weaknesses { get; set; } = new();
+        [JsonPropertyName("motivation_factor")] public string? MotivationFactor { get; set; }
+        [JsonPropertyName("lifestyle_type")] public string? LifestyleType { get; set; }
+        [JsonPropertyName("primary_focus_area")] public string? PrimaryFocusArea { get; set; }
     }
 
     private class AIChatTaskContext
@@ -208,6 +227,7 @@ public class AIChatService : IAIChatService
         [JsonPropertyName("actions")] public List<AIChatActionItem>? Actions { get; set; }
         [JsonPropertyName("suggested_tasks")] public List<AIChatMiniTask>? SuggestedTasks { get; set; }
         [JsonPropertyName("should_show_mood_selector")] public bool ShouldShowMoodSelector { get; set; }
+        [JsonPropertyName("flow_redirect")] public string? FlowRedirect { get; set; }
     }
 
     private class AIChatActionItem

@@ -120,10 +120,6 @@ const TaskPoolPage = () => {
     });
   };
 
-  const handleAssignAppTask = async (appTaskId) => {
-    // This is no longer used directly on button click, we use toggleSelection now.
-    // Keeping it here just in case, but refactored to toggleSelection.
-  };
 
   // Get dynamic categories list from available tasks - MEMOIZED
   const uniqueCategories = useMemo(() => {

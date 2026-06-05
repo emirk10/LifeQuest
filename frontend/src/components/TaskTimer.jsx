@@ -71,22 +71,23 @@ const TaskTimer = ({ task, onComplete, onClose }) => {
 
         {/* Big Timer Circle Display */}
         <div className="relative w-64 h-64 sm:w-80 sm:h-80 mx-auto flex items-center justify-center">
-          <svg className="absolute inset-0 w-full h-full -rotate-90">
+          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
             <circle
-              cx="50%"
-              cy="50%"
-              r="48%"
-              className="stroke-slate-900 fill-none"
+              cx="50"
+              cy="50"
+              r="45"
+              className="stroke-slate-900/50 fill-none"
               strokeWidth="4"
             />
             <circle
-              cx="50%"
-              cy="50%"
-              r="48%"
+              cx="50"
+              cy="50"
+              r="45"
               className="stroke-indigo-600 fill-none transition-all duration-1000"
               strokeWidth="4"
-              strokeDasharray="100 100"
-              style={{ strokeDasharray: `${progress} 100`, strokeLinecap: 'round' }}
+              strokeDasharray="282.7"
+              strokeDashoffset={282.7 - (282.7 * progress) / 100}
+              style={{ strokeLinecap: 'round' }}
             />
           </svg>
           <div className="text-7xl sm:text-8xl font-black text-white tabular-nums tracking-tighter">

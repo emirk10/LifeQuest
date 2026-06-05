@@ -23,10 +23,17 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
   };
 
   const handleDeselect = () => {
-    // If we passed an onDeselect prop, we could use it here.
-    // For now, we will expect the parent to toggle selection via onSelect,
-    // but if we want a separate button to deselect, we should use onSelect too or a new prop.
-    // Let's just use onSelect as a toggle, or let the parent pass onDeselect.
+    onSelect?.(task);
+  };
+
+  const handleStart = async () => {
+    setActionLoading('start');
+    try {
+      await taskPoolApi.startTask(taskId);
+      setStatus('inprogress');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handlePause = async () => {
@@ -150,7 +157,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
         {status === 'suggested' && (
           <button
             className={`task-btn ${isSelected ? 'task-btn--secondary' : 'task-btn--primary'}`}
-            onClick={handleSelect}
+            onClick={isSelected ? handleDeselect : handleSelect}
             disabled={!!actionLoading || (!isSelected && isLimitReached)}
           >
             {actionLoading === 'select' ? '⌛' : isSelected ? '❌ Seçimi Kaldır' : isLimitReached ? 'LİMİT DOLDU 🔒' : '✅ Seç'}
@@ -171,9 +178,10 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
             {status === 'selected' && (
               <button
                 className="task-btn task-btn--start"
-                onClick={() => setStatus('inprogress')}
+                onClick={handleStart}
+                disabled={!!actionLoading}
               >
-                ▶️ Başla
+                {actionLoading === 'start' ? '⌛' : '▶️ Başla'}
               </button>
             )}
 

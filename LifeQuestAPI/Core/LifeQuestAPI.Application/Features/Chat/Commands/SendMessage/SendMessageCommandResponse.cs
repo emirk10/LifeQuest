@@ -16,6 +16,7 @@ public class SendMessageCommandResponse
     public List<ChatActionDto> Actions { get; set; } = new();
     public List<MiniTaskDto>? SuggestedTasks { get; set; }
     public bool ShouldShowMoodSelector { get; set; } = false;
+    public string? FlowRedirect { get; set; }
 
     // Eski uyumluluk
     public Guid? SuggestedTaskId { get; set; }

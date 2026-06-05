@@ -59,10 +59,6 @@ public sealed class Challenge : BaseEntity
     [System.ComponentModel.DataAnnotations.Schema.NotMapped]
     public int WinnerBonusXP => WinnerXPBonus;
 
-    // ─── Eski alanlar (CategoryFocus için hâlâ kullanılıyor) ──────────────
-    public Guid? CategoryId { get; set; }
-    public Category? Category { get; set; }
-
     // ─── Navigation Properties ─────────────────────────────────────────────
     public ICollection<ChallengeParticipant> Participants { get; set; } = default!;
 }

@@ -1,3 +1,4 @@
+using LifeQuestAPI.Application.Abstractions;
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Enums;
@@ -100,11 +101,22 @@ public class AbandonTaskCommandHandler : IRequestHandler<AbandonTaskCommandReque
 {
     private readonly IUserTaskReadRepository _readRepository;
     private readonly IUserTaskWriteRepository _writeRepository;
+    private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IAppUserWriteRepository _userWriteRepository;
+    private readonly IUserBehaviorAnalysisService _behaviorAnalysisService;
 
-    public AbandonTaskCommandHandler(IUserTaskReadRepository readRepository, IUserTaskWriteRepository writeRepository)
+    public AbandonTaskCommandHandler(
+        IUserTaskReadRepository readRepository, 
+        IUserTaskWriteRepository writeRepository,
+        IAppUserReadRepository userReadRepository,
+        IAppUserWriteRepository userWriteRepository,
+        IUserBehaviorAnalysisService behaviorAnalysisService)
     {
         _readRepository = readRepository;
         _writeRepository = writeRepository;
+        _userReadRepository = userReadRepository;
+        _userWriteRepository = userWriteRepository;
+        _behaviorAnalysisService = behaviorAnalysisService;
     }
 
     public async Task<bool> Handle(AbandonTaskCommandRequest request, CancellationToken cancellationToken)
@@ -117,9 +129,63 @@ public class AbandonTaskCommandHandler : IRequestHandler<AbandonTaskCommandReque
         userTask.Status = AppTaskStatus.Abandoned;
         userTask.SkipReason = request.Reason;
 
+        var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true);
+        if (user != null && user.ActiveTaskCount > 0)
+        {
+            user.ActiveTaskCount--;
+            _userWriteRepository.Update(user);
+        }
+
         _writeRepository.Update(userTask);
         await _writeRepository.SaveAsync();
 
+        // Gerçek zamanlı davranış analizi tetikleme
+        try
+        {
+            await _behaviorAnalysisService.AnalyzeAndUpdateUserBehaviorAsync(request.UserId, cancellationToken);
+        }
+        catch
+        {
+            // Analiz hatası iptal etmeyi engellemesin
+        }
+
         return true;
+    }
+}
+
+// ─── Start ─────────────────────────────────────────────────────────────────────
+public class StartTaskCommandRequest : IRequest<UserTaskDto>
+{
+    public Guid UserId { get; set; }
+    public Guid UserTaskId { get; set; }
+}
+
+public class StartTaskCommandHandler : IRequestHandler<StartTaskCommandRequest, UserTaskDto>
+{
+    private readonly IUserTaskReadRepository _readRepository;
+    private readonly IUserTaskWriteRepository _writeRepository;
+
+    public StartTaskCommandHandler(IUserTaskReadRepository readRepository, IUserTaskWriteRepository writeRepository)
+    {
+        _readRepository = readRepository;
+        _writeRepository = writeRepository;
+    }
+
+    public async Task<UserTaskDto> Handle(StartTaskCommandRequest request, CancellationToken cancellationToken)
+    {
+        var userTask = await _readRepository
+            .GetWhere(ut => ut.Id == request.UserTaskId && ut.AppUserId == request.UserId, tracking: true)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new Exception("Görev bulunamadı.");
+
+        if (userTask.Status != AppTaskStatus.Selected && userTask.Status != AppTaskStatus.Suggested)
+            throw new InvalidOperationException("Yalnızca seçilmiş veya önerilmiş görevler başlatılabilir.");
+
+        userTask.Status = AppTaskStatus.InProgress;
+
+        _writeRepository.Update(userTask);
+        await _writeRepository.SaveAsync();
+
+        return new UserTaskDto { Id = userTask.Id, IsCompleted = false, Xp = userTask.EarnedXp, AssignedAt = userTask.AssignedAt };
     }
 }

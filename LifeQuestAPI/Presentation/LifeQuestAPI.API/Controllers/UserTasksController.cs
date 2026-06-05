@@ -4,6 +4,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LifeQuestAPI.Application.Features.UserTasks.Queries.GetUserTasks;
+using LifeQuestAPI.Application.Features.UserTasks.Queries.GetUserTaskById;
+using LifeQuestAPI.Application.Features.UserTasks.Commands.CancelUserTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.CompleteUserTask;
 using LifeQuestAPI.Application.Features.UserTasks.Commands.RequestNewQuests;
 using LifeQuestAPI.Application.Features.UserTasks.Queries.GetDailyTaskPool;
@@ -21,10 +23,23 @@ namespace LifeQuestAPI.API.Controllers;
 public class UserTasksController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly LifeQuestAPI.Application.Repositories.IAppUserReadRepository _userReadRepo;
+    private readonly LifeQuestAPI.Application.Repositories.IAppTaskReadRepository _taskReadRepo;
+    private readonly LifeQuestAPI.Application.Repositories.IUserTaskReadRepository _userTaskReadRepo;
+    private readonly LifeQuestAPI.Application.Abstractions.DailyQuest.IDailyQuestService _dailyQuestService;
 
-    public UserTasksController(IMediator mediator)
+    public UserTasksController(
+        IMediator mediator,
+        LifeQuestAPI.Application.Repositories.IAppUserReadRepository userReadRepo,
+        LifeQuestAPI.Application.Repositories.IAppTaskReadRepository taskReadRepo,
+        LifeQuestAPI.Application.Repositories.IUserTaskReadRepository userTaskReadRepo,
+        LifeQuestAPI.Application.Abstractions.DailyQuest.IDailyQuestService dailyQuestService)
     {
         _mediator = mediator;
+        _userReadRepo = userReadRepo;
+        _taskReadRepo = taskReadRepo;
+        _userTaskReadRepo = userTaskReadRepo;
+        _dailyQuestService = dailyQuestService;
     }
 
     [HttpGet("available-tasks")]
@@ -33,20 +48,16 @@ public class UserTasksController : ControllerBase
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
-        var userReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IAppUserReadRepository>();
-        var taskReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IAppTaskReadRepository>();
-        var userTaskReadRepo = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Repositories.IUserTaskReadRepository>();
-
         var userId = Guid.Parse(userIdString);
-        var user = await userReadRepo.Table.FirstOrDefaultAsync(u => u.Id == userId);
+        var user = await _userReadRepo.Table.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return NotFound();
 
-        var assignedTaskIds = await userTaskReadRepo.Table
+        var assignedTaskIds = await _userTaskReadRepo.Table
             .Where(ut => ut.AppUserId == userId && ut.Status != Domain.Enums.AppTaskStatus.Expired && ut.Status != Domain.Enums.AppTaskStatus.Abandoned)
             .Select(ut => ut.AppTaskId)
             .ToListAsync();
 
-        var tasks = await taskReadRepo.Table
+        var tasks = await _taskReadRepo.Table
             .Include(t => t.Category)
             .Where(t => t.IsActive && t.MinLevel <= (int)Math.Floor(user.GeneralLevel) && !assignedTaskIds.Contains(t.Id))
             .ToListAsync();
@@ -64,7 +75,9 @@ public class UserTasksController : ControllerBase
             CategoryIcon = t.Category?.IconPath ?? "🎯",
             Difficulty = t.Difficulty.ToString(),
             MinLevel = t.MinLevel,
-            WhyThisTask = t.WhyThisTask
+            WhyThisTask = t.WhyThisTask,
+            MinEnergyLevel = t.MinEnergyLevel,
+            MaxEnergyLevel = t.MaxEnergyLevel
         });
 
         return Ok(result);
@@ -261,6 +274,21 @@ public class UserTasksController : ControllerBase
         }
     }
 
+    /// <summary>Görevi başlat</summary>
+    [HttpPost("{id}/start")]
+    public async Task<IActionResult> StartTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new LifeQuestAPI.Application.Features.UserTasks.Commands.PauseResumeTask.StartTaskCommandRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id
+        });
+        return Ok(response);
+    }
+
     /// <summary>Görevi duraklat</summary>
     [HttpPost("{id}/pause")]
     public async Task<IActionResult> PauseTask([FromRoute] Guid id)
@@ -309,19 +337,59 @@ public class UserTasksController : ControllerBase
 
     /// <summary>Manuel olarak bugünün görev dağıtımını tetikle</summary>
     [HttpPost("trigger-daily-quests")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TriggerDailyQuests()
     {
-        var dailyQuestService = HttpContext.RequestServices.GetRequiredService<LifeQuestAPI.Application.Abstractions.DailyQuest.IDailyQuestService>();
-        await dailyQuestService.DistributeDailyQuestsAsync();
+        await _dailyQuestService.DistributeDailyQuestsAsync();
         return Ok(new { success = true, message = "Günlük görev dağıtımı başarıyla manuel olarak tetiklendi." });
     }
 
     /// <summary>Ekstra görev ve rozet seed verilerini yükle</summary>
     [HttpPost("seed")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TriggerSeed()
     {
         await LifeQuestAPI.Persistence.Contexts.SeedData.SeedData.Initialize(HttpContext.RequestServices);
         return Ok(new { success = true, message = "Seed verileri başarıyla yüklendi!" });
+    }
+
+    /// <summary>Tek bir görevin detayını getir</summary>
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTaskById([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new GetUserTaskByIdQueryRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            UserTaskId = id
+        });
+
+        if (response == null) return NotFound(new { success = false, message = "Görev bulunamadı." });
+        return Ok(response);
+    }
+
+    /// <summary>Görevi iptal et</summary>
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> CancelTask([FromRoute] Guid id)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        try
+        {
+            var response = await _mediator.Send(new CancelUserTaskCommandRequest
+            {
+                UserId = Guid.Parse(userIdString),
+                UserTaskId = id
+            });
+            return Ok(new { success = response });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { success = false, message = ex.Message });
+        }
     }
 }
 

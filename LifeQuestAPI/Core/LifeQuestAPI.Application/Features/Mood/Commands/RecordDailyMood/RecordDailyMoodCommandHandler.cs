@@ -1,6 +1,7 @@
 using LifeQuestAPI.Application.DTOs;
 using LifeQuestAPI.Application.Repositories;
 using LifeQuestAPI.Domain.Entities;
+using LifeQuestAPI.Domain.Enums;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,17 +13,23 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
     private readonly IUserDailyMoodWriteRepository _moodWriteRepository;
     private readonly IAppUserWriteRepository _userWriteRepository;
     private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IUserTaskReadRepository _userTaskReadRepository;
+    private readonly IUserTaskWriteRepository _userTaskWriteRepository;
 
     public RecordDailyMoodCommandHandler(
         IUserDailyMoodReadRepository moodReadRepository,
         IUserDailyMoodWriteRepository moodWriteRepository,
         IAppUserWriteRepository userWriteRepository,
-        IAppUserReadRepository userReadRepository)
+        IAppUserReadRepository userReadRepository,
+        IUserTaskReadRepository userTaskReadRepository,
+        IUserTaskWriteRepository userTaskWriteRepository)
     {
         _moodReadRepository = moodReadRepository;
         _moodWriteRepository = moodWriteRepository;
         _userWriteRepository = userWriteRepository;
         _userReadRepository = userReadRepository;
+        _userTaskReadRepository = userTaskReadRepository;
+        _userTaskWriteRepository = userTaskWriteRepository;
     }
 
     public async Task<UserDailyMoodDto> Handle(RecordDailyMoodCommandRequest request, CancellationToken cancellationToken)
@@ -58,6 +65,19 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
                 RecordedAt = DateTime.UtcNow
             };
             await _moodWriteRepository.AddAsync(existing);
+        }
+
+        // Bugün kullanıcı için önerilmiş ama henüz seçilmemiş (Suggested) görevleri temizle
+        var suggestedTasks = await _userTaskReadRepository
+            .GetWhere(ut => ut.AppUserId == request.UserId 
+                && ut.Status == AppTaskStatus.Suggested
+                && ut.DueDate.HasValue
+                && DateOnly.FromDateTime(ut.DueDate.Value) == today, tracking: true)
+            .ToListAsync(cancellationToken);
+
+        foreach (var task in suggestedTasks)
+        {
+            _userTaskWriteRepository.Remove(task);
         }
 
         // Kullanıcının LastActiveAt alanını güncelle

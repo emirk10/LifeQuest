@@ -252,6 +252,72 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, message = "Gönderi silindi." });
     }
 
+    // ─── GET /api/posts/{id} ─────────────────────────────────────────────────
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetPostById(Guid id)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var post = await _postRead.GetAll(false)
+            .Where(p => p.Id == id)
+            .Include(p => p.AppUser)
+            .Include(p => p.Tags)
+                .ThenInclude(t => t.AppTask)
+            .Include(p => p.Likes)
+            .Select(p => new
+            {
+                id = p.Id,
+                content = p.Content,
+                imageUrl = p.ImageUrl,
+                createdAt = p.CreatedAt,
+                author = new
+                {
+                    id = p.AppUser.Id,
+                    userName = p.AppUser.UserName,
+                    fullName = p.AppUser.FullName,
+                    avatarId = p.AppUser.AvatarId,
+                    level = p.AppUser.GeneralLevel
+                },
+                tags = p.Tags.Select(t => new
+                {
+                    id = t.Id,
+                    taskId = t.AppTaskId,
+                    userTaskId = t.UserTaskId,
+                    taskTitle = t.AppTask.Title,
+                    x = t.CoordinateX,
+                    y = t.CoordinateY
+                }),
+                likeCount = p.Likes.Count,
+                commentCount = p.Comments.Count(),
+                isLikedByMe = p.Likes.Any(l => l.AppUserId == userId)
+            })
+            .FirstOrDefaultAsync();
+
+        if (post == null) return NotFound(new { success = false, message = "Gönderi bulunamadı." });
+        return Ok(new { success = true, post });
+    }
+
+    // ─── PUT /api/posts/{id} ─────────────────────────────────────────────────
+    [HttpPut("{id}")]
+    public async Task<IActionResult> EditPost(Guid id, [FromBody] EditPostDto request)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var post = await _postRead.GetByIdAsync(id.ToString());
+        if (post == null) return NotFound(new { success = false, message = "Gönderi bulunamadı." });
+        if (post.AppUserId != userId) return Forbid();
+
+        post.Content = request.Content?.Trim();
+        post.UpdatedAt = DateTime.UtcNow;
+
+        _postWrite.Update(post);
+        await _postWrite.SaveAsync();
+
+        return Ok(new { success = true, message = "Gönderi güncellendi." });
+    }
+
     // ─── POST /api/posts/{id}/like ───────────────────────────────────────────
     [HttpPost("{id}/like")]
     public async Task<IActionResult> LikePost(Guid id)
@@ -339,6 +405,23 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, comments });
     }
 
+    // ─── DELETE /api/posts/comments/{commentId} ──────────────────────────────
+    [HttpDelete("comments/{commentId}")]
+    public async Task<IActionResult> DeleteComment(Guid commentId)
+    {
+        var userId = GetUserId();
+        if (userId == null) return Unauthorized();
+
+        var comment = await _postCommentRead.GetByIdAsync(commentId.ToString());
+        if (comment == null) return NotFound(new { success = false, message = "Yorum bulunamadı." });
+        if (comment.AppUserId != userId) return Forbid();
+
+        _postCommentWrite.Remove(comment);
+        await _postCommentWrite.SaveAsync();
+
+        return Ok(new { success = true, message = "Yorum silindi." });
+    }
+
     private Guid? GetUserId()
     {
         var value = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -354,6 +437,11 @@ public class CreatePostDto
     public IFormFile? Image { get; set; }
     /// <summary>JSON string: [{"taskId":"guid","x":45.5,"y":80.2}]</summary>
     public string? TagsJson { get; set; }
+}
+
+public class EditPostDto
+{
+    public string Content { get; set; } = default!;
 }
 
 public class TagDto

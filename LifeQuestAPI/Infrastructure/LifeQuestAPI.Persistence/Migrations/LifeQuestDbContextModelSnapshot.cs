@@ -190,9 +190,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("CriteriaType")
-                        .HasColumnType("integer");
-
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -217,9 +214,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.Property<string>("Rarity")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<int>("RequiredLevel")
-                        .HasColumnType("integer");
 
                     b.Property<int>("RequiredValue")
                         .HasColumnType("integer");
@@ -280,9 +274,6 @@ namespace LifeQuestAPI.Persistence.Migrations
 
                     b.Property<DateTime?>("AcceptedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CategoryId")
-                        .HasColumnType("uuid");
 
                     b.Property<int>("ChallengeType")
                         .HasColumnType("integer");
@@ -355,8 +346,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("CategoryId");
 
                     b.HasIndex("ChallengerId");
 
@@ -1658,10 +1647,6 @@ namespace LifeQuestAPI.Persistence.Migrations
 
             modelBuilder.Entity("LifeQuestAPI.Domain.Entities.Challenge", b =>
                 {
-                    b.HasOne("LifeQuestAPI.Domain.Entities.Category", "Category")
-                        .WithMany()
-                        .HasForeignKey("CategoryId");
-
                     b.HasOne("LifeQuestAPI.Domain.Entities.Identity.AppUser", "Challenger")
                         .WithMany()
                         .HasForeignKey("ChallengerId")
@@ -1681,8 +1666,6 @@ namespace LifeQuestAPI.Persistence.Migrations
                     b.HasOne("LifeQuestAPI.Domain.Entities.Category", "TargetCategory")
                         .WithMany()
                         .HasForeignKey("TargetCategoryId");
-
-                    b.Navigation("Category");
 
                     b.Navigation("Challenger");
 

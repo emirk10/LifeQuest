@@ -13,6 +13,7 @@ public sealed record ChatResponseDto
     public List<ChatActionDto> Actions { get; init; } = new();
     public List<MiniTaskDto>? SuggestedTasks { get; init; }
     public bool ShouldShowMoodSelector { get; init; } = false;
+    public string? FlowRedirect { get; init; }
 
     // Geriye dönük uyumluluk (eski ChatBot.jsx ile)
     public Guid? SuggestedTaskId { get; init; }

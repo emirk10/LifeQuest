@@ -101,9 +101,7 @@ class SentimentAnalyzer:
         if not self.model:
             self.train()
 
-        # Metin çok kısaysa (1 kelime) duygu analizi genelde "neutral" olur.
-        if len(text.split()) < 2:
-            return {"label": "neutral", "confidence": 0.8}
+        # Kısa mesajlarda da modelin tahmin yapmasına izin verelim
 
         proba = self.model.predict_proba([text])[0]
         classes = self.model.classes_

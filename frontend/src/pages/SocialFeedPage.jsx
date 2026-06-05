@@ -296,7 +296,8 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
 
   // Son 7 gün filtreli veriler
   const filteredTasks = userTasks.filter(t => {
-    const isDone = t.isCompleted === true || t.IsCompleted === true;
+    const isDone = t.status === 'Completed' || t.Status === 'Completed'
+      || t.isCompleted === true || t.IsCompleted === true;
     if (!isDone) return false;
     const completedDate = t.completedAt || t.CompletedAt;
     // completedAt yoksa ama tamamlandıysa yine göster (güvenli fallback)
@@ -586,13 +587,55 @@ const SocialFeedPage = () => {
     }
   }, []);
 
+  // Son 7 günde tamamlanan görevleri çek
+  // Backend, /user-tasks endpoint'ini gün bazlı paginate eder:
+  // page=1 → bugün, page=2 → dün, page=3 → 2 gün önce...
+  const fetchCompletedTasks = useCallback(async () => {
+    try {
+      const allCompleted = [];
+      // 7 günü kapsayan sayfaları paralel çek
+      const pagePromises = Array.from({ length: 7 }, (_, i) =>
+        taskService.getAllTasks(null, i + 1, 100).catch(() => null)
+      );
+      const results = await Promise.all(pagePromises);
+
+      for (const res of results) {
+        if (!res) continue;
+        const tasks = Array.isArray(res) ? res : (res?.tasks || res?.Tasks || []);
+        const completed = tasks.filter(t =>
+          t.status === 'Completed' || t.Status === 'Completed'
+          || t.isCompleted === true || t.IsCompleted === true
+        );
+        allCompleted.push(...completed);
+      }
+
+      // Aynı userTask ID'sine veya aynı appTaskId'ye sahip kayıtları tekrar gösterme
+      const seenIds = new Set();
+      const seenAppTaskIds = new Set();
+      const deduplicated = allCompleted.filter(t => {
+        const uid = t.id || t.Id;
+        const atid = t.appTaskId || t.AppTaskId;
+
+        // Önce userTask ID'sine göre kontrol
+        if (uid && seenIds.has(uid)) return false;
+        if (uid) seenIds.add(uid);
+
+        // Sonra appTaskId'ye göre kontrol (aynı görev farklı günlerde atandıysa)
+        if (atid && seenAppTaskIds.has(atid)) return false;
+        if (atid) seenAppTaskIds.add(atid);
+
+        return true;
+      });
+
+      setUserTasks(deduplicated);
+    } catch (err) {
+      console.error('Tamamlanan görevler yüklenemedi:', err);
+      setUserTasks([]);
+    }
+  }, []);
+
   useEffect(() => {
-    // userId artık authContext'ten alınıyor (sessionStorage token decode etmeye gerek yok)
-    import('../services/taskService').then(({ default: taskService }) => {
-      taskService.getAllTasks().then((tasks) => {
-        setUserTasks(Array.isArray(tasks) ? tasks : []);
-      }).catch(() => {});
-    });
+    fetchCompletedTasks();
 
     import('../services/goalService').then(({ default: goalService }) => {
       goalService.getGoalDashboard().then((data) => {
@@ -607,7 +650,7 @@ const SocialFeedPage = () => {
     });
 
     fetchFeed();
-  }, [fetchFeed]);
+  }, [fetchFeed, fetchCompletedTasks]);
 
   const handleDelete = async (postId) => {
     if (!window.confirm('Bu gönderiyi silmek istediğine emin misin?')) return;

@@ -3,9 +3,10 @@ import axiosClient from "../../api/axiosClient";
 import chatService from "../../services/chatService";
 import taskService from "../../services/taskService";
 import userService from "../../services/userService";
-import moodService from "../../services/moodService";
+import { moodService } from "../../api/moodApi";
 import badgeService from "../../services/badgeService";
 import goalService from "../../services/goalService";
+import { getMoodHint } from "../../utils/moodUtils";
 import { MOTIVATION_TEMPLATES } from "./chatFlows";
 
 // ─── Yardımcı: API cevabından metin çıkar ────────────────────────────────────
@@ -98,6 +99,44 @@ export async function executeApiAction(apiAction, context = {}) {
         : null;
 
       let filtered = [...rawTasks];
+
+      // ── Mood'a Göre Katı Filtreler (Strict Constraints) ───────────────────
+      let moodMode = "Normal";
+      if (mood && mood.moodMode !== undefined) {
+        moodMode = String(mood.moodMode);
+      } else if (context.moodMode !== undefined) {
+        const modesMap = ["Energetic", "Normal", "Tired", "Overwhelmed", "LimitedTime"];
+        moodMode = modesMap[context.moodMode] || "Normal";
+      }
+
+      const energyLevel = mood ? (mood.energyLevel ?? 5) : (context.energyLevel ?? 5);
+      const availableMinutes = mood ? (mood.availableMinutes ?? 60) : (context.availableMinutes ?? 60);
+
+      filtered = filtered.filter(t => {
+        const estMin = t.estimatedMinutes ?? t.EstimatedMinutes ?? (t.baseXP > 0 ? Math.ceil(t.baseXP / 5.0) : 15);
+        const minEnergy = t.minEnergyLevel ?? t.MinEnergyLevel ?? 1;
+
+        // Müsait zamandan uzun süren görevleri tamamen ele
+        if (estMin > availableMinutes) return false;
+        // Enerjinin yetmediği görevleri ele
+        if (energyLevel < minEnergy) return false;
+
+        // Overwhelmed (3) durumunda katı kurallar
+        if (moodMode === "Overwhelmed" || moodMode === "3") {
+          // Bunaldığında sadece kolay, kısa (<=15dk) ve düşük enerjili (<=2) görevler verilsin
+          if (t.difficulty !== "Easy" || minEnergy > 2 || estMin > 15) {
+            return false;
+          }
+        }
+        // Tired (2) durumunda katı kurallar
+        else if (moodMode === "Tired" || moodMode === "2") {
+          // Yorgunken yüksek enerjili (>=4) ve zor görevleri tamamen ele
+          if (minEnergy >= 4 || t.difficulty === "Hard") {
+            return false;
+          }
+        }
+        return true;
+      });
 
       // ── Kategori filtresi ────────────────────────────────────────────────────
       const cat = context.categoryHint;
@@ -247,7 +286,7 @@ export async function executeApiAction(apiAction, context = {}) {
       const prompt = `${levelText} Kullanıcının şu anki ruh hali: ${moodDesc}. Kullanıcıya kısa, içten ve güçlü Türkçe motivasyon mesajı yaz. Sadece motivasyon metnini yaz, JSON veya başka format kullanma.`;
 
       try {
-        const aiResponse = await chatService.sendMessage(prompt);
+        const aiResponse = await chatService.sendMessage(prompt, false);
         // AI servisi { response: "...", intent: "...", ... } döner
         const text = extractText(aiResponse?.response ?? aiResponse);
         if (!text) throw new Error("Boş AI cevabı");
@@ -285,15 +324,6 @@ export async function executeApiAction(apiAction, context = {}) {
     default:
       throw new Error(`Bilinmeyen API aksiyonu: ${apiAction}`);
   }
-}
-
-// ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
-function getMoodHint(energyLevel) {
-  if (!energyLevel) return "normal";
-  if (energyLevel >= 8) return "pozitif";
-  if (energyLevel >= 6) return "normal";
-  if (energyLevel >= 4) return "yorgun";
-  return "zor";
 }
 
 // ─── Görev Atama (available-tasks → assign) ───────────────────────────────────

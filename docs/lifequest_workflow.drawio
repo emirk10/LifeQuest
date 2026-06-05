@@ -1,0 +1,288 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="LifeQuest Is Akisi" id="workflow-v3">
+    <mxGraphModel dx="875" dy="363" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1920" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=20;fontStyle=1;fontColor=#1a1a2e;" value="LifeQuest – Genel Uygulama İş Akışı" vertex="1">
+          <mxGeometry height="36" width="1450" x="20" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_fe" parent="1" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;fontSize=12;" value="Frontend (React + Vite)" vertex="1">
+          <mxGeometry height="1060" width="270" x="20" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_api" parent="1" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;fontSize=12;" value="Backend API (.NET 8 – CQRS/MediatR)" vertex="1">
+          <mxGeometry height="1060" width="330" x="310" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_ai" parent="1" style="swimlane;startSize=30;fillColor=#ffe6cc;strokeColor=#d6b656;fontStyle=1;fontSize=12;" value="AI Mikro Servis (Python/FastAPI)" vertex="1">
+          <mxGeometry height="1060" width="270" x="660" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_db" parent="1" style="swimlane;startSize=30;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;fontSize=12;" value="Veri Katmanı (PostgreSQL + Redis)" vertex="1">
+          <mxGeometry height="1060" width="260" x="950" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lane_ext" parent="1" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;fontSize=12;" value="Dış Servisler / Altyapı" vertex="1">
+          <mxGeometry height="1060" width="240" x="1230" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="sec1" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="1. KİMLİK DOĞRULAMA" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="108" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_auth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="LoginPage / Register&#xa;ForgotPassword / ResetPassword&#xa;VerifyEmailPage" vertex="1">
+          <mxGeometry height="55" width="230" x="40" y="134" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_onboard" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="OnboardingPage" vertex="1">
+          <mxGeometry height="34" width="230" x="40" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="api_auth" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="AuthController&#xa;POST register/login/refresh&#xa;PATCH verify-email&#xa;POST forgot/reset/revoke" vertex="1">
+          <mxGeometry height="65" width="200" x="328" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="api_onboard" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="OnboardingController&#xa;POST /api/onboarding" vertex="1">
+          <mxGeometry height="34" width="200" x="328" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="db_user" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="AppUser (Identity)&#xa;RefreshToken" vertex="1">
+          <mxGeometry height="52" width="170" x="970" y="138" as="geometry" />
+        </mxCell>
+        <mxCell id="ext_smtp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="SMTP Sunucusu&#xa;(E-posta Doğrulama)" vertex="1">
+          <mxGeometry height="38" width="180" x="1250" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ea1" edge="1" parent="1" source="fe_auth" style="edgeStyle=orthogonalEdgeStyle;" target="api_auth">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea2" edge="1" parent="1" source="fe_onboard" style="edgeStyle=orthogonalEdgeStyle;" target="api_onboard">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea3" edge="1" parent="1" source="api_auth" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" target="fe_auth" value="JWT Cookie">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ea5" edge="1" parent="1" source="api_auth" style="edgeStyle=orthogonalEdgeStyle;" target="ext_smtp">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="910" y="150" />
+              <mxPoint x="910" y="130" />
+              <mxPoint x="1340" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sec2" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="2. GÖREV YÖNETİMİ" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="257" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_tasks" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="TaskList / TaskPoolPage&#xa;DailyTaskPage" vertex="1">
+          <mxGeometry height="44" width="230" x="40" y="283" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_chatbot_t" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="ChatBot – Görev Akışı&#xa;(state machine)" vertex="1">
+          <mxGeometry height="38" width="230" x="40" y="338" as="geometry" />
+        </mxCell>
+        <mxCell id="api_usertasks" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=9;" value="UserTasksController&#xa;GET aktif/tamamlanan/ertelenen&#xa;POST ata/tamamla/ertele/paylaş/kudos" vertex="1">
+          <mxGeometry height="60" width="210" x="328" y="278" as="geometry" />
+        </mxCell>
+        <mxCell id="api_taskpool" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="TasksController&#xa;GET /api/tasks/pool" vertex="1">
+          <mxGeometry height="34" width="200" x="328" y="348" as="geometry" />
+        </mxCell>
+        <mxCell id="ai_rec" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=10;" value="POST /api/recommend-tasks&#xa;(ML – Bağlamsal Öneri)" vertex="1">
+          <mxGeometry height="44" width="215" x="678" y="288" as="geometry" />
+        </mxCell>
+        <mxCell id="db_tasks" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="AppTask&#xa;UserTask&#xa;UserTaskInteraction" vertex="1">
+          <mxGeometry height="65" width="170" x="970" y="278" as="geometry" />
+        </mxCell>
+        <mxCell id="et1" edge="1" parent="1" source="fe_tasks" style="edgeStyle=orthogonalEdgeStyle;" target="api_usertasks">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="et2" edge="1" parent="1" source="fe_chatbot_t" style="edgeStyle=orthogonalEdgeStyle;" target="api_taskpool">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="et3" edge="1" parent="1" source="api_usertasks" style="edgeStyle=orthogonalEdgeStyle;" target="ai_rec">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="308" />
+              <mxPoint x="650" y="308" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="et4" edge="1" parent="1" source="api_usertasks" style="edgeStyle=orthogonalEdgeStyle;" target="db_tasks">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="620" y="290" />
+              <mxPoint x="620" y="260" />
+              <mxPoint x="1055" y="260" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sec3" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="3. GAMİFİKASYON (XP / Rozet / Liderboard)" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_badges" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="BadgeGallery&#xa;LeaderboardPage&#xa;ProfilePage" vertex="1">
+          <mxGeometry height="55" width="230" x="40" y="425" as="geometry" />
+        </mxCell>
+        <mxCell id="api_badges" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="BadgesController&#xa;UserBadgesController&#xa;XP Hesaplama (MediatR)" vertex="1">
+          <mxGeometry height="55" width="210" x="328" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="api_bgxp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;dashed=1;fontSize=9;" value="Arka Plan Servisleri&#xa;DailyQuestWorker&#xa;WeeklyReportWorker" vertex="1">
+          <mxGeometry height="48" width="210" x="328" y="485" as="geometry" />
+        </mxCell>
+        <mxCell id="db_badges" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="Badge / UserBadge&#xa;Achievement&#xa;UserAchievement&#xa;UserCategoryProgress" vertex="1">
+          <mxGeometry height="68" width="170" x="970" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="eg1" edge="1" parent="1" source="fe_badges" style="edgeStyle=orthogonalEdgeStyle;" target="api_badges">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg2" edge="1" parent="1" source="api_badges" style="edgeStyle=orthogonalEdgeStyle;" target="db_badges">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eg3" edge="1" parent="1" source="api_bgxp" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" target="db_badges" value="XP/Rozet Güncelle">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="754" y="509" />
+              <mxPoint x="754" y="470" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sec4" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="4. SOSYAL / CHALLENGE" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="550" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_social" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="SocialPage&#xa;SocialFeedPage&#xa;SharePage" vertex="1">
+          <mxGeometry height="55" width="230" x="40" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="api_social" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="SocialController&#xa;PostsController&#xa;Arkadaşlık / Kudos / Challenge" vertex="1">
+          <mxGeometry height="55" width="210" x="328" y="570" as="geometry" />
+        </mxCell>
+        <mxCell id="api_hub" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FF6F00;strokeColor=#E65100;fontColor=#fff;fontStyle=1;fontSize=10;" value="NotificationHub&#xa;(SignalR – /hubs/notification)" vertex="1">
+          <mxGeometry height="38" width="210" x="328" y="636" as="geometry" />
+        </mxCell>
+        <mxCell id="db_social" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="Post / PostLike / PostComment&#xa;PostTag / Friendship / Kudos&#xa;Challenge / ChallengeParticipant" vertex="1">
+          <mxGeometry height="68" width="170" x="970" y="572" as="geometry" />
+        </mxCell>
+        <mxCell id="es1" edge="1" parent="1" source="fe_social" style="edgeStyle=orthogonalEdgeStyle;" target="api_social">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="es2" edge="1" parent="1" source="api_social" style="edgeStyle=orthogonalEdgeStyle;" target="api_hub">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="es3" edge="1" parent="1" source="api_hub" style="edgeStyle=orthogonalEdgeStyle;dashed=1;" target="fe_social" value="WS Push">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="es4" edge="1" parent="1" source="api_social" style="edgeStyle=orthogonalEdgeStyle;" target="db_social">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="598" />
+              <mxPoint x="860" y="598" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sec5" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="5. AI CHATBOT / RUH HALİ / MOTİVASYON" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="694" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_chatbot" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="ChatBotFlow.jsx&#xa;ChatBotCards.jsx&#xa;(State Machine – chatFlows)" vertex="1">
+          <mxGeometry height="55" width="230" x="40" y="720" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_mood" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="Ruh Hali Seçim Ekranı" vertex="1">
+          <mxGeometry height="34" width="230" x="40" y="786" as="geometry" />
+        </mxCell>
+        <mxCell id="api_chat" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="ChatController&#xa;POST /api/chat/send&#xa;POST /api/chat/action" vertex="1">
+          <mxGeometry height="55" width="210" x="328" y="716" as="geometry" />
+        </mxCell>
+        <mxCell id="api_mood" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="MoodController&#xa;POST /api/mood/save&#xa;GET /api/mood/today" vertex="1">
+          <mxGeometry height="50" width="210" x="328" y="782" as="geometry" />
+        </mxCell>
+        <mxCell id="ai_chat" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=9;" value="POST /api/chat&#xa;Intent + Sentiment + Urgency&#xa;Kişilik Motoru (scikit-learn)" vertex="1">
+          <mxGeometry height="60" width="215" x="678" y="712" as="geometry" />
+        </mxCell>
+        <mxCell id="ai_reflect" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=9;" value="POST /api/ai/analyze-reflection&#xa;Mikro-günlük Analizi&#xa;(Duygu + Insight + Bonus XP)" vertex="1">
+          <mxGeometry height="55" width="215" x="678" y="785" as="geometry" />
+        </mxCell>
+        <mxCell id="db_chat" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="ChatBotMessage&#xa;UserDailyMood&#xa;WeeklyReport" vertex="1">
+          <mxGeometry height="65" width="170" x="970" y="718" as="geometry" />
+        </mxCell>
+        <mxCell id="ec1" edge="1" parent="1" source="fe_chatbot" style="edgeStyle=orthogonalEdgeStyle;" target="api_chat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec2" edge="1" parent="1" source="fe_mood" style="edgeStyle=orthogonalEdgeStyle;" target="api_mood">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ec3" edge="1" parent="1" source="api_chat" style="edgeStyle=orthogonalEdgeStyle;" target="ai_chat">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="744" />
+              <mxPoint x="660" y="744" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ec4" edge="1" parent="1" source="api_chat" style="edgeStyle=orthogonalEdgeStyle;" target="db_chat">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="590" y="744" />
+              <mxPoint x="590" y="690" />
+              <mxPoint x="1055" y="690" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ec5" edge="1" parent="1" source="api_mood" style="edgeStyle=orthogonalEdgeStyle;entryX=0;entryY=0;entryDx=0;entryDy=41.25;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="db_chat">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="570" y="807" />
+              <mxPoint x="570" y="780" />
+              <mxPoint x="940" y="780" />
+              <mxPoint x="940" y="759" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="sec6" parent="1" style="text;html=1;strokeColor=none;fillColor=#dae8fc;align=left;fontStyle=1;fontSize=10;fontColor=#0050ef;" value="6. HEDEFLER / RAPORLAR" vertex="1">
+          <mxGeometry height="20" width="255" x="28" y="858" as="geometry" />
+        </mxCell>
+        <mxCell id="fe_goals" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=10;" value="GoalsPage&#xa;ReportsPage&#xa;DashBoard" vertex="1">
+          <mxGeometry height="55" width="230" x="40" y="883" as="geometry" />
+        </mxCell>
+        <mxCell id="api_goals" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" value="GoalsController&#xa;ReportsController&#xa;GET /api/goals&#xa;GET /api/reports/weekly" vertex="1">
+          <mxGeometry height="60" width="210" x="328" y="878" as="geometry" />
+        </mxCell>
+        <mxCell id="db_goals" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=9;" value="UserGoal&#xa;GoalMilestone&#xa;UserCategoryProgress&#xa;WeeklyReport" vertex="1">
+          <mxGeometry height="68" width="170" x="970" y="878" as="geometry" />
+        </mxCell>
+        <mxCell id="redis_node" parent="1" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;dashed=1;fontSize=9;" value="Redis Cache&#xa;(Token Blacklist / Leaderboard)" vertex="1">
+          <mxGeometry height="58" width="170" x="970" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="egr1" edge="1" parent="1" source="fe_goals" style="edgeStyle=orthogonalEdgeStyle;" target="api_goals">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="egr2" edge="1" parent="1" source="api_goals" style="edgeStyle=orthogonalEdgeStyle;" target="db_goals">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="870" y="908" />
+              <mxPoint x="870" y="908" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ext_docker" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" value="Docker Compose&#xa;(API + AI + PostgreSQL + Redis)" vertex="1">
+          <mxGeometry height="50" width="180" x="1250" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="ed1" edge="1" parent="1" source="ext_docker" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" target="lane_api" value="Konteynerize Eder">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="945" y="225" />
+              <mxPoint x="945" y="570" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ed2" edge="1" parent="1" source="ext_docker" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" target="lane_db" value="Konteynerize Eder">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ed3" edge="1" parent="1" source="ext_docker" style="edgeStyle=orthogonalEdgeStyle;dashed=1;endArrow=open;" target="lane_ai" value="Konteynerize Eder">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1090" y="225" />
+              <mxPoint x="1090" y="670" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="ea4" edge="1" parent="1" source="api_auth" style="edgeStyle=orthogonalEdgeStyle;entryX=0;entryY=0;entryDx=0;entryDy=20.5;entryPerimeter=0;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="db_user">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="820" y="163" />
+              <mxPoint x="950" y="163" />
+              <mxPoint x="950" y="159" />
+            </Array>
+            <mxPoint x="507.97000000000025" y="199.0128205128205" as="sourcePoint" />
+            <mxPoint x="949.97" y="195.00000000000006" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

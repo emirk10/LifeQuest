@@ -103,17 +103,43 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
         }
 
         // Her görev için puan hesapla
-        var scored = candidateTasks
+        var scoredList = candidateTasks
             .Select(task => new
             {
                 Task = task,
                 Score = CalculateScore(task, user, mood, timeSlot, energyLevel, availableMinutes, abandonedTaskIds, recentlyCompletedTaskIds),
                 Reason = BuildReason(task, user, mood, timeSlot, energyLevel)
             })
-            .Where(x => x.Score >= 0) // skoru 0 olanları da alsın eğer görev kalmadıysa
+            .Where(x => x.Score > 0.0) // Skoru 0.0 olan (filtrelenen) görevleri alma
             .OrderByDescending(x => x.Score)
-            .Take(count)
             .ToList();
+
+        // Eğer filtrelenmiş görev sayısı yetersizse, default hafif görevlerden ekle
+        if (scoredList.Count < count)
+        {
+            var defaultCategory = await _taskReadRepository.Table.Select(t => t.Category).FirstOrDefaultAsync();
+            var fallbackTasks = new List<Domain.Entities.AppTask>
+            {
+                new() { Id = Guid.NewGuid(), Title = "10 Dakikalık Meditasyon", Description = "Zihnini dinlendir ve odaklan.", BaseXP = 50, IsActive = true, Category = defaultCategory, MinLevel = 1, WhyThisTask = "Zihinsel sağlık için.", EstimatedMinutes = 10, MinEnergyLevel = 1, MaxEnergyLevel = 5 },
+                new() { Id = Guid.NewGuid(), Title = "Kısa Bir Yürüyüş", Description = "Açık havada 15 dakika yürüyüş yap.", BaseXP = 60, IsActive = true, Category = defaultCategory, MinLevel = 1, WhyThisTask = "Fiziksel zindelik için.", EstimatedMinutes = 15, MinEnergyLevel = 1, MaxEnergyLevel = 5 },
+                new() { Id = Guid.NewGuid(), Title = "Kitap Oku", Description = "Gelişimin için en az 10 sayfa oku.", BaseXP = 75, IsActive = true, Category = defaultCategory, MinLevel = 1, WhyThisTask = "Kişisel gelişim için.", EstimatedMinutes = 20, MinEnergyLevel = 1, MaxEnergyLevel = 5 }
+            };
+
+            foreach (var fb in fallbackTasks)
+            {
+                if (scoredList.Count >= count) break;
+                if (scoredList.Any(s => s.Task.Title == fb.Title)) continue;
+
+                scoredList.Add(new
+                {
+                    Task = fb,
+                    Score = 0.1,
+                    Reason = "Genel zindelik ve gelişim önerisi"
+                });
+            }
+        }
+
+        var scored = scoredList.Take(count).ToList();
 
         // UserTask olarak kaydet (Status=Suggested)
         var result = new List<TaskRecommendationDto>();
@@ -179,6 +205,25 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
         ArgumentNullException.ThrowIfNull(task);
         ArgumentNullException.ThrowIfNull(user);
 
+        // --- SIKI FİLTRELER (Strict Constraints) ---
+        int estimatedMin = task.EstimatedMinutes ?? (task.BaseXP > 0 ? (int)Math.Ceiling(task.BaseXP / 5.0) : 15);
+        if (estimatedMin > availableMinutes) return 0.0; // Müsait zamandan uzun süren görevleri tamamen ele
+        if (energyLevel < task.MinEnergyLevel) return 0.0; // Enerjinin yetmediği görevleri ele
+
+        // Overwhelmed / Tired / LimitedTime durumlarında katı kurallar
+        if (mood == MoodMode.Overwhelmed)
+        {
+            // Bunaldığında sadece kolay, kısa ve düşük enerjili görevler verilsin
+            if (task.Difficulty != DifficultyLevel.Easy || task.MinEnergyLevel > 2 || estimatedMin > 15)
+                return 0.0;
+        }
+        else if (mood == MoodMode.Tired)
+        {
+            // Yorgunken yüksek enerjili (>=4) ve zor görevleri tamamen ele
+            if (task.MinEnergyLevel >= 4 || task.Difficulty == DifficultyLevel.Hard)
+                return 0.0;
+        }
+
         double score = 0.0;
 
         // 1. GoalMatch (0.25) — kullanıcının hedefleriyle görev kategorisi eşleşiyor mu?
@@ -191,8 +236,7 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
         // 2. TimeMatch (0.20) — görev müsait süreye sığıyor mu?
         bool timeSlotMatch = task.RecommendedTimeSlots == null || !task.RecommendedTimeSlots.Any()
             || task.RecommendedTimeSlots.Contains(timeSlot);
-        bool durationFits = (task.EstimatedMinutes ?? int.MaxValue) <= availableMinutes;
-        if (timeSlotMatch && durationFits) score += 0.20;
+        if (timeSlotMatch) score += 0.20;
 
         // 3. EnergyMatch (0.20) — enerji seviyesi görevin gereksinimlerine uyuyor mu?
         if (energyLevel >= task.MinEnergyLevel && energyLevel <= task.MaxEnergyLevel)
@@ -262,17 +306,30 @@ public sealed class TaskRecommendationService : ITaskRecommendationService
                 score += 0.05;
         }
 
-        // Mood override bonus'lar
-        if (mood == MoodMode.Energetic && task.MinEnergyLevel >= 4)
-            score += 0.10;
-        if (mood == MoodMode.LimitedTime && task.EstimatedMinutes <= 15)
-            score += 0.10;
-        if (mood == MoodMode.Tired && task.MaxEnergyLevel <= 2)
-            score += 0.05;
-        if ((mood == MoodMode.Tired || mood == MoodMode.Overwhelmed) && task.MinEnergyLevel > 3)
-            score -= 0.20; // Yorgunken zorlu görevleri alt sıralara it
+        // --- MOOD OVERRIDES (Ruh Haline Göre Puanlama Düzenlemeleri) ---
+        if (mood == MoodMode.Energetic)
+        {
+            if (task.MinEnergyLevel >= 3)
+                score += 0.25; // Yüksek enerjili görevleri destekle
+            if (task.Difficulty >= DifficultyLevel.Medium)
+                score += 0.20; // Zor/orta görevleri öne çıkar
+        }
+        else if (mood == MoodMode.LimitedTime && estimatedMin <= 15)
+        {
+            score += 0.30; // Çok kısa görevleri öne çıkar
+        }
+        else if (mood == MoodMode.Tired && task.MaxEnergyLevel <= 2)
+        {
+            score += 0.25; // Düşük enerjili görevleri destekle
+        }
+        else if (mood == MoodMode.Overwhelmed)
+        {
+            var catName = task.Category?.Name?.ToLower() ?? string.Empty;
+            if (catName.Contains("gelişim") || catName.Contains("sağlık"))
+                score += 0.35; // Rahatlatıcı ve hafif zihinsel görevleri öne çıkar
+        }
 
-        return Math.Max(0, score);
+        return Math.Max(0.01, score); // En azından çok ufak bir skor kalsın (0 ise elenir)
     }
 
     private static string BuildReason(

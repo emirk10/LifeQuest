@@ -78,8 +78,21 @@ public class DailyQuestWorker : BackgroundService
             .Select(u => u.Id)
             .ToListAsync(ct);
 
-        var isMonday = DateTime.UtcNow.DayOfWeek == DayOfWeek.Monday;
-        var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+        var configuration = services.GetRequiredService<IConfiguration>();
+        var timeZoneId = configuration["AppTimezone"] ?? "Europe/Istanbul";
+        TimeZoneInfo tz;
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time");
+        }
+
+        var localTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        var isMonday = localTime.DayOfWeek == DayOfWeek.Monday;
+        var yesterday = DateOnly.FromDateTime(localTime.AddDays(-1));
 
         // 100'lük batch'ler halinde paralel işleme
         var batches = userIds.Chunk(100).ToList();

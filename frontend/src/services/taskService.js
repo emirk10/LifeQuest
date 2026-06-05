@@ -45,6 +45,11 @@ const taskService = {
     return response.data;
   },
 
+  startTask: async (taskId) => {
+    const response = await axiosClient.post(`/user-tasks/${taskId}/start`);
+    return response.data;
+  },
+
   postponeTask: async (taskId, postponeTo, reason) => {
     const response = await axiosClient.post(`/user-tasks/${taskId}/postpone`, {
       postponeTo,
@@ -67,6 +72,11 @@ const taskService = {
     const response = await axiosClient.post(`/user-tasks/${taskId}/abandon`, {
       reason
     });
+    return response.data;
+  },
+
+  cancelTask: async (taskId) => {
+    const response = await axiosClient.post(`/user-tasks/${taskId}/cancel`);
     return response.data;
   }
 };

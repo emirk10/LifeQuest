@@ -70,19 +70,24 @@ public class MoodController : ControllerBase
         return Ok(new { success = true, data = mood });
     }
 
-    /// <summary>GET /api/mood/history — Son 30 günün mood geçmişi</summary>
+    /// <summary>GET /api/mood/history — Mood geçmişi (paginated)</summary>
     [HttpGet("history")]
-    public async Task<IActionResult> GetMoodHistory()
+    public async Task<IActionResult> GetMoodHistory([FromQuery] int page = 1, [FromQuery] int pageSize = 30)
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
-        var thirtyDaysAgo = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
 
-        var history = await _moodReadRepository
-            .GetWhere(m => m.AppUserId == userId && m.Date >= thirtyDaysAgo, tracking: false)
+        var query = _moodReadRepository
+            .GetWhere(m => m.AppUserId == userId, tracking: false);
+
+        var totalCount = await query.CountAsync();
+
+        var history = await query
             .OrderByDescending(m => m.Date)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(m => new UserDailyMoodDto
             {
                 Id = m.Id,
@@ -97,8 +102,14 @@ public class MoodController : ControllerBase
             })
             .ToListAsync();
 
-        return Ok(new { success = true, data = history });
+        return Ok(new { success = true, data = history, totalCount, page, pageSize });
     }
 }
 
-public record RecordDailyMoodRequest(Domain.Enums.MoodMode MoodMode, int AvailableMinutes, int EnergyLevel, string? JournalEntry, int? SleepQuality);
+public record RecordDailyMoodRequest(
+    Domain.Enums.MoodMode MoodMode, 
+    [System.ComponentModel.DataAnnotations.Range(1, 1440, ErrorMessage = "Müsaitlik süresi 1 ile 1440 dakika arasında olmalıdır.")] int AvailableMinutes, 
+    [System.ComponentModel.DataAnnotations.Range(1, 10, ErrorMessage = "Enerji seviyesi 1 ile 10 arasında olmalıdır.")] int EnergyLevel, 
+    string? JournalEntry, 
+    [System.ComponentModel.DataAnnotations.Range(1, 5, ErrorMessage = "Uyku kalitesi 1 ile 5 arasında olmalıdır.")] int? SleepQuality
+);

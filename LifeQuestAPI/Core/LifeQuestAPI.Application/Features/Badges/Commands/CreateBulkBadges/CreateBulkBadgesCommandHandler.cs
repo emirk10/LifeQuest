@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,7 +32,8 @@ public sealed class CreateBulkBadgesCommandHandler : IRequestHandler<CreateBulkB
                 Name = dto.Name,
                 Description = dto.Description,
                 IconPath = string.IsNullOrEmpty(dto.IconPath) ? "default_badge.png" : dto.IconPath,
-                RequiredLevel = dto.RequiredLevel,
+                RequiredValue = dto.RequiredLevel,
+                Type = dto.CategoryId.HasValue && dto.CategoryId != Guid.Empty ? Domain.Enums.BadgeType.CategoryMaster : Domain.Enums.BadgeType.Level,
                 CategoryId = dto.CategoryId == Guid.Empty ? null : dto.CategoryId,
             });
         }

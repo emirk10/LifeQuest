@@ -1,5 +1,6 @@
 using LifeQuestAPI.Application.Features.Chat.Commands.ProcessChatAction;
 using LifeQuestAPI.Application.Features.Chat.Commands.SendMessage;
+using LifeQuestAPI.Application.Features.Chat.Queries.GetChatHistory;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,7 +30,8 @@ public class ChatController : ControllerBase
         var response = await _mediator.Send(new SendMessageCommandRequest
         {
             UserId = Guid.Parse(userIdString),
-            Message = body.Message
+            Message = body.Message,
+            SaveToHistory = body.SaveToHistory
         });
 
         if (!response.Success) return BadRequest(response);
@@ -60,14 +62,23 @@ public class ChatController : ControllerBase
     [HttpGet("history")]
     public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
     {
-        // Basit implementasyon — gelecekte paged query eklenebilir
-        return Ok(new { message = "Coming soon — SP-03" });
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdString)) return Unauthorized();
+
+        var response = await _mediator.Send(new GetChatHistoryQueryRequest
+        {
+            UserId = Guid.Parse(userIdString),
+            Limit = limit
+        });
+
+        return Ok(response);
     }
 }
 
 public class ChatMessageBody
 {
     public string Message { get; set; } = string.Empty;
+    public bool SaveToHistory { get; set; } = true;
 }
 
 public class ProcessChatActionBody

@@ -6,14 +6,13 @@ FROM python:3.11-slim
 # Çalışma dizini
 WORKDIR /app
 
-# Sistem bağımlılıkları (TensorFlow ve PIL için gerekli + openssl SSL için)
+# Create a non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Sistem bağımlılıkları (Openssl ve CA sertifikaları için)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgl1 \
     openssl \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 # Python bağımlılıkları (önce kopyala → cache kullan)
@@ -23,8 +22,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Uygulama dosyaları
 COPY . .
 
-# Models klasörünü oluştur
-RUN mkdir -p /app/models
+# Models klasörünü oluştur ve izinleri ayarla
+RUN mkdir -p /app/models && chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
 
 # Port
 EXPOSE 5001

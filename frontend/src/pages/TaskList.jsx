@@ -19,7 +19,8 @@ const TaskList = () => {
   const [activeTimerTask, setActiveTimerTask] = useState(null);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const pageSize = 1;
+  const [activeTab, setActiveTab] = useState("active");
+  const pageSize = 10;
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -74,7 +75,23 @@ const TaskList = () => {
     return groups;
   };
 
-  const taskGroups = groupTasksByDate(tasks);
+  const filteredTasks = tasks.filter((task) => {
+    if (activeTab === "active") {
+      return !task.isCompleted && task.status !== "Postponed" && task.status !== "Cancelled" && task.status !== "Abandoned";
+    }
+    if (activeTab === "completed") {
+      return task.isCompleted || task.status === "Completed";
+    }
+    if (activeTab === "postponed") {
+      return task.status === "Postponed";
+    }
+    if (activeTab === "cancelled") {
+      return task.status === "Cancelled" || task.status === "Abandoned";
+    }
+    return true;
+  });
+
+  const taskGroups = groupTasksByDate(filteredTasks);
   const totalPages = Math.ceil(totalCount / pageSize);
 
   const handleCategoryChange = (e) => {
@@ -121,6 +138,40 @@ const TaskList = () => {
       )
     );
     showToast("Görevin ertelemesi iptal edildi.", "success");
+  };
+
+  const handleCancelTask = async (taskId) => {
+    try {
+      const result = await taskService.cancelTask(taskId);
+      if (result.success) {
+        setTasks((prevTasks) =>
+          prevTasks.map((t) => (t.id === taskId ? { ...t, status: 'Cancelled' } : t))
+        );
+        window.dispatchEvent(new Event("userUpdated"));
+        showToast("🚫 Görev iptal edildi.", "success");
+      } else {
+        showToast(result.message || "Görev iptal edilemedi.", "error");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Bir hata oluştu. Lütfen tekrar dene.", "error");
+    }
+  };
+
+  const handleReassignTask = async (taskId) => {
+    try {
+      const result = await taskService.selectTask(taskId);
+      if (result) {
+        setTasks((prevTasks) =>
+          prevTasks.map((t) => (t.id === taskId ? { ...t, status: 'Selected' } : t))
+        );
+        window.dispatchEvent(new Event("userUpdated"));
+        showToast("🔄 Görev yeniden atandı!", "success");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || "Görev yeniden atanamadı.", "error");
+    }
   };
 
 
@@ -210,10 +261,44 @@ const TaskList = () => {
           </div>
         )}
 
+        {/* Tabs Filter */}
+        <div className="flex border-b border-slate-800 gap-6 text-sm font-bold pb-2 overflow-x-auto">
+          {[
+            { id: "active", label: "Aktif Görevler", count: tasks.filter(t => !t.isCompleted && t.status !== "Postponed" && t.status !== "Cancelled" && t.status !== "Abandoned").length },
+            { id: "completed", label: "Tamamlananlar", count: tasks.filter(t => t.isCompleted || t.status === "Completed").length },
+            { id: "postponed", label: "Ertelenenler", count: tasks.filter(t => t.status === "Postponed").length },
+            { id: "cancelled", label: "İptal Edilenler", count: tasks.filter(t => t.status === "Cancelled").length }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`pb-4 px-2 relative transition-all duration-300 whitespace-nowrap ${
+                activeTab === tab.id
+                  ? "text-indigo-400 font-extrabold"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <span>{tab.label}</span>
+              {tab.count > 0 && (
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-black ${
+                  activeTab === tab.id
+                    ? "bg-indigo-500/20 text-indigo-400"
+                    : "bg-slate-800 text-slate-400"
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+              {activeTab === tab.id && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.8)]"></div>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Task List */}
         <div className="space-y-12">
           {!loading ? (
-            tasks.length > 0 ? (
+            filteredTasks.length > 0 ? (
               Object.keys(taskGroups).map((date) => (
                 <div key={date} className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -238,6 +323,8 @@ const TaskList = () => {
                         onPostpone={handlePostponeTask}
                         onCancelPostpone={handleCancelPostponeTask}
                         onFocus={handleFocusTask}
+                        onCancel={handleCancelTask}
+                        onReassign={handleReassignTask}
                       />
                     ))}
                   </div>
@@ -247,17 +334,27 @@ const TaskList = () => {
               <div className="text-center py-16 border-2 border-slate-800/50 rounded-[2rem] bg-slate-900/20 border-dashed flex flex-col items-center gap-6">
                 <div className="text-6xl">🎯</div>
                 <div>
-                  <h3 className="text-white font-bold text-xl">Maceraya Hazır Mısın?</h3>
+                  <h3 className="text-white font-bold text-xl">
+                    {activeTab === "active" && "Maceraya Hazır Mısın?"}
+                    {activeTab === "completed" && "Henüz Tamamlanan Görev Yok"}
+                    {activeTab === "postponed" && "Ertelenen Görev Yok"}
+                    {activeTab === "cancelled" && "İptal Edilen Görev Yok"}
+                  </h3>
                   <p className="text-slate-500 text-sm mt-1">
-                    Şu an aktif bir görevin yok. Hemen yenilerini alabilirsin.
+                    {activeTab === "active" && "Şu an aktif bir görevin yok. Hemen yenilerini alabilirsin."}
+                    {activeTab === "completed" && "Henüz hiçbir görevi tamamlamadın. Aktif görevleri bitirerek başlayabilirsin!"}
+                    {activeTab === "postponed" && "Şu anda ertelenmiş bir görevin bulunmuyor."}
+                    {activeTab === "cancelled" && "Şu anda iptal edilmiş bir görevin bulunmuyor."}
                   </p>
                 </div>
-                <button
-                  onClick={handleRequestNewQuests}
-                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
-                >
-                  GÖREV HAVUZUNA GİT
-                </button>
+                {activeTab === "active" && (
+                  <button
+                    onClick={handleRequestNewQuests}
+                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg shadow-indigo-500/30 transition-all hover:scale-105 active:scale-95"
+                  >
+                    GÖREV HAVUZUNA GİT
+                  </button>
+                )}
               </div>
             )
           ) : (

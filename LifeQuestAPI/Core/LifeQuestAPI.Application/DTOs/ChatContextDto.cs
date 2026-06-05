@@ -13,6 +13,17 @@ public sealed record ChatContextDto
     public int TotalXP { get; init; }
     public string? TodayMood { get; init; }      // "Energetic", "Tired", vb.
     public int AvailableMinutes { get; init; } = 30;
+
+    // Behavioral Analysis & Profile fields
+    public double GeneralLevel { get; init; } = 1.0;
+    public string? MostSkippedCategory { get; init; }
+    public string? PreferredMorningTime { get; init; }
+    public string? DifficultyPreference { get; init; }
+    public List<string> Strengths { get; init; } = new();
+    public List<string> Weaknesses { get; init; } = new();
+    public string? MotivationFactor { get; init; }
+    public string? LifestyleType { get; init; }
+    public string? PrimaryFocusArea { get; init; }
 }
 
 public sealed record TaskContextDto

@@ -8,6 +8,11 @@ const MOOD_LABELS = {
   2: { label: 'Yorgun', emoji: '😴', color: '#6366f1' },
   3: { label: 'Bunalmış', emoji: '😰', color: '#ef4444' },
   4: { label: 'Vaktim Kısıtlı', emoji: '⏰', color: '#3b82f6' },
+  'Energetic': { label: 'Enerjik', emoji: '⚡', color: '#f59e0b' },
+  'Normal': { label: 'Normal', emoji: '😊', color: '#10b981' },
+  'Tired': { label: 'Yorgun', emoji: '😴', color: '#6366f1' },
+  'Overwhelmed': { label: 'Bunalmış', emoji: '😰', color: '#ef4444' },
+  'LimitedTime': { label: 'Vaktim Kısıtlı', emoji: '⏰', color: '#3b82f6' },
 };
 
 const SLOT_LABELS = {
@@ -16,6 +21,11 @@ const SLOT_LABELS = {
   2: 'Öğleden Sonra',
   3: 'Akşam',
   4: 'Gece',
+  'Morning': 'Sabah',
+  'Noon': 'Öğle',
+  'Afternoon': 'Öğleden Sonra',
+  'Evening': 'Akşam',
+  'Night': 'Gece',
 };
 
 export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh, isPoolMode = false, isLimitReached = false, selectedIds = new Set() }) {

@@ -37,4 +37,5 @@ public class UserBehaviorSummaryDto
 
     // ─── Chatbot Önerisi ──────────────────────────────────────────────────
     public string? InsightMessage { get; set; } // Sistem tarafından üretilen kişisel mesaj
+    public List<string> AISystemInsights { get; set; } = new();
 }

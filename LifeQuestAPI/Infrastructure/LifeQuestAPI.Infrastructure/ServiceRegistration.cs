@@ -35,6 +35,10 @@ public static class ServiceRegistration
         services.AddScoped<LifeQuestAPI.Application.Abstractions.ITaskRecommendationService,
             LifeQuestAPI.Infrastructure.Services.DailyQuest.TaskRecommendationService>();
 
+        // ML.NET AI Görev öneri servisi (isim çakışmasını önlemek için explicit namespace kullanılmıştır)
+        services.AddSingleton<LifeQuestAPI.Application.Abstractions.AI.ITaskRecommendationService,
+            LifeQuestAPI.Infrastructure.Services.AI.TaskRecommendationService>();
+
         // SP-03: Davranış analizi servisi
         services.AddScoped<IUserBehaviorAnalysisService, UserBehaviorAnalysisService>();
 
@@ -60,7 +64,15 @@ public static class ServiceRegistration
         })
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
-            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
+            ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => 
+            {
+                var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+                if (env == "Development")
+                {
+                    return true;
+                }
+                return sslPolicyErrors == System.Net.Security.SslPolicyErrors.None;
+            }
         })
         .AddPolicyHandler(retryPolicy)
         .AddPolicyHandler(circuitBreakerPolicy);

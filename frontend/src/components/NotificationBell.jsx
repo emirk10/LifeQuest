@@ -45,6 +45,8 @@ const NotificationBell = () => {
                     });
                     return newGroups;
                 });
+            }).catch(err => {
+                console.error("Bildirimler okundu işaretlenirken hata oluştu:", err);
             });
         }
         setIsOpen(!isOpen);

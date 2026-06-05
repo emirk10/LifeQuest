@@ -2,7 +2,10 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using LifeQuestAPI.Application.Repositories;
+using LifeQuestAPI.Application.Abstractions.Notifications;
+using LifeQuestAPI.Application.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +18,26 @@ namespace LifeQuestAPI.API.Controllers;
 public class ReportsController : ControllerBase
 {
     private readonly IWeeklyReportReadRepository _reportReadRepository;
+    private readonly IWeeklyReportWriteRepository _reportWriteRepository;
     private readonly IUserTaskReadRepository _userTaskReadRepository;
+    private readonly IAppUserReadRepository _userReadRepository;
+    private readonly IAppNotificationService _notificationService;
+    private readonly IUserBehaviorAnalysisService _behaviorService;
 
-    public ReportsController(IWeeklyReportReadRepository reportReadRepository, IUserTaskReadRepository userTaskReadRepository)
+    public ReportsController(
+        IWeeklyReportReadRepository reportReadRepository,
+        IWeeklyReportWriteRepository reportWriteRepository,
+        IUserTaskReadRepository userTaskReadRepository,
+        IAppUserReadRepository userReadRepository,
+        IAppNotificationService notificationService,
+        IUserBehaviorAnalysisService behaviorService)
     {
         _reportReadRepository = reportReadRepository;
+        _reportWriteRepository = reportWriteRepository;
         _userTaskReadRepository = userTaskReadRepository;
+        _userReadRepository = userReadRepository;
+        _notificationService = notificationService;
+        _behaviorService = behaviorService;
     }
 
     [HttpGet]
@@ -48,7 +65,6 @@ public class ReportsController : ControllerBase
 
         var userId = Guid.Parse(userIdString);
 
-        // Son 7 günün başı (Yerel saat ve UTC farkından etkilenmemek için .Date kullanıyoruz)
         var today = DateTime.UtcNow.Date;
         var startDay = today.AddDays(-6);
 
@@ -56,7 +72,7 @@ public class ReportsController : ControllerBase
             .Where(ut => ut.AppUserId == userId && ut.Status == Domain.Enums.AppTaskStatus.Completed && ut.CompletedAt != null && ut.CompletedAt >= startDay)
             .ToListAsync();
 
-        var dailyData = new System.Collections.Generic.List<object>();
+        var dailyData = new List<object>();
 
         for (int i = 6; i >= 0; i--)
         {
@@ -77,23 +93,18 @@ public class ReportsController : ControllerBase
     }
 
     [HttpPost("trigger-weekly-report")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TriggerWeeklyReport()
     {
-        var userReadRepo = HttpContext.RequestServices.GetRequiredService<IAppUserReadRepository>();
-        var userTaskReadRepo = HttpContext.RequestServices.GetRequiredService<IUserTaskReadRepository>();
-        var reportWriteRepo = HttpContext.RequestServices.GetRequiredService<IWeeklyReportWriteRepository>();
-        var notificationService = HttpContext.RequestServices.GetRequiredService<Application.Abstractions.Notifications.IAppNotificationService>();
-        var behaviorService = HttpContext.RequestServices.GetRequiredService<Application.Abstractions.IUserBehaviorAnalysisService>();
-
         var weekEnd = DateTime.UtcNow;
         var weekStart = weekEnd.AddDays(-7);
 
-        var users = await userReadRepo.GetAll(false).ToListAsync();
+        var users = await _userReadRepository.GetAll(false).ToListAsync();
 
         int generatedCount = 0;
         foreach (var user in users)
         {
-            var thisWeekTasks = await userTaskReadRepo.Table
+            var thisWeekTasks = await _userTaskReadRepository.Table
                 .Include(ut => ut.AppTask)
                 .Where(ut => ut.AppUserId == user.Id && ut.AssignedAt >= weekStart)
                 .ToListAsync();
@@ -136,20 +147,20 @@ public class ReportsController : ControllerBase
                 CreatedAt = DateTime.UtcNow
             };
 
-            await reportWriteRepo.AddAsync(report);
+            await _reportWriteRepository.AddAsync(report);
             generatedCount++;
 
-            await notificationService.SendNotificationAsync(
+            await _notificationService.SendNotificationAsync(
                 user.Id, 
                 "Haftalık Raporun Hazır! 📊", 
                 $"Bu hafta {completedTasks.Count} görev tamamladın ve toplam {totalXpEarned} XP kazandın.", 
                 "Report");
 
-            try { await behaviorService.AnalyzeAndUpdateUserBehaviorAsync(user.Id); }
+            try { await _behaviorService.AnalyzeAndUpdateUserBehaviorAsync(user.Id); }
             catch { }
         }
 
-        await reportWriteRepo.SaveAsync();
+        await _reportWriteRepository.SaveAsync();
 
         return Ok(new { success = true, message = $"{generatedCount} kullanıcı için haftalık rapor başarıyla üretildi!" });
     }
