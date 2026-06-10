@@ -16,10 +16,10 @@ public class TaskRecommendationDto
     public string? BadgeHint { get; set; }
     public string Status { get; set; } = "Suggested";
 
-    /// <summary>0.0 - 1.0 arası uyum skoru</summary>
+    
     public double MatchScore { get; set; }
 
-    /// <summary>Neden önerildiğini Türkçe açıklayan metin</summary>
+    
     public string RecommendationReason { get; set; } = string.Empty;
 }
 

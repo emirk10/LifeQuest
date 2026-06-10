@@ -24,7 +24,7 @@ public sealed class ShareUserTaskCommandHandler
         if (userTask == null)
             return new() { Success = false, Message = "Görev bulunamadı." };
 
-        // Token oluştur (UUID)
+        
         userTask.ShareToken = Guid.NewGuid().ToString("N");
         userTask.ShareTokenExpiresAt = DateTime.UtcNow.AddDays(7);
 
@@ -36,7 +36,7 @@ public sealed class ShareUserTaskCommandHandler
             Success = true,
             Message = "Paylaşım linki oluşturuldu.",
             ShareToken = userTask.ShareToken,
-            ShareUrl = $"/share/{userTask.ShareToken}" // Frontend route
+            ShareUrl = $"/share/{userTask.ShareToken}" 
         };
     }
 }

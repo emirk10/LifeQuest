@@ -13,7 +13,7 @@ import {
   TypingIndicator,
 } from "./ChatBotCards";
 
-// ─── Mesaj fabrikası ──────────────────────────────────────────────────────────
+
 const mkMsg = (sender, content, extras = {}) => ({
   id: Date.now() + Math.random(),
   sender,
@@ -22,7 +22,7 @@ const mkMsg = (sender, content, extras = {}) => ({
   ...extras,
 });
 
-// ─── Intent → Flow Mapping (AI yanıtından sonra doğru flow'a yönlendirme) ─────
+
 const INTENT_FLOW_MAP = {
   gorev_sorgula: "tasks_menu",
   istatistik: "stats_menu",
@@ -55,7 +55,7 @@ const INTENT_LABELS = {
   alakasiz: "🤔 Genel", yardim: "❓ Yardım",
 };
 
-// ─── Ana Bileşen ──────────────────────────────────────────────────────────────
+
 const ChatBotFlow = () => {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -65,7 +65,7 @@ const ChatBotFlow = () => {
   });
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
-  const [activeTab, setActiveTab] = useState("assistant"); // "assistant" | "history"
+  const [activeTab, setActiveTab] = useState("assistant"); 
   const [historyMessages, setHistoryMessages] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [unread, setUnread] = useState(0);
@@ -79,12 +79,12 @@ const ChatBotFlow = () => {
   const initDone = useRef(false);
   const flowCtxRef = useRef({});
 
-  // Sync ref with state
+  
   useEffect(() => {
     flowCtxRef.current = flowCtx;
   }, [flowCtx]);
 
-  // Proaktif nudge dinleyici
+  
   useSignalR({
     onNotification: (notif) => {
       if (notif?.type === 'ProactiveNudge') {
@@ -107,7 +107,7 @@ const ChatBotFlow = () => {
     }
   });
 
-  // Persistence
+  
   useEffect(() => {
     if (user && messages.length > 0) {
       sessionStorage.setItem(`lq_chat_msgs_${user.id}`, JSON.stringify(messages));
@@ -120,7 +120,7 @@ const ChatBotFlow = () => {
     }
   }, [flowCtx, user]);
 
-  // Kullanıcı değişince (logout / farklı hesapla login) her şeyi sıfırla
+  
   useEffect(() => {
     if (!user) {
       setIsOpen(false);
@@ -130,7 +130,7 @@ const ChatBotFlow = () => {
       initDone.current = false;
       return;
     }
-    // Başlangıç mesajı eğer hafızada yoksa
+    
     if (messages.length === 0 && !initDone.current) {
       initDone.current = true;
       pushNode("main_menu");
@@ -139,7 +139,7 @@ const ChatBotFlow = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // Bazen içerik (grafik vs) geç yüklendiği için kısa süre sonra tekrar dene
+    
     const timer = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 300);
@@ -207,7 +207,7 @@ const ChatBotFlow = () => {
     if (!isOpen) setUnread(c => c + 1);
   }, [isOpen]);
 
-  // Dışarıdan tetikleme (dashboard toast)
+  
   useEffect(() => {
     const handler = (e) => {
       setIsOpen(true);
@@ -217,9 +217,9 @@ const ChatBotFlow = () => {
     };
     window.addEventListener("openChatBot", handler);
     return () => window.removeEventListener("openChatBot", handler);
-  }, [addMsg]); // addMsg değişince handler'ı güncelle
+  }, [addMsg]); 
 
-  // ─── Node'u işle ve mesaj olarak ekle ────────────────────────────────────
+  
   const pushNode = useCallback(async (nodeId, ctx = {}) => {
     const node = FLOWS[nodeId];
     if (!node) return;
@@ -245,9 +245,9 @@ const ChatBotFlow = () => {
         setLoading(false);
         const nextNode = FLOWS[node.nextNode];
         if (!nextNode) return;
-        // Dynamic node'lar renderDataNode'a gönderilmez, pushNode ile işlenir
+        
         if (nextNode.type === "dynamic") {
-          // API'den gelen veriyi context'e aktar
+          
           const dataCtx = { ...mergedCtx };
           if (data.mood) dataCtx.moodFromApi = data.mood;
           await pushNode(node.nextNode, dataCtx);
@@ -264,16 +264,16 @@ const ChatBotFlow = () => {
     }
 
     if (node.type === "dynamic" && node.dynamicType === "motivation_with_mood") {
-      // Mood verisi ya API'den geldi (moodFromApi) ya da burada fetch edelim
+      
       const existingMood = mergedCtx.moodFromApi || null;
       if (existingMood !== undefined && existingMood !== null) {
-        // Mood var — direkt AI motivasyon çağrısına geç
+        
         const newCtx = { ...mergedCtx, moodHint: getMoodHint(existingMood.energyLevel) };
         flowCtxRef.current = newCtx;
         setFlowCtx(newCtx);
         await pushNode("motivation_ai_call", newCtx);
       } else {
-        // Mood yok — önce mood'unu sor
+        
         addMsg(mkMsg("bot", { type: "loading", text: "Ruh halin kontrol ediliyor..." }));
         setLoading(true);
         try {
@@ -297,14 +297,14 @@ const ChatBotFlow = () => {
       }
       return;
     }
-  }, [addMsg]); // flowCtxRef.current kullanıldığı için flowCtx bağımlılığı gerekmez
+  }, [addMsg]); 
 
-  // ─── Data node'u render et ─────────────────────────────────────────────────
+  
   const renderDataNode = (node, data, ctx) => {
     if (!node) return;
 
     switch (node.type) {
-      // Aktif / Ertelenen görev listeleri
+      
       case "task_list":
       case "postponed_task_list": {
         const tasks = data.tasks || [];
@@ -316,7 +316,7 @@ const ChatBotFlow = () => {
         break;
       }
 
-      // Tamamlanan görevler
+      
       case "completed_task_list": {
         const tasks = data.tasks || [];
         if (tasks.length === 0) {
@@ -327,7 +327,7 @@ const ChatBotFlow = () => {
         break;
       }
 
-      // Havuz (seç butonu olan liste)
+      
       case "pool_task_list": {
         const tasks = data.tasks || [];
         if (tasks.length === 0) {
@@ -338,7 +338,7 @@ const ChatBotFlow = () => {
         break;
       }
 
-      // Kişiselleştirilmiş öneriler
+      
       case "suggested_task_cards": {
         const tasks = data.tasks || [];
         if (tasks.length === 0) {
@@ -397,10 +397,10 @@ const ChatBotFlow = () => {
         }));
         break;
 
-      // Motivasyon — AI veya offline
+      
       case "motivation_card":
         if (!data.message || typeof data.message !== "string") {
-          // Güvenlik: boş veya geçersiz cevap gelirse offline fallback
+          
           addMsg(mkMsg("bot", { type: "text", text: "💪 Bugün küçük bir adım bile büyük bir zafer. Devam et!" }));
         } else {
           addMsg(mkMsg("bot", {
@@ -414,7 +414,7 @@ const ChatBotFlow = () => {
         break;
 
       default:
-        // JSON dump yerine kullanıcı dostu mesaj
+        
         addMsg(mkMsg("bot", {
           type: "options",
           text: "İşlem tamamlandı! Başka bir şey yapayım mı?",
@@ -424,17 +424,17 @@ const ChatBotFlow = () => {
     }
   };
 
-  // ─── Buton tıklaması ──────────────────────────────────────────────────────
+  
   const handleOption = useCallback(async (opt, msgId) => {
     if (loading) return;
 
-    // Kullanıcı mesajı ekle
+    
     addMsg(mkMsg("user", { type: "text", text: opt.label }));
 
-    // Eski mesajdaki seçenekleri devre dışı bırak
+    
     setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: { ...m.content, optionsUsed: true } } : m));
 
-    // Context güncelle
+    
     const ctxUpdate = {};
     if (opt.categoryHint !== undefined) ctxUpdate.categoryHint = opt.categoryHint;
     if (opt.difficultyHint !== undefined) ctxUpdate.difficultyHint = opt.difficultyHint;
@@ -446,7 +446,7 @@ const ChatBotFlow = () => {
     flowCtxRef.current = newCtx;
     setFlowCtx(newCtx);
 
-    // Özel aksiyon
+    
     if (opt.action === "navigate" && opt.target) {
       window.location.href = opt.target;
       return;
@@ -482,13 +482,13 @@ const ChatBotFlow = () => {
     }
   };
 
-  // ─── Görev atama ─────────────────────────────────────────────────────────
+  
   const handleAssign = async (task) => {
     setLoading(true);
     try {
       const res = await assignTask(task.id || task.taskId);
       
-      // Backend'den 200 dönse de success false (örn: limit aşıldı) olabilir
+      
       if (res && (res.success === false || res.Success === false)) {
         throw new Error(res.message || res.Message || "Görev eklenemedi.");
       }
@@ -551,7 +551,7 @@ const ChatBotFlow = () => {
     }
   };
 
-  // ─── Sohbeti sıfırla ──────────────────────────────────────────────────────
+  
   const handleReset = () => {
     sessionStorage.removeItem(`lq_chat_msgs_${user?.id}`);
     sessionStorage.removeItem(`lq_chat_ctx_${user?.id}`);
@@ -562,16 +562,16 @@ const ChatBotFlow = () => {
     setTimeout(() => pushNode("main_menu"), 50);
   };
 
-  // ─── Serbest metin gönderimi (AI Chat) ──────────────────────────────────────
+  
   const handleFreeText = useCallback(async (textOverride) => {
     const trimmed = (textOverride || inputText).trim();
     if (!trimmed || loading) return;
 
-    // Kullanıcı mesajını ekle
+    
     addMsg(mkMsg("user", { type: "text", text: trimmed }));
     setInputText("");
 
-    // Yükleniyor animasyonu
+    
     addMsg(mkMsg("bot", { type: "loading", text: "Düşünüyorum..." }));
     setLoading(true);
 
@@ -581,18 +581,18 @@ const ChatBotFlow = () => {
         freeTextMessage: trimmed,
       });
 
-      // Loading mesajını kaldır
+      
       setMessages(prev => prev.filter(m => m.content?.type !== "loading"));
       setLoading(false);
 
-      // AI yanıtını göster (metadata ile)
+      
       addMsg(mkMsg("bot", {
         type: "ai_response",
         text: result.aiResponse,
         ...result
       }));
 
-      // Proaktif Ruh Hali Tetikleyici
+      
       if (result.shouldShowMoodSelector) {
         setTimeout(() => {
           pushNode("mood_update_intro");
@@ -600,29 +600,29 @@ const ChatBotFlow = () => {
         return;
       }
 
-      // Flow yönlendirmesi varsa, ilgili node'un butonlarını göster
+      
       const flowTarget = result.flowRedirect || INTENT_FLOW_MAP[result.intent];
       const hasAiOptions = !!(result.suggestedTasks?.length || result.actions?.length || result.suggestions?.length || result.suggestedTaskId);
 
       if (flowTarget && FLOWS[flowTarget]) {
         const targetNode = FLOWS[flowTarget];
-        // Kısa gecikme ile butonları göster (doğal his vermesi için)
+        
         setTimeout(() => {
           if (targetNode.type === "api_call") {
-            // API call node ise direkt çalıştır
+            
             pushNode(flowTarget, flowCtxRef.current);
           } else {
-            // Options node ise butonları göster
+            
             addMsg(mkMsg("bot", {
               type: "options",
-              text: null, // AI yanıtı zaten gösterildi
+              text: null, 
               options: targetNode.options,
               nodeId: flowTarget,
             }));
           }
         }, 300);
       } else if (!hasAiOptions) {
-        // Flow yönlendirmesi yoksa VE AI tarafında özel seçenek/öneri yoksa ana menü butonlarını göster
+        
         setTimeout(() => {
           addMsg(mkMsg("bot", {
             type: "options",
@@ -647,7 +647,7 @@ const ChatBotFlow = () => {
     }
   };
 
-  // ─── Mesaj render ────────────────────────────────────────────────────────
+  
   const renderMessage = (msg) => {
     const { content } = msg;
     const isUser = msg.sender === "user";
@@ -677,20 +677,20 @@ const ChatBotFlow = () => {
     return (
       <div key={msg.id} className="flex justify-start">
         <div className="max-w-[92%] space-y-2 w-full">
-          {/* Bot avatar */}
+          {}
           <div className="flex items-center gap-1.5 mb-1">
             <div className="w-5 h-5 bg-indigo-600/50 rounded-full flex items-center justify-center text-[10px]">🤖</div>
             <span className="text-[9px] text-slate-500">{msg.time}</span>
           </div>
 
-          {/* Metin (ai_response hariç — kendi render'ı var) */}
+          {}
           {content.text && content.type !== "ai_response" && (
             <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
               <p className="text-sm text-slate-100 leading-relaxed whitespace-pre-wrap">{content.text}</p>
             </div>
           )}
 
-          {/* AI Yanıtı (metadata ile) */}
+          {}
           {content.type === "ai_response" && (
             <div className="space-y-2 w-full">
               <div className="bg-slate-800 rounded-2xl rounded-bl-md px-4 py-3 border border-slate-700/50">
@@ -713,7 +713,7 @@ const ChatBotFlow = () => {
                   )}
                 </div>
 
-                {/* Tekil görev önerisi (eski uyumluluk) */}
+                {}
                 {content.suggestedTaskId && (
                   <div className="mt-3 bg-indigo-500/10 rounded-xl p-3 border border-indigo-500/30">
                     <div className="flex justify-between items-start mb-2">
@@ -723,7 +723,7 @@ const ChatBotFlow = () => {
                     <button
                       onClick={() => {
                         handleAssign({ id: content.suggestedTaskId, title: content.suggestedTaskTitle });
-                        // Atandıktan sonra butonu gizle (opsiyonel)
+                        
                         setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, content: { ...m.content, suggestedTaskId: null } } : m));
                       }}
                       className="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 rounded-lg transition-colors"
@@ -733,7 +733,7 @@ const ChatBotFlow = () => {
                   </div>
                 )}
 
-                {/* Eylemler / Aksiyonlar (content.actions) */}
+                {}
                 {content.actions?.length > 0 && !content.optionsUsed && (
                   <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-slate-700/30">
                     {content.actions.map((act, i) => {
@@ -752,7 +752,7 @@ const ChatBotFlow = () => {
                   </div>
                 )}
 
-                {/* Hızlı Yanıtlar / Öneriler (content.suggestions) */}
+                {}
                 {content.suggestions?.length > 0 && !content.optionsUsed && (
                   <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-slate-700/30">
                     {content.suggestions.map((sug, i) => {
@@ -781,7 +781,7 @@ const ChatBotFlow = () => {
                 )}
               </div>
 
-              {/* Önerilen Görevler (content.suggestedTasks) */}
+              {}
               {content.suggestedTasks?.length > 0 && (
                 <div className="space-y-2 mt-2">
                   <p className="text-[11px] text-slate-400 font-bold tracking-wider uppercase pl-1">Önerilen Görevler</p>
@@ -800,7 +800,7 @@ const ChatBotFlow = () => {
             </div>
           )}
 
-          {/* Özel kartlar */}
+          {}
           {content.type === "profile_card" && <ProfileCard profile={content.profile} />}
           {content.type === "weekly_stats" && <WeeklyStatsCard report={content.report} />}
           {content.type === "xp_chart" && <XPBreakdownChart breakdown={content.breakdown} />}
@@ -809,7 +809,7 @@ const ChatBotFlow = () => {
           {content.type === "motivation_card" && <MotivationCard message={content.message} isAI={content.isAI} />}
           {content.type === "mood_saved" && <MoodSavedCard mood={content.mood} />}
 
-          {/* Aktif / ertelenen görev listesi (Etkileşimli) */}
+          {}
           {content.type === "task_cards" && content.tasks?.map(t => (
             <TaskCard 
               key={t.id || t.taskId} 
@@ -821,12 +821,12 @@ const ChatBotFlow = () => {
             />
           ))}
 
-          {/* Tamamlananlar */}
+          {}
           {content.type === "completed_tasks" && content.tasks?.map(t => (
             <CompletedTaskCard key={t.id || t.taskId} task={t} />
           ))}
 
-          {/* Havuz görevleri — seç butonu var */}
+          {}
           {content.type === "pool_tasks" && content.tasks?.map(t => (
             <TaskCard
               key={t.id || t.taskId}
@@ -860,7 +860,7 @@ const ChatBotFlow = () => {
             </div>
           )}
 
-          {/* Seçenek Butonları */}
+          {}
           {content.options?.length > 0 && !content.optionsUsed && (
             <div className="flex flex-wrap gap-2 pt-1">
               {content.options.map((opt, i) => (
@@ -924,12 +924,12 @@ const ChatBotFlow = () => {
     );
   };
 
-  // Giriş yapılmamışsa chatbot'u tamamen gizle
+  
   if (!user) return null;
 
   return (
     <>
-      {/* Floating Buton */}
+      {}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-6 right-6 z-50 w-16 h-16 rounded-full flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 ${
@@ -951,11 +951,11 @@ const ChatBotFlow = () => {
         )}
       </button>
 
-      {/* Chat Penceresi */}
+      {}
       {isOpen && (
         <div className="fixed inset-0 sm:inset-auto sm:bottom-24 sm:right-6 z-50 w-full h-full sm:w-[420px] sm:h-[650px] bg-slate-900 sm:rounded-3xl border-t sm:border border-slate-700/50 shadow-2xl shadow-black/50 flex flex-col overflow-hidden">
           
-          {/* Header */}
+          {}
           <div className="p-4 bg-gradient-to-r from-indigo-600 to-indigo-700 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
               <button onClick={() => setIsOpen(false)} className="sm:hidden text-white/80 hover:text-white mr-1">
@@ -981,7 +981,7 @@ const ChatBotFlow = () => {
             </button>
           </div>
 
-          {/* Tab Navigation */}
+          {}
           <div className="flex border-b border-slate-800 bg-slate-900 shrink-0">
             <button
               onClick={() => setActiveTab("assistant")}
@@ -1005,7 +1005,7 @@ const ChatBotFlow = () => {
             </button>
           </div>
 
-          {/* Mesajlar */}
+          {}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
             {activeTab === "history" ? (
               historyLoading ? (
@@ -1026,7 +1026,7 @@ const ChatBotFlow = () => {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Alt Kısım / Giriş Alanı */}
+          {}
           {activeTab === "assistant" ? (
             <div className="p-3 border-t border-slate-800 bg-slate-900/80 backdrop-blur-sm shrink-0">
               <div className="flex gap-2">
@@ -1063,7 +1063,7 @@ const ChatBotFlow = () => {
 
 export default ChatBotFlow;
 
-// ─── Yardımcı ─────────────────────────────────────────────────────────────────
+
 function getMoodHint(energyLevel) {
   if (!energyLevel) return "normal";
   if (energyLevel >= 8) return "pozitif";

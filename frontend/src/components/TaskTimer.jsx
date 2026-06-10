@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const TaskTimer = ({ task, onComplete, onClose }) => {
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // Default 25 mins Pomodoro
+  const [timeLeft, setTimeLeft] = useState(25 * 60); 
   const [isActive, setIsActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
@@ -13,7 +13,7 @@ const TaskTimer = ({ task, onComplete, onClose }) => {
       }, 1000);
     } else if (timeLeft === 0) {
       clearInterval(timerRef.current);
-      // Optional: auto-complete or notification
+      
     } else {
       clearInterval(timerRef.current);
     }
@@ -69,7 +69,7 @@ const TaskTimer = ({ task, onComplete, onClose }) => {
           </div>
         </div>
 
-        {/* Big Timer Circle Display */}
+        {}
         <div className="relative w-64 h-64 sm:w-80 sm:h-80 mx-auto flex items-center justify-center">
           <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
             <circle
@@ -95,7 +95,7 @@ const TaskTimer = ({ task, onComplete, onClose }) => {
           </div>
         </div>
 
-        {/* Controls */}
+        {}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <button
             onClick={toggleTimer}

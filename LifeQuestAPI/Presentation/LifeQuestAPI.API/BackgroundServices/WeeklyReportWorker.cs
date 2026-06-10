@@ -32,18 +32,18 @@ public class WeeklyReportWorker : BackgroundService
         {
             var now = DateTime.UtcNow;
 
-            // Pazar günü (Sunday) saat 23:00'te çalışsın
+            
             if (now.DayOfWeek == DayOfWeek.Sunday && now.Hour == 23)
             {
                 _logger.LogInformation("Haftalık raporlar hesaplanmaya başlanıyor...");
                 await GenerateReportsAsync(stoppingToken);
                 
-                // Bir kez çalıştıktan sonra sonraki haftaya kadar veya ertesi saate kadar uyusun
+                
                 await Task.Delay(TimeSpan.FromHours(2), stoppingToken);
             }
             else
             {
-                // Her 30 dakikada bir kontrol et
+                
                 await Task.Delay(TimeSpan.FromMinutes(30), stoppingToken);
             }
         }
@@ -78,7 +78,7 @@ public class WeeklyReportWorker : BackgroundService
 
             var totalXpEarned = completedTasks.Sum(t => t.EarnedXp);
 
-            // Basit AI/Hesaplama özetleri
+            
             string insight = "Bu hafta harika bir iş çıkardın!";
             string recommendation = "Önümüzdeki hafta Sağlık kategorisine daha fazla odaklanabilirsin.";
 
@@ -98,7 +98,7 @@ public class WeeklyReportWorker : BackgroundService
                 TasksCompleted = completedTasks.Count,
                 TasksFailed = failedTasks.Count,
                 TotalXPEarned = totalXpEarned,
-                StreakDays = 0, // Günlük streak logu eklendiğinde buradan çekilebilir
+                StreakDays = 0, 
                 StrongestCategory = categoryGroups.FirstOrDefault()?.CategoryId.ToString() ?? "N/A",
                 WeakestCategory = categoryGroups.LastOrDefault()?.CategoryId.ToString() ?? "N/A",
                 AIInsight = insight,
@@ -110,7 +110,7 @@ public class WeeklyReportWorker : BackgroundService
 
             await reportWriteRepo.AddAsync(report);
             
-            // Bildirim At
+            
             await notificationService.SendNotificationAsync(
                 user.Id, 
                 "Haftalık Raporun Hazır! 📊", 
@@ -121,7 +121,7 @@ public class WeeklyReportWorker : BackgroundService
         await reportWriteRepo.SaveAsync();
         _logger.LogInformation($"Haftalık raporlar {users.Count} kullanıcı için oluşturuldu ve kaydedildi.");
 
-        // SP-03: Davranış analizi güncelle
+        
         var behaviorService = scope.ServiceProvider.GetRequiredService<IUserBehaviorAnalysisService>();
         foreach (var user in users)
         {

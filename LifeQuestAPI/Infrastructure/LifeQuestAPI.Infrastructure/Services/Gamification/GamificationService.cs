@@ -48,18 +48,18 @@ public sealed class GamificationService : IGamificationService
         return await AddExperienceWithTaskAsync(userId, xpAmount, null, categoryId);
     }
 
-    /// <summary>
-    /// SP-01: XpCompensationRate ve IsCompensated bonus destekli XP ekleme.
-    /// Ertelenen görevlerde rate=0.70, normal tamamlamada rate=1.0, telafi tamamlamada +%10 bonus.
-    /// </summary>
+    
+    
+    
+    
     public async Task<AppUser> AddExperienceWithTaskAsync(Guid userId, int baseXpAmount, UserTask? userTask, Guid? categoryId = null)
     {
         var user = await _userReadRepository.GetByIdAsync(userId.ToString(), tracking: true);
         if (user == null) throw new Exception("Kullanıcı bulunamadı!");
 
-        // XP hesabı: CompensationRate uygula
+        
         decimal compensationRate = userTask?.XpCompensationRate ?? 1.0m;
-        // Telafi bonusu: Postponed görev tamamlanıyorsa +%10
+        
         if (userTask?.IsCompensated == true)
             compensationRate = Math.Min(compensationRate + 0.10m, 1.0m);
 
@@ -72,7 +72,7 @@ public sealed class GamificationService : IGamificationService
         user.GeneralLevel = CalculateLevel(user.TotalXP);
         user.LastActiveAt = DateTime.UtcNow;
 
-        // Seviye arttıkça günlük görev limitini güncelle (Max 10)
+        
         UpdateDailyTaskLimit(user);
 
         _userWriteRepository.Update(user);
@@ -173,11 +173,11 @@ public sealed class GamificationService : IGamificationService
     private void UpdateDailyTaskLimit(AppUser user)
     {
         int level = (int)Math.Floor(user.GeneralLevel);
-        // Formül: 1-2->3, 3-4->4, 5-6->5, 7-8->6, 9-10->7, 11-12->8, 13-14->9, 15+->10
+        
         int calculatedLimit = 3 + (level - 1) / 2;
         if (calculatedLimit > 10) calculatedLimit = 10;
 
-        // Kullanıcının limiti mevcut seviyesine göre düşük kalmışsa otomatik yükselt
+        
         if (calculatedLimit > user.DailyTaskLimit)
         {
             user.DailyTaskLimit = calculatedLimit;
@@ -186,13 +186,13 @@ public sealed class GamificationService : IGamificationService
 
     private double CalculateLevel(int totalXp)
     {
-        // L1: 0, L2: 500, L3: 1500, L5: 4000, L10: 15000, 10+ için her +5000 XP
+        
         if (totalXp < 500) return 1.0 + (totalXp / 500.0);
         if (totalXp < 1500) return 2.0 + ((totalXp - 500) / 1000.0);
-        if (totalXp < 4000) return 3.0 + ((totalXp - 1500) / 1250.0); // L3->L5 arası (2 level fark, 2500 XP)
-        if (totalXp < 15000) return 5.0 + ((totalXp - 4000) / 2200.0); // L5->L10 arası (5 level fark, 11000 XP)
+        if (totalXp < 4000) return 3.0 + ((totalXp - 1500) / 1250.0); 
+        if (totalXp < 15000) return 5.0 + ((totalXp - 4000) / 2200.0); 
         
-        // 10+ seviye: 15000 + (level - 10) * 5000
+        
         return 10.0 + ((totalXp - 15000) / 5000.0);
     }
 }

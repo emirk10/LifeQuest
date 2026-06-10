@@ -4,14 +4,14 @@ using MediatR;
 
 namespace LifeQuestAPI.Application.Features.User.Commands.Vacation;
 
-// ─── Request ──────────────────────────────────────────────────────────────────
+
 
 public class EndVacationCommandRequest : IRequest<VacationCommandResponse>
 {
     public Guid UserId { get; set; }
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+
 
 public sealed class EndVacationCommandHandler
     : IRequestHandler<EndVacationCommandRequest, VacationCommandResponse>
@@ -50,7 +50,7 @@ public sealed class EndVacationCommandHandler
         _userWrite.Update(user);
         await _userWrite.SaveAsync();
 
-        // Chatbot hoşgeldin mesajı (SignalR push)
+        
         await _notifService.SendNotificationAsync(
             user.Id,
             "Hoş geldin! 🎉",

@@ -61,7 +61,7 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
 
         _userTaskWriteRepository.Update(userTask);
 
-        // Kullanıcının toplam erteleme sayısını artır
+        
         var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true);
         if (user != null)
         {
@@ -69,7 +69,7 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
             _userWriteRepository.Update(user);
         }
 
-        // Yarın için aynı görevi Suggested statüsüyle yeni UserTask oluştur
+        
         var tomorrowTask = new UserTask
         {
             AppUserId = request.UserId,
@@ -83,14 +83,14 @@ public class PostponeTaskCommandHandler : IRequestHandler<PostponeTaskCommandReq
         await _userTaskWriteRepository.AddAsync(tomorrowTask);
         await _userTaskWriteRepository.SaveAsync();
 
-        // Gerçek zamanlı davranış analizi tetikleme
+        
         try
         {
             await _behaviorAnalysisService.AnalyzeAndUpdateUserBehaviorAsync(request.UserId, cancellationToken);
         }
         catch
         {
-            // Analiz hatası ertelemeyi engellemesin
+            
         }
 
         return new PostponeResultDto

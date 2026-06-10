@@ -52,21 +52,21 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
   const [journalEntry, setJournalEntry] = useState('');
   const [sleepQuality, setSleepQuality] = useState(3);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: mood seç, 2: detaylar
+  const [step, setStep] = useState(1); 
 
   let maxEnergy = 5;
   let maxMinutes = 240;
   let limitMessage = '';
 
   if (selectedMood) {
-    if (selectedMood.key === 3) { // Bunalmış
+    if (selectedMood.key === 3) { 
       maxEnergy = 2;
       maxMinutes = 15;
       limitMessage = 'Bunalmış hissettiğiniz için sadece en kolay ve kısa görevler (maks 15 dk, 2 enerji) seçilebilir.';
-    } else if (selectedMood.key === 2) { // Yorgun
+    } else if (selectedMood.key === 2) { 
       maxEnergy = 3;
       limitMessage = 'Yorgun hissettiğiniz için yüksek enerjili görevler (maks 3 enerji) sınırlandırılmıştır.';
-    } else if (selectedMood.key === 4) { // Vaktim Kısıtlı
+    } else if (selectedMood.key === 4) { 
       maxMinutes = 20;
       limitMessage = 'Zamanınız kısıtlı olduğu için hızlı görevler (maks 20 dk) sınırlandırılmıştır.';
     }
@@ -75,7 +75,7 @@ export default function DailyMoodSelector({ onMoodRecorded }) {
   const handleMoodSelect = (mood) => {
     setSelectedMood(mood);
     setStep(2);
-    // Mood'a göre otomatik enerji ve süre öneri
+    
     if (mood.key === 0) { setEnergyLevel(5); setAvailableMinutes(60); }
     else if (mood.key === 1) { setEnergyLevel(3); setAvailableMinutes(30); }
     else if (mood.key === 2) { setEnergyLevel(2); setAvailableMinutes(20); }

@@ -29,7 +29,7 @@ const DashBoard = () => {
   const [taskToAccept, setTaskToAccept] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
 
-  // SP-03: useSignalR hook ile proaktif nudge dinleme
+  
   useSignalR({
     onNotification: (notif) => {
       if (notif?.type === 'ProactiveNudge') {
@@ -77,7 +77,7 @@ const DashBoard = () => {
           console.error("İstatistik hatası:", err);
         }
 
-        // AI Motivasyon Çekme
+        
         try {
           const aiResponse = await axiosClient.post('/chat/send', { 
             message: "Beni motive et" 
@@ -91,7 +91,7 @@ const DashBoard = () => {
           setMotivation("Bugün hedeflerine ulaşmak için harika bir gün! Küçük adımlar büyük sonuçlar getirir.");
         }
 
-        // Mood Check
+        
         try {
           const moodRes = await moodApi.getTodayMood();
           if (moodRes.data?.data) {
@@ -166,7 +166,7 @@ const DashBoard = () => {
             <div className="h-1.5 w-24 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.6)]"></div>
           </div>
           
-          {/* AI Motivasyon Widget */}
+          {}
           <div className="bg-gradient-to-r from-indigo-900/50 to-violet-900/50 border border-indigo-500/30 rounded-2xl p-4 flex items-center gap-4 max-w-md shadow-lg backdrop-blur-sm relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full group-hover:bg-indigo-500/20 transition-all"></div>
             <div className="text-3xl relative z-10 animate-bounce">🤖</div>
@@ -177,7 +177,7 @@ const DashBoard = () => {
           </div>
         </section>
 
-        {/* Günlük Özet Bar */}
+        {}
         {todayMood && (
           <div className="bg-slate-900/60 p-5 rounded-[2rem] border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 mb-4 shadow-xl backdrop-blur-md">
             <div className="flex items-center gap-4">
@@ -298,7 +298,7 @@ const DashBoard = () => {
           </div>
         </div>
       </div>
-      {/* SP-03: Nudge toast bildirimleri */}
+      {}
       <ToastContainer
         position="bottom-right"
         theme="dark"
@@ -306,7 +306,7 @@ const DashBoard = () => {
         progressClassName="!bg-indigo-500"
       />
 
-      {/* Mood Modal */}
+      {}
       {showMoodModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
@@ -330,7 +330,7 @@ const DashBoard = () => {
         </div>
       )}
 
-      {/* Görev Kabul/Red Etme Modalı */}
+      {}
       {showTaskModal && taskToAccept && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
           <div className="bg-slate-900/90 border border-indigo-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.2)] p-6 relative">

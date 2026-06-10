@@ -11,7 +11,7 @@ export const SignalRProvider = ({ children }) => {
     const { user } = useAuth();
     const connectionRef = useRef(null);
     const [isConnected, setIsConnected] = useState(false);
-    const handlersRef = useRef([]); // Array of { eventName, callback }
+    const handlersRef = useRef([]); 
 
     useEffect(() => {
         if (!user) {
@@ -23,7 +23,7 @@ export const SignalRProvider = ({ children }) => {
             return;
         }
 
-        if (connectionRef.current) return; // Already connecting/connected
+        if (connectionRef.current) return; 
 
         const connection = new HubConnectionBuilder()
             .withUrl(HUB_URL, {
@@ -38,7 +38,7 @@ export const SignalRProvider = ({ children }) => {
         connection.onreconnected(() => setIsConnected(true));
         connection.onclose(() => setIsConnected(false));
 
-        // Register any queued handlers to this new connection
+        
         handlersRef.current.forEach(({ eventName, callback }) => {
             connection.on(eventName, callback);
         });
@@ -68,7 +68,7 @@ export const SignalRProvider = ({ children }) => {
     }, [user]);
 
     const on = (eventName, callback) => {
-        // Prevent duplicate handler registrations in queue
+        
         const exists = handlersRef.current.some(h => h.eventName === eventName && h.callback === callback);
         if (!exists) {
             handlersRef.current.push({ eventName, callback });

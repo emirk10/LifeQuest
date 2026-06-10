@@ -23,7 +23,7 @@ public static class ServiceRegistration
 {
     public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Mevcut servisler
+        
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<IEmailService, SmtpEmailService>();
         services.AddScoped<IGamificationService, GamificationService>();
@@ -31,25 +31,25 @@ public static class ServiceRegistration
         services.AddScoped<IDailyQuestService, DailyQuestService>();
         services.AddScoped<IChallengeService, ChallengeService>();
 
-        // SP-01: Bağlam-duyarlı görev öneri servisi (explicit namespace - isim çakışması önleme)
+        
         services.AddScoped<LifeQuestAPI.Application.Abstractions.ITaskRecommendationService,
             LifeQuestAPI.Infrastructure.Services.DailyQuest.TaskRecommendationService>();
 
-        // ML.NET AI Görev öneri servisi (isim çakışmasını önlemek için explicit namespace kullanılmıştır)
+        
         services.AddSingleton<LifeQuestAPI.Application.Abstractions.AI.ITaskRecommendationService,
             LifeQuestAPI.Infrastructure.Services.AI.TaskRecommendationService>();
 
-        // SP-03: Davranış analizi servisi
+        
         services.AddScoped<IUserBehaviorAnalysisService, UserBehaviorAnalysisService>();
 
-        // AI Chat servisi — Python mikro servise bağlanır
-        // MISS-010: 5s timeout + 3 retry (exponential backoff) + circuit breaker
+        
+        
         var aiServiceBaseUrl = configuration["AIService:BaseUrl"] ?? "http://localhost:5001";
 
         var retryPolicy = HttpPolicyExtensions
             .HandleTransientHttpError()
             .WaitAndRetryAsync(3, retryAttempt =>
-                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))); // 2s, 4s, 8s
+                TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))); 
 
         var circuitBreakerPolicy = HttpPolicyExtensions
             .HandleTransientHttpError()
@@ -60,7 +60,7 @@ public static class ServiceRegistration
         services.AddHttpClient<IAIChatService, AIChatService>(client =>
         {
             client.BaseAddress = new Uri(aiServiceBaseUrl);
-            client.Timeout = TimeSpan.FromSeconds(10); // MISS-010: 5s yerine 10s (3 deneme için)
+            client.Timeout = TimeSpan.FromSeconds(10); 
         })
         .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
         {
@@ -78,4 +78,4 @@ public static class ServiceRegistration
         .AddPolicyHandler(circuitBreakerPolicy);
     }
 }
-
+

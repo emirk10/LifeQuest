@@ -21,11 +21,11 @@ public sealed class UserTask : BaseEntity
     public DateTime? CompletedAt { get; set; }
     public DateTime? DueDate { get; set; }
 
-    // ─── SP-01: Yeni Alanlar ──────────────────────────────────────────────
-    /// <summary>Görevin önerildiği zaman dilimi</summary>
+    
+    
     public DayTimeSlot? DayTimeSlot { get; set; }
 
-    // ─── Erteleme Alanları ────────────────────────────────────────────────
+    
     public bool IsPostponed { get; set; } = false;
     public int PostponeCount { get; set; } = 0;
     public DateOnly? PostponedTo { get; set; }
@@ -33,29 +33,29 @@ public sealed class UserTask : BaseEntity
     public DateTime? CompensatedAt { get; set; }
     public string? SkipReason { get; set; }
 
-    // ─── Enerji & Mood Snapshot ────────────────────────────────────────────
-    /// <summary>Timer başladığında kullanıcının enerji seviyesi (1-5)</summary>
+    
+    
     public int? UserEnergyAtStart { get; set; }
 
-    /// <summary>Timer başladığında kullanıcının modu</summary>
+    
     public MoodMode? UserMoodAtStart { get; set; }
 
-    // ─── Duraklatma ───────────────────────────────────────────────────────
+    
     public DateTime? PausedAt { get; set; }
     public int TotalPausedMinutes { get; set; } = 0;
 
-    // ─── XP Hesaplaması ───────────────────────────────────────────────────
-    /// <summary>Normal tamamlama = 1.0, erteleme sonrası = 0.70, telafi = 1.10</summary>
+    
+    
     public decimal XpCompensationRate { get; set; } = 1.0m;
 
-    // ─── FEAT-002: Micro-journaling ──────────────────────────────────────
+    
     public string? ReflectionText { get; set; }
 
-    // ─── FEAT-008: Tagging ───────────────────────────────────────────────
+    
     [Column(TypeName = "jsonb")]
     public List<string>? CustomTags { get; set; }
 
-    // ─── FEAT-001: Sharing ───────────────────────────────────────────────
+    
     public string? ShareToken { get; set; }
     public DateTime? ShareTokenExpiresAt { get; set; }
 }

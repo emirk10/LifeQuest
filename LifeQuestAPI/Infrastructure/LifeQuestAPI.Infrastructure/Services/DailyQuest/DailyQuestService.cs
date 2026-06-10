@@ -44,7 +44,7 @@ public class DailyQuestService : IDailyQuestService
     {
         _logger.LogInformation($"Toplu görev dağıtımı başlıyor... {DateTime.UtcNow}");
 
-        // SP-03 / Phase 3: Eski görevleri temizle
+        
         await ExpireOldTasksAsync();
 
         var users = await _userReadRepository.GetAll(false)
@@ -53,7 +53,7 @@ public class DailyQuestService : IDailyQuestService
 
         foreach (var user in users)
         {
-            // SP-04: Tatil modundaki kullanıcılara görev atama
+            
             if (user.IsOnVacation)
             {
                 _logger.LogDebug("DailyQuestWorker: {UserId} tatil modunda, görev atlanıyor.", user.Id);
@@ -87,7 +87,7 @@ public class DailyQuestService : IDailyQuestService
             throw new Exception("Mevcut görevlerini tamamlamadan yeni görev alamazsın!");
         }
 
-        // SP-05: Kullanıcının günlük limit kontrolünü sağla
+        
         var tasksTakenToday = await _userTaskReadRepository.Table
             .CountAsync(ut => ut.AppUserId == userId && ut.AssignedAt.Date == DateTime.UtcNow.Date);
 
@@ -106,12 +106,12 @@ public class DailyQuestService : IDailyQuestService
             .GetWhere(m => m.AppUserId == user.Id && m.Date == today, tracking: false)
             .FirstOrDefaultAsync();
 
-        // SP-01: Akıllı öneri motorunu (ML.NET tabanlı) kullanarak en uygun 6 görevi seç
-        // Bu servis kendi içinde UserTask kayıtlarını Suggested olarak oluşturur ve kaydeder.
+        
+        
         var recommendations = await _taskRecommendationService.GetContextualRecommendationsAsync(
             user.Id,
             todayMood?.MoodMode ?? MoodMode.Normal,
-            DayTimeSlot.Morning, // Default değer, gerekirse saate göre hesaplanabilir
+            DayTimeSlot.Morning, 
             todayMood?.EnergyLevel ?? 3,
             todayMood?.AvailableMinutes ?? 30,
             6);
@@ -125,7 +125,7 @@ public class DailyQuestService : IDailyQuestService
     {
         var now = DateTime.UtcNow;
 
-        // 1. Süresi dolmuş Suggested görevler -> Expired
+        
         var expiredSuggested = await _userTaskReadRepository.GetWhere(ut =>
             ut.Status == AppTaskStatus.Suggested &&
             ut.DueDate < now, tracking: true).ToListAsync();
@@ -136,7 +136,7 @@ public class DailyQuestService : IDailyQuestService
             _userTaskWriteRepository.Update(ut);
         }
 
-        // 2. Süresi dolmuş Selected/InProgress görevler -> Abandoned (Cezalı durum)
+        
         var abandonedTasks = await _userTaskReadRepository.GetWhere(ut =>
             (ut.Status == AppTaskStatus.Selected || ut.Status == AppTaskStatus.InProgress) &&
             ut.DueDate < now, tracking: true).ToListAsync();

@@ -14,7 +14,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LifeQuestAPI.Persistence.Migrations
 {
     [DbContext(typeof(LifeQuestDbContext))]
-    [Migration("20260605084050_InitialCreate")]
+    [Migration("20260610190017_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

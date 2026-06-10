@@ -32,13 +32,13 @@ public sealed class LifeQuestDbContext : DbContext
     public DbSet<UserTaskInteraction> UserTaskInteractions { get; set; }
     public DbSet<UserDailyMood> UserDailyMoods { get; set; }
 
-    // SP-05 Yeni Entity'ler
+    
     public DbSet<OnboardingResponse> OnboardingResponses { get; set; }
     public DbSet<GoalMilestone> GoalMilestones { get; set; }
     public DbSet<ChallengeParticipant> ChallengeParticipants { get; set; }
     public DbSet<Kudos> Kudos { get; set; }
 
-    // Social Feed
+    
     public DbSet<Post> Posts { get; set; }
     public DbSet<PostTag> PostTags { get; set; }
     public DbSet<PostLike> PostLikes { get; set; }
@@ -55,7 +55,7 @@ public sealed class LifeQuestDbContext : DbContext
             .WithMany()
             .HasForeignKey(u => u.AppRoleId);
 
-        // Friendship - self-referencing
+        
         modelBuilder.Entity<Friendship>()
             .HasOne(f => f.Requester)
             .WithMany()
@@ -72,7 +72,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(f => new { f.RequesterId, f.AddresseeId })
             .IsUnique();
 
-        // Challenge - self-referencing
+        
         modelBuilder.Entity<Challenge>()
             .HasOne(c => c.Challenger)
             .WithMany()
@@ -85,7 +85,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasForeignKey(c => c.OpponentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // SP-05: ChallengeParticipants
+        
         modelBuilder.Entity<ChallengeParticipant>()
             .HasOne(cp => cp.Challenge)
             .WithMany(c => c.Participants)
@@ -98,19 +98,19 @@ public sealed class LifeQuestDbContext : DbContext
             .HasForeignKey(cp => cp.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // UserAchievement unique constraint
+        
         modelBuilder.Entity<UserAchievement>()
             .HasIndex(ua => new { ua.AppUserId, ua.AchievementId })
             .IsUnique();
 
-        // UserTaskInteraction indexes for ML queries
+        
         modelBuilder.Entity<UserTaskInteraction>()
             .HasIndex(uti => uti.AppUserId);
 
         modelBuilder.Entity<UserTaskInteraction>()
             .HasIndex(uti => uti.WasCompleted);
 
-        // Notification index
+        
         modelBuilder.Entity<Notification>()
             .HasIndex(n => new { n.AppUserId, n.CreatedAt })
             .HasDatabaseName("IX_Notification_UserId_CreatedAt");
@@ -119,12 +119,12 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(n => new { n.AppUserId, n.IsRead, n.CreatedAt })
             .HasDatabaseName("IX_Notification_UserId_IsRead_CreatedAt");
 
-        // WeeklyReport index
+        
         modelBuilder.Entity<WeeklyReport>()
             .HasIndex(wr => new { wr.AppUserId, wr.WeekStartDate })
             .IsUnique();
 
-        // UserDailyMood — UNIQUE(AppUserId, Date) + indexes
+        
         modelBuilder.Entity<UserDailyMood>()
             .HasIndex(m => new { m.AppUserId, m.Date })
             .IsUnique();
@@ -133,7 +133,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(m => m.Date);
 
 
-        // AppUser jsonb kolonları
+        
         modelBuilder.Entity<AppUser>()
             .Property(u => u.UserGoals)
             .HasColumnType("jsonb")
@@ -151,13 +151,13 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(u => u.Interests)
             .HasColumnType("jsonb");
 
-        // AppUser.Goals → UserGoalsList navigation
+        
         modelBuilder.Entity<AppUser>()
             .HasMany(u => u.UserGoalsList)
             .WithOne(g => g.AppUser)
             .HasForeignKey(g => g.AppUserId);
 
-        // AppTask jsonb kolonları
+        
         modelBuilder.Entity<AppTask>()
             .Property(t => t.RecommendedTimeSlots)
             .HasColumnType("jsonb");
@@ -178,7 +178,7 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(ut => ut.CustomTags)
             .HasColumnType("jsonb");
 
-        // SP-03 / Phase 3: Database Constraints
+        
         modelBuilder.Entity<AppTask>(entity =>
         {
             entity.ToTable(t => t.HasCheckConstraint("CK_AppTask_BaseXP", "\"BaseXP\" >= 0"));
@@ -198,7 +198,7 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(m => m.ActionsOfferedJson)
             .HasColumnType("jsonb");
 
-        // Migration Fix: Defaults
+        
         modelBuilder.Entity<AppUser>()
             .Property(u => u.NudgeEnabled)
             .HasDefaultValue(true);
@@ -207,7 +207,7 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(ut => ut.XpCompensationRate)
             .HasDefaultValue(1.0m);
 
-        // SP-05: Task Limit defaults
+        
         modelBuilder.Entity<AppUser>()
             .Property(u => u.DailyTaskLimit)
             .HasDefaultValue(3);
@@ -216,7 +216,7 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(u => u.WeeklyTaskLimit)
             .HasDefaultValue(7);
 
-        // SP-05: AppUser yeni jsonb kolonlari
+        
         modelBuilder.Entity<AppUser>()
             .Property(u => u.WorkDays)
             .HasColumnType("jsonb");
@@ -225,7 +225,7 @@ public sealed class LifeQuestDbContext : DbContext
             .Property(u => u.MotivationKillers)
             .HasColumnType("jsonb");
 
-        // SP-05: OnboardingResponse
+        
         modelBuilder.Entity<OnboardingResponse>()
             .HasOne(o => o.AppUser)
             .WithMany(u => u.OnboardingResponses)
@@ -235,7 +235,7 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<OnboardingResponse>()
             .HasIndex(o => new { o.AppUserId, o.QuestionKey });
 
-        // SP-05: GoalMilestone
+        
         modelBuilder.Entity<GoalMilestone>()
             .HasOne(gm => gm.UserGoal)
             .WithMany(g => g.Milestones)
@@ -245,12 +245,12 @@ public sealed class LifeQuestDbContext : DbContext
         modelBuilder.Entity<GoalMilestone>()
             .HasIndex(gm => new { gm.UserGoalId, gm.OrderIndex });
 
-        // SP-05: UserGoal jsonb
+        
         modelBuilder.Entity<UserGoal>()
             .Property(g => g.LinkedCategoryIds)
             .HasColumnType("jsonb");
 
-        // IMP-006: Eksik performans indeksleri
+        
         modelBuilder.Entity<UserTask>()
             .HasIndex(ut => new { ut.AppUserId, ut.Status, ut.CreatedAt })
             .HasDatabaseName("IX_UserTask_UserId_Status_CreatedAt");
@@ -271,7 +271,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(t => new { t.IsActive, t.CategoryId })
             .HasDatabaseName("IX_AppTask_IsActive_CategoryId");
 
-        // Social Feed — Post ilişkileri
+        
         modelBuilder.Entity<Post>()
             .HasOne(p => p.AppUser)
             .WithMany()
@@ -294,7 +294,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasForeignKey(pt => pt.AppTaskId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // PostLike
+        
         modelBuilder.Entity<PostLike>()
             .HasOne(pl => pl.Post)
             .WithMany(p => p.Likes)
@@ -311,7 +311,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(pl => new { pl.PostId, pl.AppUserId })
             .IsUnique();
 
-        // PostComment
+        
         modelBuilder.Entity<PostComment>()
             .HasOne(pc => pc.Post)
             .WithMany(p => p.Comments)
@@ -324,7 +324,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasForeignKey(pc => pc.AppUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Kudos — FEAT-005
+        
         modelBuilder.Entity<Kudos>()
             .HasOne(k => k.Sender)
             .WithMany()
@@ -347,7 +347,7 @@ public sealed class LifeQuestDbContext : DbContext
             .HasIndex(k => new { k.SenderId, k.UserTaskId })
             .IsUnique();
 
-        // Soft Delete Global Filter
+        
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))

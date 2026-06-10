@@ -2,11 +2,11 @@ namespace LifeQuestAPI.Domain.Enums;
 
 public enum DayTimeSlot
 {
-    Morning = 0,   // 06:00 - 11:00
-    Noon = 1,      // 11:00 - 14:00
-    Afternoon = 2, // 14:00 - 18:00
-    Evening = 3,   // 18:00 - 22:00
-    Night = 4      // 22:00 - 06:00
+    Morning = 0,   
+    Noon = 1,      
+    Afternoon = 2, 
+    Evening = 3,   
+    Night = 4      
 }
 
 public static class DayTimeSlotExtensions

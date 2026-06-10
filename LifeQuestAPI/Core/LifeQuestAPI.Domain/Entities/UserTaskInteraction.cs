@@ -11,7 +11,7 @@ public sealed class UserTaskInteraction : BaseEntity
     public Guid AppTaskId { get; set; }
     public AppTask AppTask { get; set; } = default!;
 
-    // ML Feature'ları
+    
     public int UserLevel { get; set; }
     public int UserCategoryLevel { get; set; }
     public int TaskDifficulty { get; set; }
@@ -21,7 +21,7 @@ public sealed class UserTaskInteraction : BaseEntity
     public int UserCompletedTaskCount { get; set; }
     public int UserStreakDays { get; set; }
 
-    // ML Label'ları
+    
     public bool WasCompleted { get; set; }
     public float CompletionTimeHours { get; set; }
     public float Rating { get; set; }

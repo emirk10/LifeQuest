@@ -11,7 +11,7 @@ const chatService = {
     return response.data;
   },
 
-  // Bağlamsal motivasyon mesajı (mood + level dahil)
+  
   getMotivation: async ({ moodHint, level, totalXp }) => {
     const parts = [];
     if (moodHint) parts.push(`Kullanıcı şu an ${moodHint} hissediyor.`);

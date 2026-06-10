@@ -36,7 +36,7 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // UPSERT — bugün zaten kayıt varsa güncelle
+        
         var existing = await _moodReadRepository
             .GetWhere(m => m.AppUserId == request.UserId && m.Date == today, tracking: true)
             .FirstOrDefaultAsync(cancellationToken);
@@ -67,7 +67,7 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
             await _moodWriteRepository.AddAsync(existing);
         }
 
-        // Bugün kullanıcı için önerilmiş ama henüz seçilmemiş (Suggested) görevleri temizle
+        
         var suggestedTasks = await _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId 
                 && ut.Status == AppTaskStatus.Suggested
@@ -80,7 +80,7 @@ public class RecordDailyMoodCommandHandler : IRequestHandler<RecordDailyMoodComm
             _userTaskWriteRepository.Remove(task);
         }
 
-        // Kullanıcının LastActiveAt alanını güncelle
+        
         var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true);
         if (user != null)
         {

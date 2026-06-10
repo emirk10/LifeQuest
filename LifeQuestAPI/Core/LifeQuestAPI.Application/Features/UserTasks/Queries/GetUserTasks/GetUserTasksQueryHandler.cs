@@ -28,7 +28,7 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
             query = query.Where(ut => ut.AppTask.CategoryId == request.CategoryId.Value);
         }
 
-        // Benzersiz tarihleri bul (Görevin atandığı günler)
+        
         var uniqueDates = await query
             .Select(ut => ut.AssignedAt.Date)
             .Distinct()
@@ -40,7 +40,7 @@ public sealed class GetUserTasksQueryHandler : IRequestHandler<GetUserTasksQuery
 
         if (totalCount > 0)
         {
-            // İlgili sayfadaki (gündeki) tarihi seç
+            
             var targetIndex = Math.Clamp(request.Page - 1, 0, totalCount - 1);
             var targetDate = uniqueDates[targetIndex];
 

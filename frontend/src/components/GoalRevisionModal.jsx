@@ -2,18 +2,18 @@ import React, { useState } from "react";
 import axiosClient from "../api/axiosClient";
 import { getUserIdFromToken } from "../utils/authUtils";
 
-/**
- * GoalRevisionModal — SP-04
- * ChatBot'tan gelen goal_revision aksiyonuna karşılık açılır.
- * Kullanıcıya zayıf kategoriyi güncellemesini veya devam etmesini sorar.
- *
- * Props:
- *   isOpen: bool
- *   category: string — revize önerilen kategori adı
- *   currentGoals: string[] — mevcut hedefler
- *   onClose: () => void
- *   onUpdated: (updatedGoals: string[]) => void
- */
+
+
+
+
+
+
+
+
+
+
+
+
 const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpdated }) => {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -48,7 +48,7 @@ const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpd
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-700/50 rounded-[2rem] shadow-2xl max-w-md w-full p-6 space-y-5 animate-fade-in">
-        {/* Başlık */}
+        {}
         <div className="text-center">
           <span className="text-4xl block mb-2">🎯</span>
           <h2 className="text-xl font-black text-white">Hedef Revizyonu</h2>
@@ -57,7 +57,7 @@ const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpd
           </p>
         </div>
 
-        {/* Analiz özeti */}
+        {}
         <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
           <p className="text-amber-200 text-sm leading-relaxed">
             <span className="font-bold text-amber-400">'{category}'</span> kategorisini
@@ -65,7 +65,7 @@ const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpd
           </p>
         </div>
 
-        {/* Mevcut hedefler */}
+        {}
         <div>
           <p className="text-xs text-slate-500 mb-2 font-medium uppercase tracking-wider">
             Mevcut Hedeflerin
@@ -91,7 +91,7 @@ const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpd
           )}
         </div>
 
-        {/* Sonuç mesajı */}
+        {}
         {done ? (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 text-center">
             <p className="text-emerald-300 font-semibold text-sm">{resultMsg}</p>
@@ -115,7 +115,7 @@ const GoalRevisionModal = ({ isOpen, category, currentGoals = [], onClose, onUpd
           </div>
         )}
 
-        {/* Kapat */}
+        {}
         <button
           onClick={onClose}
           className="w-full text-xs text-slate-600 hover:text-slate-400 transition-colors"

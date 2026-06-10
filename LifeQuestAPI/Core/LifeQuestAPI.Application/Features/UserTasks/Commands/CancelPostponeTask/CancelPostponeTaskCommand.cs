@@ -42,11 +42,11 @@ public class CancelPostponeTaskCommandHandler : IRequestHandler<CancelPostponeTa
         if (!userTask.IsPostponed || userTask.Status != AppTaskStatus.Postponed)
             throw new InvalidOperationException("Bu görev ertelenmiş durumda değil.");
 
-        // Yarın için oluşturulan görevi bul ve sil
+        
         if (userTask.PostponedTo.HasValue)
         {
             var dueDate = userTask.PostponedTo.Value.ToDateTime(TimeOnly.MinValue);
-            // PostgreSQL UTC time matching
+            
             dueDate = DateTime.SpecifyKind(dueDate, DateTimeKind.Utc);
             
             var tomorrowTask = await _userTaskReadRepository
@@ -62,17 +62,17 @@ public class CancelPostponeTaskCommandHandler : IRequestHandler<CancelPostponeTa
             }
         }
 
-        // Görevi eski haline döndür
+        
         userTask.IsPostponed = false;
         userTask.PostponeCount = Math.Max(0, userTask.PostponeCount - 1);
         userTask.PostponedTo = null;
-        userTask.Status = AppTaskStatus.Selected; // Erteleme iptal edilince görev listesine geri döner
+        userTask.Status = AppTaskStatus.Selected; 
         userTask.SkipReason = null;
         userTask.XpCompensationRate = 1.0m;
 
         _userTaskWriteRepository.Update(userTask);
 
-        // Kullanıcının toplam erteleme sayısını düşür
+        
         var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true);
         if (user != null)
         {

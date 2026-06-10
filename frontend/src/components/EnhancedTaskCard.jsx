@@ -10,7 +10,7 @@ const DIFFICULTY_CONFIG = {
 
 export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMode = false, isLimitReached = false }) {
   const [actionLoading, setActionLoading] = useState(null);
-  const [status, setStatus] = useState(task.status?.toLowerCase() || task.Status?.toLowerCase() || 'suggested'); // suggested | selected | inprogress | paused | postponed
+  const [status, setStatus] = useState(task.status?.toLowerCase() || task.Status?.toLowerCase() || 'suggested'); 
   const [showPostpone, setShowPostpone] = useState(false);
   const [postponeReason, setPostponeReason] = useState('');
 
@@ -101,7 +101,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
 
   return (
     <div className={`task-card ${isAlreadySelected ? 'task-card--selected' : ''} task-card--${status}`}>
-      {/* Match Score Badge */}
+      {}
       <div className="task-match-badge">
         <div
           className="match-ring"
@@ -112,7 +112,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
         <span className="match-label">uyum</span>
       </div>
 
-      {/* Card Header */}
+      {}
       <div className="task-card-header">
         <span className="task-category">{task.categoryName}</span>
         <span className="task-difficulty" style={{ color: diff.color }}>
@@ -120,11 +120,11 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
         </span>
       </div>
 
-      {/* Title & Description */}
+      {}
       <h3 className="task-title">{task.title}</h3>
       <p className="task-description">{task.description}</p>
 
-      {/* Why This Task */}
+      {}
       {task.whyThisTask && (
         <div className="task-why">
           <span>💡</span>
@@ -132,27 +132,27 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
         </div>
       )}
 
-      {/* Recommendation Reason */}
+      {}
       {task.recommendationReason && (
         <div className="task-reason">
           🎯 {task.recommendationReason}
         </div>
       )}
 
-      {/* Meta */}
+      {}
       <div className="task-meta">
         {task.estimatedMinutes && <span>⏱️ {task.estimatedMinutes} dk</span>}
         <span>✨ {task.baseXP} XP</span>
       </div>
 
-      {/* Badge Hint */}
+      {}
       {task.badgeHint && (
         <div className="task-badge-hint">
           🏅 {task.badgeHint}
         </div>
       )}
 
-      {/* Actions */}
+      {}
       <div className="task-actions">
         {status === 'suggested' && (
           <button
@@ -164,7 +164,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
           </button>
         )}
 
-        {/* Havuz modunda "Başla", "Duraklat" gibi butonları gizliyoruz */}
+        {}
         {isPoolMode ? (
           <>
             {(status === 'selected' || status === 'inprogress') && (
@@ -205,7 +205,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
               </button>
             )}
 
-            {/* Erteleme butonu her durumda görünür */}
+            {}
             {['suggested', 'selected', 'paused'].includes(status) && (
               <button
                 className="task-btn task-btn--postpone"
@@ -228,7 +228,7 @@ export default function EnhancedTaskCard({ task, isSelected, onSelect, isPoolMod
         )}
       </div>
 
-      {/* Postpone Panel */}
+      {}
       {showPostpone && (
         <div className="postpone-panel">
           <p>Neden erteliyorsun? (isteğe bağlı)</p>

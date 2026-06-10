@@ -32,7 +32,7 @@ function App() {
         <AuthProvider>
           <SignalRProvider>
             <Routes>
-              {/* ... routes ... */}
+              {}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<Register />} />
               <Route path="/verify-email" element={<VerifyEmailPage />} />

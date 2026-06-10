@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace LifeQuestAPI.Infrastructure.Services.BehaviorAnalysis;
 
-/// <summary>
-/// SP-03: Son 30 günün UserTask davranışını analiz eder.
-/// Haftalık rapor sonrası WeeklyReportWorker tarafından tetiklenir.
-/// </summary>
+
+
+
+
 public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
 {
     private readonly IAppUserReadRepository _userReadRepository;
@@ -48,7 +48,7 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
                 .FirstOrDefaultAsync(ct);
             if (user == null) return;
 
-            // ── AverageDailyActiveMinutes — EstimatedMinutes proxy olarak kullan ──
+            
             var completedTasks = tasks.Where(t => t.Status == AppTaskStatus.Completed).ToList();
             user.AverageDailyActiveMinutes = completedTasks.Any()
                 ? (int)completedTasks
@@ -57,7 +57,7 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
                     .Average(t => t?.AppTask?.EstimatedMinutes ?? 0)
                 : 0;
 
-            // ── MostSkippedCategory ────────────────────────────────────────
+            
             var skippedByCategory = tasks
                 .Where(t => t.Status is AppTaskStatus.Abandoned or AppTaskStatus.Expired)
                 .GroupBy(t => t.AppTask?.Category?.Name ?? "Diğer")
@@ -65,10 +65,10 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
                 .FirstOrDefault();
             user.MostSkippedCategory = skippedByCategory?.Key;
 
-            // ── TotalPostponeCount ─────────────────────────────────────────
+            
             user.TotalPostponeCount = tasks.Sum(t => t.PostponeCount);
 
-            // ── PreferredMorningTime — en çok tamamlanan saat dilimi ───────
+            
             var completedWithSlot = completedTasks.Where(t => t.DayTimeSlot.HasValue).ToList();
             if (completedWithSlot.Any())
             {
@@ -109,12 +109,12 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
         var completed = tasks.Where(t => t.Status == AppTaskStatus.Completed).ToList();
         var abandoned = tasks.Where(t => t.Status == AppTaskStatus.Abandoned).ToList();
 
-        // ── Tamamlama oranı ────────────────────────────────────────────────
+        
         double completionRate = tasks.Count > 0
             ? (double)completed.Count / tasks.Count
             : 0.0;
 
-        // ── En çok tamamlanan / atlanan kategori ──────────────────────────
+        
         var mostCompleted = completed
             .GroupBy(t => t.AppTask?.Category?.Name ?? "Diğer")
             .OrderByDescending(g => g.Count())
@@ -126,7 +126,7 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
             .OrderByDescending(g => g.Count())
             .FirstOrDefault()?.Key;
 
-        // ── En verimli saat dilimi ─────────────────────────────────────────
+        
         var completedWithSlot = completed.Where(t => t.DayTimeSlot.HasValue).ToList();
         string bestTimeLabel = "Bilinmiyor";
         if (completedWithSlot.Any())
@@ -139,16 +139,16 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
             bestTimeLabel = SlotToLabel(bestSlot);
         }
 
-        // ── Ortalama aktif dakika (EstimatedMinutes proxy) ─────────────────
+        
         int avgMinutes = completed.Any(t => t.AppTask?.EstimatedMinutes > 0)
             ? (int)completed.Where(t => t.AppTask?.EstimatedMinutes > 0)
                 .Average(t => t.AppTask!.EstimatedMinutes!.Value)
             : 0;
 
-        // ── Streak hesaplama ───────────────────────────────────────────────
+        
         var (current, longest) = CalculateStreaks(completed, today);
 
-         // ── Son 7 gün günlük özet ──────────────────────────────────────────
+         
         var weeklyProgress = Enumerable.Range(0, 7)
             .Select(i =>
             {
@@ -181,10 +181,10 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
             })
             .ToList();
 
-        // ── Insight mesajı ─────────────────────────────────────────────────
+        
         string? insight = BuildInsightMessage(completionRate, mostSkipped, bestTimeLabel, current);
 
-        // ── Kapsamlı AI Analizi ────────────────────────────────────────────
+        
         var user = await _userReadRepository
             .GetWhere(u => u.Id == userId, tracking: false)
             .FirstOrDefaultAsync(ct);
@@ -192,43 +192,43 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
         var aiInsights = new List<string>();
         if (user != null)
         {
-            // 1. Streak / Disiplin Karnesi
+            
             if (current >= 7)
                 aiInsights.Add($"🔥 Müthiş Disiplin: {current} gündür serini bozmadın. Sistem senin alışkanlık kazanma kararlılığını %95 olarak ölçtü!");
             else if (current > 0)
                 aiInsights.Add($"💪 Seri Takibi: Şu an {current} günlük aktiflik serin var. Bunu korumak hedeflerine ulaşmanı kolaylaştıracaktır.");
 
-            // 2. Kategori Eğilimleri
+            
             if (!string.IsNullOrEmpty(mostCompleted))
                 aiInsights.Add($"🏆 Uzmanlık Alanın: En çok başarı gösterdiğin kategori '{mostCompleted}'. Bu kategorideki kararlılığın ve odaklanma gücün en üst düzeyde.");
 
             if (!string.IsNullOrEmpty(mostSkipped))
                 aiInsights.Add($"⚠️ Gelişim Fırsatı: Son analizlere göre '{mostSkipped}' kategorisindeki görevleri atlama veya erteleme eğilimindesin. Asistanınız bu kategorideki görevleri 10-15 dakikalık kısa/kolay adımlara bölmeni öneriyor.");
 
-            // 3. Zaman Tercihi
+            
             if (bestTimeLabel != "Bilinmiyor")
                 aiInsights.Add($"⏰ Biyolojik Saat: Görevlerini en çok '{bestTimeLabel}' saatlerinde tamamlıyorsun. Kritik odaklanma gerektiren işlerini bu zaman dilimlerine planlaman verimliliğini %25 artıracaktır.");
 
-            // 4. Güçlü Yönler
+            
             if (user.Strengths != null && user.Strengths.Any())
             {
                 var strList = string.Join(", ", user.Strengths);
                 aiInsights.Add($"✨ Güçlü Yönlerin: Sistem senin '{strList}' yönlerini başarıyla kullandığını analiz etti. Görev önerilerinde bu yönlerini besleyecek içeriklere öncelik veriliyor.");
             }
 
-            // 5. Zayıf Yönler
+            
             if (user.Weaknesses != null && user.Weaknesses.Any())
             {
                 var weakList = string.Join(", ", user.Weaknesses);
                 aiInsights.Add($"💡 Gelişim Alanları: Kendinde '{weakList}' yönlerini geliştirmek istediğini belirttin. Asistanınız, bu alanlardaki direncini kırmak için proaktif yönlendirmeler hazırlıyor.");
             }
 
-            // 6. Erteleme Alışkanlığı
+            
             int userPostpones = tasks.Sum(t => t.PostponeCount);
             if (userPostpones > 5)
                 aiInsights.Add($"⏸️ Erteleme Eğilimi: Son 30 günde toplam {userPostpones} erteleme yaptın. Erteleme oranını düşürmek için günlük limitini (şu an {user.DailyTaskLimit} görev) düşürerek başlaman iyi bir strateji olabilir.");
 
-            // 7. Odak Alanı
+            
             if (!string.IsNullOrEmpty(user.PrimaryFocusArea))
             {
                 var focusAreaTr = user.PrimaryFocusArea.ToLower() switch
@@ -263,7 +263,7 @@ public sealed class UserBehaviorAnalysisService : IUserBehaviorAnalysisService
         };
     }
 
-    // ─── Yardımcı ─────────────────────────────────────────────────────────
+    
 
     private static (int current, int longest) CalculateStreaks(
         List<Domain.Entities.UserTask> completed, DateOnly today)

@@ -85,7 +85,7 @@ const GoalsPage = () => {
   return (
     <MainLayout>
       <div className="space-y-8">
-        {/* Header */}
+        {}
         <div className="flex justify-between items-end">
           <section className="relative">
             <div className="absolute -left-10 -top-10 w-40 h-40 bg-teal-600/10 blur-[80px] rounded-full pointer-events-none"></div>
@@ -100,7 +100,7 @@ const GoalsPage = () => {
           </button>
         </div>
 
-        {/* Lag uyarısı */}
+        {}
         {lagGoals.length > 0 && (
           <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
@@ -113,7 +113,7 @@ const GoalsPage = () => {
           </div>
         )}
 
-        {/* KPI Özet Paneli */}
+        {}
         {!loading && dashboard && (() => {
           const activeGoals = dashboard.activeGoals || [];
           const completedGoals = dashboard.completedGoals || [];
@@ -141,7 +141,7 @@ const GoalsPage = () => {
           );
         })()}
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-2">
           {tabs.map(tab => (
             <button
@@ -165,7 +165,7 @@ const GoalsPage = () => {
           ))}
         </div>
 
-        {/* Content */}
+        {}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3].map(i => (
@@ -196,7 +196,7 @@ const GoalsPage = () => {
         )}
       </div>
 
-      {/* Hedef Oluştur Modal */}
+      {}
       {showModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-slate-700 p-8 rounded-3xl w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -206,7 +206,7 @@ const GoalsPage = () => {
             </div>
 
             <form onSubmit={handleCreateGoal} className="space-y-4">
-              {/* Icon + Color seçici */}
+              {}
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2 block">İkon</label>
@@ -272,7 +272,7 @@ const GoalsPage = () => {
                 </div>
               </div>
 
-              {/* Otomatik takip */}
+              {}
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="w-4 h-4 accent-indigo-600"

@@ -39,13 +39,13 @@ const ProfilePage = () => {
           interests: data?.interests || []
         });
 
-        // SP-03: Davranış analizi özeti
+        
         const userId = getUserIdFromToken();
         if (userId) {
           try {
             const bRes = await axiosClient.get(`/users/${userId}/behavior-summary`);
             setBehaviorSummary(bRes.data);
-          } catch { /* henüz veri yoksa sessizce geç */ }
+          } catch {  }
         }
       } catch (err) {
         console.error(err);
@@ -77,7 +77,7 @@ const ProfilePage = () => {
       await axiosClient.patch(`/users/${userId}/nudge-settings`, { nudgeEnabled: newVal });
     } catch (err) {
       console.error("Nudge kaydedilemedi:", err);
-      setNudgeEnabled(!newVal); // rollback
+      setNudgeEnabled(!newVal); 
     }
   };
 
@@ -290,7 +290,7 @@ const ProfilePage = () => {
           </div>
         </section>
 
-        {/* SP-02: Chatbot Kişilik Ayarları */}
+        {}
         <section className="bg-slate-900/40 p-8 rounded-[2rem] border border-slate-800">
           <h3 className="text-lg font-black text-white mb-6 tracking-widest uppercase italic flex items-center gap-2">
             <span className="text-xl">🤖</span> AI Asistan Kişiliği
@@ -330,21 +330,21 @@ const ProfilePage = () => {
           </div>
         </section>
 
-        {/* SP-03: Davranış Analizi */}
+        {}
         {behaviorSummary && (
           <section>
             <BehaviorInsightCard summary={behaviorSummary} />
           </section>
         )}
 
-        {/* SP-04: Tatil / Mola Modu */}
+        {}
         <section>
           <VacationModeToggle
             isOnVacation={isOnVacation}
             onVacationChange={(val) => setIsOnVacation(val)}
           />
         </section>
-        {/* Edit Profile Modal */}
+        {}
         {showEditModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative">
@@ -409,4 +409,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default ProfilePage;

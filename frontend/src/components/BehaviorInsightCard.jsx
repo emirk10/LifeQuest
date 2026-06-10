@@ -45,7 +45,7 @@ const BehaviorInsightCard = ({ summary }) => {
 
   return (
     <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/60 border border-slate-700/50 rounded-[2rem] p-6 space-y-6">
-      {/* Başlık */}
+      {}
       <div className="flex items-center justify-between">
         <h3 className="text-base font-black text-white tracking-wider uppercase italic flex items-center gap-2">
           <span className="text-lg">📊</span> Haftalık Davranış Özeti
@@ -57,7 +57,7 @@ const BehaviorInsightCard = ({ summary }) => {
         )}
       </div>
 
-      {/* Mini istatistik row */}
+      {}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Tamamlandı", value: totalCompletedLast30Days, icon: "✅", color: "text-emerald-400" },
@@ -75,7 +75,7 @@ const BehaviorInsightCard = ({ summary }) => {
         ))}
       </div>
 
-      {/* Mini bar chart — son 7 gün */}
+      {}
       {weeklyProgress.length > 0 && (
         <div>
           <p className="text-xs text-slate-400 mb-2 font-medium">Son 7 Gün</p>
@@ -99,7 +99,7 @@ const BehaviorInsightCard = ({ summary }) => {
         </div>
       )}
 
-      {/* 30 gün tamamlama oranı */}
+      {}
       <div>
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-slate-400 font-medium">30 Gün Tamamlama Oranı</span>
@@ -129,7 +129,7 @@ const BehaviorInsightCard = ({ summary }) => {
         </div>
       </div>
 
-      {/* Kategori & zaman bilgisi */}
+      {}
       <div className="grid grid-cols-2 gap-3 text-xs">
         {mostCompletedCategory && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-3">
@@ -153,14 +153,14 @@ const BehaviorInsightCard = ({ summary }) => {
         )}
       </div>
 
-      {/* En uzun seri */}
+      {}
       {longestStreak > 0 && (
         <div className="text-center text-xs text-slate-500">
           En uzun serim: <span className="text-white font-bold">{longestStreak} gün</span>
         </div>
       )}
 
-      {/* AI & Chatbot Kapsamlı Öğrenim Analizi */}
+      {}
       {((aiSystemInsights && aiSystemInsights.length > 0) || insightMessage) && (
         <div className="bg-gradient-to-r from-indigo-950/40 to-slate-900/60 border border-indigo-500/20 rounded-[1.5rem] p-6 space-y-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full"></div>

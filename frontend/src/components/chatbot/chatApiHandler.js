@@ -1,4 +1,4 @@
-// ─── ChatBot API Handler ──────────────────────────────────────────────────────
+
 import axiosClient from "../../api/axiosClient";
 import chatService from "../../services/chatService";
 import taskService from "../../services/taskService";
@@ -9,18 +9,18 @@ import goalService from "../../services/goalService";
 import { getMoodHint } from "../../utils/moodUtils";
 import { MOTIVATION_TEMPLATES } from "./chatFlows";
 
-// ─── Yardımcı: API cevabından metin çıkar ────────────────────────────────────
+
 function extractText(val) {
   if (!val) return null;
   if (typeof val === "string") return val;
-  // AI servisi bazen { response: "..." } ya da { message: "..." } döner
+  
   if (typeof val === "object") {
     return val.response || val.message || val.text || null;
   }
   return String(val);
 }
 
-// ─── Yardımcı: Mood açıklaması ────────────────────────────────────────────────
+
 function getMoodDescription(mood) {
   if (!mood) return "bilinmiyor";
   const energy = mood.energyLevel ?? 5;
@@ -30,7 +30,7 @@ function getMoodDescription(mood) {
   return "düşük enerji, zorlu bir gün geçiriyor";
 }
 
-// ─── Yardımcı: Mood hint'ten template key ────────────────────────────────────
+
 function moodHintToTemplateKey(moodHint) {
   const map = {
     pozitif: "pozitif",
@@ -41,11 +41,11 @@ function moodHintToTemplateKey(moodHint) {
   return map[moodHint] || "normal";
 }
 
-// ─── Ana API Yürütücü ─────────────────────────────────────────────────────────
+
 export async function executeApiAction(apiAction, context = {}) {
   switch (apiAction) {
 
-    // ── Görev Sorgulama ────────────────────────────────────────────────────────
+    
     case "get_active_tasks": {
       const res = await taskService.getAllTasks(null, 1, 100);
       const tasks = Array.isArray(res) ? res : (res.tasks || []);
@@ -76,12 +76,12 @@ export async function executeApiAction(apiAction, context = {}) {
 
     case "get_daily_pool": {
       const data = await taskService.getDailyPool();
-      // Backend { tasks: [...] } veya doğrudan array dönebilir
+      
       const tasks = Array.isArray(data) ? data : (data.tasks || []);
       return { tasks };
     }
 
-    // ── Kişiselleştirilmiş Görev Önerisi ──────────────────────────────────────
+    
     case "get_personalized_tasks": {
       const [allTasksRes, profileRes, moodRes] = await Promise.allSettled([
         axiosClient.get("/user-tasks/available-tasks"),
@@ -89,7 +89,7 @@ export async function executeApiAction(apiAction, context = {}) {
         moodService.getTodayMood(),
       ]);
 
-      // available-tasks endpoint'i zaten level filtrelemesini backend'de yapıyor
+      
       const rawTasks = allTasksRes.status === "fulfilled"
         ? (Array.isArray(allTasksRes.value.data) ? allTasksRes.value.data : [])
         : [];
@@ -100,7 +100,7 @@ export async function executeApiAction(apiAction, context = {}) {
 
       let filtered = [...rawTasks];
 
-      // ── Mood'a Göre Katı Filtreler (Strict Constraints) ───────────────────
+      
       let moodMode = "Normal";
       if (mood && mood.moodMode !== undefined) {
         moodMode = String(mood.moodMode);
@@ -116,21 +116,21 @@ export async function executeApiAction(apiAction, context = {}) {
         const estMin = t.estimatedMinutes ?? t.EstimatedMinutes ?? (t.baseXP > 0 ? Math.ceil(t.baseXP / 5.0) : 15);
         const minEnergy = t.minEnergyLevel ?? t.MinEnergyLevel ?? 1;
 
-        // Müsait zamandan uzun süren görevleri tamamen ele
+        
         if (estMin > availableMinutes) return false;
-        // Enerjinin yetmediği görevleri ele
+        
         if (energyLevel < minEnergy) return false;
 
-        // Overwhelmed (3) durumunda katı kurallar
+        
         if (moodMode === "Overwhelmed" || moodMode === "3") {
-          // Bunaldığında sadece kolay, kısa (<=15dk) ve düşük enerjili (<=2) görevler verilsin
+          
           if (t.difficulty !== "Easy" || minEnergy > 2 || estMin > 15) {
             return false;
           }
         }
-        // Tired (2) durumunda katı kurallar
+        
         else if (moodMode === "Tired" || moodMode === "2") {
-          // Yorgunken yüksek enerjili (>=4) ve zor görevleri tamamen ele
+          
           if (minEnergy >= 4 || t.difficulty === "Hard") {
             return false;
           }
@@ -138,7 +138,7 @@ export async function executeApiAction(apiAction, context = {}) {
         return true;
       });
 
-      // ── Kategori filtresi ────────────────────────────────────────────────────
+      
       const cat = context.categoryHint;
       if (cat && cat !== "all" && filtered.length > 0) {
         const catKeywords = {
@@ -154,17 +154,17 @@ export async function executeApiAction(apiAction, context = {}) {
           const name = (t.categoryName || "").toLowerCase();
           return keywords.some(kw => name.includes(kw));
         });
-        // Eşleşme yoksa orijinal listeyi koru (kullanıcı kafası karışmasın)
+        
         if (catFiltered.length > 0) filtered = catFiltered;
       }
 
-      // ── Zorluk filtresi ──────────────────────────────────────────────────────
+      
       const diff = context.difficultyHint;
       if (diff && diff !== "auto") {
         const diffFiltered = filtered.filter(t => t.difficulty === diff);
         if (diffFiltered.length > 0) filtered = diffFiltered;
       } else if (diff === "auto") {
-        // Mood enerji seviyesine göre otomatik zorluk seçimi
+        
         const energy = mood?.energyLevel ?? 5;
         let preferredDiffs;
         if (energy >= 8)      preferredDiffs = ["Hard", "Medium"];
@@ -175,24 +175,24 @@ export async function executeApiAction(apiAction, context = {}) {
         if (autoFiltered.length > 0) filtered = autoFiltered;
       }
 
-      // ── Seviyeye göre sırala (backend zaten filtreler ama sıralama ekle) ────
+      
       if (user?.generalLevel) {
         const lvl = Math.floor(user.generalLevel);
         filtered.sort((a, b) => {
-          // MinLevel'ı kullanıcı seviyesine en yakın olanlar önce
+          
           const aDiff = Math.abs((a.minLevel || 1) - lvl);
           const bDiff = Math.abs((b.minLevel || 1) - lvl);
           return aDiff - bDiff;
         });
       }
 
-      // ── Mood'a göre XP ağırlıklandırması ────────────────────────────────────
-      // Düşük enerjide küçük XP'li (hızlı biten) görevler öne çıksın
+      
+      
       if (mood?.energyLevel && mood.energyLevel < 5) {
         filtered.sort((a, b) => (a.baseXP || 0) - (b.baseXP || 0));
       }
 
-      // En iyi 5 tane al (shuffle ile çeşitlilik ekle)
+      
       const top = filtered.slice(0, 10);
       const shuffled = top.sort(() => 0.5 - Math.random()).slice(0, 5);
 
@@ -205,7 +205,7 @@ export async function executeApiAction(apiAction, context = {}) {
       };
     }
 
-    // ── Profil & İstatistik ────────────────────────────────────────────────────
+    
     case "get_profile": {
       const profile = await userService.getProfile();
       return { profile };
@@ -227,7 +227,7 @@ export async function executeApiAction(apiAction, context = {}) {
       return { breakdown: res.data?.breakdown || [] };
     }
 
-    // ── Hedefler ──────────────────────────────────────────────────────────────
+    
     case "get_goals": {
       const goals = await goalService.getGoals();
       return { goals: Array.isArray(goals) ? goals : [] };
@@ -238,16 +238,16 @@ export async function executeApiAction(apiAction, context = {}) {
       return { dashboard: data };
     }
 
-    // ── Rozetler ──────────────────────────────────────────────────────────────
+    
     case "get_badges": {
       const badges = await badgeService.getBadgeGallery();
       return { badges: Array.isArray(badges) ? badges : [] };
     }
 
-    // ── Mood ──────────────────────────────────────────────────────────────────
+    
     case "get_today_mood": {
       const res = await moodService.getTodayMood();
-      // { success: true, data: { ... } } yapısından data çıkar
+      
       const mood = res?.data ?? res ?? null;
       return { mood };
     }
@@ -262,9 +262,9 @@ export async function executeApiAction(apiAction, context = {}) {
       return { saved: true, mood: moodData };
     }
 
-    // ── AI Motivasyon ─────────────────────────────────────────────────────────
+    
     case "get_ai_motivation": {
-      // Profil + mood verisini paralel çek
+      
       const [profileRes, moodRes] = await Promise.allSettled([
         userService.getProfile(),
         moodService.getTodayMood(),
@@ -287,12 +287,12 @@ export async function executeApiAction(apiAction, context = {}) {
 
       try {
         const aiResponse = await chatService.sendMessage(prompt, false);
-        // AI servisi { response: "...", intent: "...", ... } döner
+        
         const text = extractText(aiResponse?.response ?? aiResponse);
         if (!text) throw new Error("Boş AI cevabı");
         return { message: text, mood, profile: user, isAI: true };
       } catch {
-        // AI servis yoksa veya hata varsa → offline şablonlar
+        
         const key = moodHintToTemplateKey(context.moodHint || getMoodHint(mood?.energyLevel));
         const templates = MOTIVATION_TEMPLATES[key] || MOTIVATION_TEMPLATES.normal;
         const msg = templates[Math.floor(Math.random() * templates.length)];
@@ -300,7 +300,7 @@ export async function executeApiAction(apiAction, context = {}) {
       }
     }
 
-    // ── Serbest Metin (AI Chat) ────────────────────────────────────────────────
+    
     case "send_free_text": {
       const response = await chatService.sendMessage(context.freeTextMessage);
       return {
@@ -314,7 +314,7 @@ export async function executeApiAction(apiAction, context = {}) {
         actions: response.actions || [],
         flowRedirect: response.flowRedirect || response.flow_redirect || null,
         shouldShowMoodSelector: response.shouldShowMoodSelector,
-        // Geriye uyumluluk / Tekil görev önerisi
+        
         suggestedTaskId: response.suggestedTaskId || response.SuggestedTaskId,
         suggestedTaskTitle: response.suggestedTaskTitle || response.SuggestedTaskTitle,
         suggestedTaskXp: response.suggestedTaskXp || response.SuggestedTaskXp,
@@ -326,25 +326,25 @@ export async function executeApiAction(apiAction, context = {}) {
   }
 }
 
-// ─── Görev Atama (available-tasks → assign) ───────────────────────────────────
+
 export async function assignTask(taskId) {
   return await taskService.assignSpecificTask(taskId);
 }
 
-// ─── Görev Havuzdan Seç (daily-pool → select) ────────────────────────────────
+
 export async function selectTask(taskId) {
   return await taskService.selectTask(taskId);
 }
 
-// ─── Görev Tamamla ───────────────────────────────────────────────────────────
+
 export async function completeTask(userTaskId, reflectionText = "") {
   return await taskService.completeTask(userTaskId, reflectionText);
 }
 
-// ─── Görev Ertele ────────────────────────────────────────────────────────────
+
 export async function postponeTask(userTaskId) {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  const dateStr = tomorrow.toISOString().split('T')[0]; // YYYY-MM-DD
+  const dateStr = tomorrow.toISOString().split('T')[0]; 
   return await taskService.postponeTask(userTaskId, dateStr, "Chatbot üzerinden ertelendi");
 }

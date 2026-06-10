@@ -33,7 +33,7 @@ public class GetDailyTaskPoolQueryHandler : IRequestHandler<GetDailyTaskPoolQuer
     {
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        // Bugün zaten önerilmiş görevler varsa onları döndür
+        
         var existingSuggested = await _userTaskReadRepository
             .GetWhere(ut => ut.AppUserId == request.UserId
                 && (ut.Status == AppTaskStatus.Suggested || ut.Status == AppTaskStatus.Selected)
@@ -43,7 +43,7 @@ public class GetDailyTaskPoolQueryHandler : IRequestHandler<GetDailyTaskPoolQuer
                 .ThenInclude(t => t.Category)
             .ToListAsync(cancellationToken);
 
-        // Bugünkü mood kaydını çek (yoksa default)
+        
         var todayMood = await _moodReadRepository
             .GetWhere(m => m.AppUserId == request.UserId && m.Date == today, tracking: false)
             .FirstOrDefaultAsync(cancellationToken);
@@ -81,7 +81,7 @@ public class GetDailyTaskPoolQueryHandler : IRequestHandler<GetDailyTaskPoolQuer
             };
         }
 
-        // Yeni öneri oluştur
+        
         var recommendations = await _recommendationService.GetContextualRecommendationsAsync(
             request.UserId, moodMode, timeSlot, energyLevel, availableMinutes, request.Count);
 

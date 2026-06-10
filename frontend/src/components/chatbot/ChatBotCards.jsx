@@ -1,7 +1,7 @@
 
 import React from "react";
 
-// ─── Renk paleti yardımcıları ─────────────────────────────────────────────────
+
 const difficultyColor = (d) => ({
   Easy: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
   Medium: "text-amber-400 bg-amber-500/10 border-amber-500/30",
@@ -20,7 +20,7 @@ const energyBar = (level) => {
   return { pct, col };
 };
 
-// ─── Görev Kartı ─────────────────────────────────────────────────────────────
+
 export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor = "indigo", actions = [] }) => {
   const colors = {
     indigo: "bg-indigo-600 hover:bg-indigo-500",
@@ -30,7 +30,7 @@ export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor 
     rose: "bg-rose-600 hover:bg-rose-500",
   };
 
-  // Tekil action prop'u varsa array'e çevir
+  
   const allActions = [...actions];
   if (onAction && actionLabel) {
     allActions.push({ onAction, actionLabel, actionIcon, actionColor });
@@ -80,7 +80,7 @@ export const TaskCard = ({ task, onAction, actionLabel, actionIcon, actionColor 
   );
 };
 
-// ─── Tamamlanan Görev Kartı ───────────────────────────────────────────────────
+
 export const CompletedTaskCard = ({ task }) => (
   <div className="bg-emerald-500/5 rounded-xl border border-emerald-500/20 p-3 flex items-center gap-3">
     <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
@@ -94,7 +94,7 @@ export const CompletedTaskCard = ({ task }) => (
   </div>
 );
 
-// ─── Rozet Kartı ─────────────────────────────────────────────────────────────
+
 export const BadgeCard = ({ badge }) => (
   <div className={`rounded-xl border p-3 flex items-center gap-3 ${
     badge.isEarned
@@ -116,13 +116,13 @@ export const BadgeCard = ({ badge }) => (
   </div>
 );
 
-// ─── Profil Kartı ─────────────────────────────────────────────────────────────
+
 export const ProfileCard = ({ profile }) => {
   const level = Math.floor(profile?.generalLevel || 1);
   const xpProgress = ((profile?.generalLevel || 1) % 1) * 100;
-  // Backend: TotalXP (PascalCase) → JSON → totalXP (camelCase)
+  
   const totalXp = profile?.totalXP ?? profile?.totalXp ?? 0;
-  // Backend: CompletedTaskCount (PascalCase) → JSON → completedTaskCount
+  
   const completedCount = profile?.completedTaskCount ?? profile?.completedTasksCount ?? (Array.isArray(profile?.completedTasks) ? profile.completedTasks.length : 0);
   const abandonedCount = profile?.abandonedTasksCount ?? (Array.isArray(profile?.abandonedTasks) ? profile.abandonedTasks.length : 0);
 
@@ -137,7 +137,7 @@ export const ProfileCard = ({ profile }) => {
           <p className="text-indigo-300 text-xs">Seviye {level} · {totalXp.toLocaleString("tr-TR")} XP</p>
         </div>
       </div>
-      {/* XP Progress */}
+      {}
       <div>
         <div className="flex justify-between text-[10px] text-slate-400 mb-1">
           <span>Seviye {level}</span>
@@ -150,7 +150,7 @@ export const ProfileCard = ({ profile }) => {
           />
         </div>
       </div>
-      {/* Streak */}
+      {}
       {profile?.currentStreak > 0 && (
         <div className="flex items-center gap-2 bg-orange-500/10 rounded-lg px-3 py-2 border border-orange-500/20">
           <span className="text-lg">🔥</span>
@@ -160,7 +160,7 @@ export const ProfileCard = ({ profile }) => {
           </div>
         </div>
       )}
-      {/* Stats */}
+      {}
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: "Tamamlanan", value: completedCount, icon: "✅" },
@@ -177,7 +177,7 @@ export const ProfileCard = ({ profile }) => {
   );
 };
 
-// ─── Mood Özet Kartı ─────────────────────────────────────────────────────────
+
 export const MoodSavedCard = ({ mood, message }) => {
   const modeInfo = moodModeLabel(mood?.moodMode);
   const energy = energyBar(mood?.energyLevel || 5);
@@ -207,7 +207,7 @@ export const MoodSavedCard = ({ mood, message }) => {
   );
 };
 
-// ─── Motivasyon Kartı ─────────────────────────────────────────────────────────
+
 export const MotivationCard = ({ message, isAI, mood }) => (
   <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/20 rounded-xl border border-indigo-500/30 p-4 space-y-2">
     <div className="flex items-center gap-2 mb-1">
@@ -220,7 +220,7 @@ export const MotivationCard = ({ message, isAI, mood }) => (
   </div>
 );
 
-// ─── Haftalık Rapor ───────────────────────────────────────────────────────────
+
 export const WeeklyStatsCard = ({ report }) => {
   if (!report) return (
     <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-4 text-center">
@@ -269,12 +269,12 @@ export const WeeklyStatsCard = ({ report }) => {
   );
 };
 
-// ─── XP Grafik (Mini Bar Chart) ───────────────────────────────────────────────
+
 export const XPBreakdownChart = ({ breakdown }) => {
   if (!breakdown || breakdown.length === 0) return (
     <p className="text-slate-400 text-sm text-center py-2">Henüz XP verisi yok.</p>
   );
-  // Backend returns XPKazanci (PascalCase mixed) — support all casings
+  
   const getXP = (d) => d.xpKazanci ?? d.XPKazanci ?? d.XpKazanci ?? d.xp ?? 0;
   const maxXP = Math.max(...breakdown.map(getXP), 1);
   return (
@@ -306,8 +306,8 @@ export const XPBreakdownChart = ({ breakdown }) => {
 };
 
 
-// ─── Genel İstatistik Kartı ───────────────────────────────────────────────────
-// Backend: GetUserStatsQueryResponse → { totalCompleted, weeklyGrowth, streakCount, streak: bool[] }
+
+
 export const StatsCard = ({ stats }) => {
   if (!stats) return null;
 
@@ -334,7 +334,7 @@ export const StatsCard = ({ stats }) => {
           </div>
         ))}
       </div>
-      {/* Son 7 gün seri göstergesi */}
+      {}
       {streakArr.length > 0 && (
         <div>
           <p className="text-slate-400 text-[10px] mb-1.5">Son 7 Gün</p>
@@ -354,7 +354,7 @@ export const StatsCard = ({ stats }) => {
   );
 };
 
-// ─── Hedef Kartı ─────────────────────────────────────────────────────────────
+
 export const GoalCard = ({ goal }) => {
   const progress = Math.min(Math.round(((goal.currentValue || 0) / (goal.targetValue || 1)) * 100), 100);
   return (
@@ -381,7 +381,7 @@ export const GoalCard = ({ goal }) => {
   );
 };
 
-// ─── Hedef Dashboard Özet ─────────────────────────────────────────────────────
+
 export const GoalsDashboardCard = ({ dashboard }) => {
   if (!dashboard) return null;
 
@@ -390,7 +390,7 @@ export const GoalsDashboardCard = ({ dashboard }) => {
   const activeCount = dashboard.totalActiveGoals ?? activeGoals.length;
   const completedCount = dashboard.totalCompletedThisMonth ?? completedGoals.length;
 
-  // AvgProgress: prefer backend-calculated field, fall back to frontend calculation
+  
   let progress = dashboard.avgProgress ?? dashboard.AvgProgress;
   if (progress === undefined || progress === null) {
     const all = [...activeGoals, ...completedGoals];
@@ -422,7 +422,7 @@ export const GoalsDashboardCard = ({ dashboard }) => {
   );
 };
 
-// ─── Yazıyor... Göstergesi ───────────────────────────────────────────────────
+
 export const TypingIndicator = () => (
   <div className="flex gap-1 py-1 px-2">
     <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.3s]" />

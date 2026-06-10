@@ -78,7 +78,7 @@ public class UsersController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>SP-02: Chatbot kişiliğini güncelle (friendly | motivator | coach).</summary>
+    
     [HttpPatch("{id}/chat-personality")]
     public async Task<IActionResult> UpdateChatPersonality(Guid id, [FromBody] ChatPersonalityBody body)
     {
@@ -98,7 +98,7 @@ public class UsersController : ControllerBase
         return Ok(new { success = true });
     }
 
-    /// <summary>SP-02: Nudge bildirimlerini aç/kapat.</summary>
+    
     [HttpPatch("{id}/nudge-settings")]
     public async Task<IActionResult> UpdateNudgeSettings(Guid id, [FromBody] NudgeSettingsBody body)
     {
@@ -115,7 +115,7 @@ public class UsersController : ControllerBase
         return Ok(new { success = true });
     }
 
-    /// <summary>SP-03: Kullanıcının son 30 gün davranış analizi özeti.</summary>
+    
     [HttpGet("{id}/behavior-summary")]
     public async Task<IActionResult> GetBehaviorSummary(Guid id)
     {
@@ -126,7 +126,7 @@ public class UsersController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>SP-04: Tatil/mola modunu başlat.</summary>
+    
     [HttpPost("{id}/vacation/start")]
     public async Task<IActionResult> StartVacation(Guid id, [FromBody] StartVacationBody body)
     {
@@ -142,7 +142,7 @@ public class UsersController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
-    /// <summary>SP-04: Tatil/mola modunu bitir.</summary>
+    
     [HttpPost("{id}/vacation/end")]
     public async Task<IActionResult> EndVacation(Guid id)
     {
@@ -153,7 +153,7 @@ public class UsersController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
-    /// <summary>SP-04: Kullanıcı hedeflerini güncelle.</summary>
+    
     [HttpPut("{id}/goals")]
     public async Task<IActionResult> UpdateGoals(Guid id, [FromBody] UpdateGoalsBody body)
     {
@@ -169,7 +169,7 @@ public class UsersController : ControllerBase
         return response.Success ? Ok(response) : BadRequest(response);
     }
 
-    /// <summary>MISS-011: Kullanıcı tercihlerini/anketini güncelle.</summary>
+    
     [HttpPatch("{id}/preferences")]
     public async Task<IActionResult> UpdatePreferences(Guid id, [FromBody] UpdatePreferencesBody body)
     {

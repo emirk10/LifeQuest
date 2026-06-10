@@ -19,7 +19,7 @@ public sealed class WeeklyReport : BaseEntity
     public string StrongestCategory { get; set; } = string.Empty;
     public string WeakestCategory { get; set; } = string.Empty;
 
-    // AI analiz sonuçları
+    
     public string? AIInsight { get; set; }
     public string? AIRecommendation { get; set; }
     public float? OverallPerformanceScore { get; set; }

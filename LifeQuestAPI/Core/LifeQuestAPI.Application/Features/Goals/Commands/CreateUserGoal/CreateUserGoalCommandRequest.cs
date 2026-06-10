@@ -16,7 +16,7 @@ public class CreateUserGoalCommandRequest : IRequest<CreateUserGoalCommandRespon
     public DateTime EndDate { get; set; }
     public int BonusXP { get; set; }
     
-    // SP-05
+    
     public string? Icon { get; set; }
     public string? Color { get; set; }
     public string? Why { get; set; }

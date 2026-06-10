@@ -83,7 +83,7 @@ const MainLayout = ({ children }) => {
   return (
     <div className="flex h-screen w-full bg-slate-950 text-slate-100 overflow-hidden font-sans">
 
-      {/* Mobile Menu Overlay */}
+      {}
       {mobileMenuOpen && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden"
@@ -91,7 +91,7 @@ const MainLayout = ({ children }) => {
         />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside className={`fixed lg:relative top-0 left-0 h-full w-72 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 shadow-2xl z-40 transition-transform duration-300 ${
         mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
@@ -134,10 +134,10 @@ const MainLayout = ({ children }) => {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {}
       <div className="flex-1 flex flex-col relative min-w-0">
         <header className="h-20 bg-slate-950/80 backdrop-blur-2xl border-b border-slate-800/50 flex items-center justify-between px-4 lg:px-10 z-10 shadow-lg shrink-0">
-          {/* Mobile menu toggle */}
+          {}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -147,7 +147,7 @@ const MainLayout = ({ children }) => {
             </svg>
           </button>
 
-          {/* XP Bar */}
+          {}
           <div className="flex flex-col gap-2 w-48 lg:w-80 hidden sm:flex">
             <div className="flex justify-between text-[10px] font-black tracking-widest text-slate-500 uppercase">
               <span className="text-indigo-500 font-black">Experience Bar</span>
@@ -161,7 +161,7 @@ const MainLayout = ({ children }) => {
             </div>
           </div>
 
-          {/* Right side */}
+          {}
           <div className="flex items-center gap-6">
             <NotificationBell />
             <div className="text-right">

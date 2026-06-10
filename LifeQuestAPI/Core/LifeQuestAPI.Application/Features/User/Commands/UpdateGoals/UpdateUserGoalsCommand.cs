@@ -4,7 +4,7 @@ using MediatR;
 
 namespace LifeQuestAPI.Application.Features.User.Commands.UpdateGoals;
 
-// ─── Request ──────────────────────────────────────────────────────────────────
+
 
 public class UpdateUserGoalsCommandRequest : IRequest<UpdateUserGoalsCommandResponse>
 {
@@ -20,7 +20,7 @@ public class UpdateUserGoalsCommandResponse
     public List<string> UpdatedGoals { get; set; } = new();
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+
 
 public sealed class UpdateUserGoalsCommandHandler
     : IRequestHandler<UpdateUserGoalsCommandRequest, UpdateUserGoalsCommandResponse>
@@ -48,11 +48,11 @@ public sealed class UpdateUserGoalsCommandHandler
 
         var goals = user.UserGoals ?? new List<string>();
 
-        // Kaldırılanları sil
+        
         foreach (var r in request.RemovedGoals)
             goals.Remove(r);
 
-        // Yenileri ekle (duplicate yok)
+        
         foreach (var n in request.NewGoals)
             if (!goals.Contains(n, StringComparer.OrdinalIgnoreCase))
                 goals.Add(n);
@@ -63,7 +63,7 @@ public sealed class UpdateUserGoalsCommandHandler
         _userWrite.Update(user);
         await _userWrite.SaveAsync();
 
-        // Bildirim gönder
+        
         await _notifService.SendNotificationAsync(
             user.Id,
             "Hedeflerin güncellendi! 🎯",

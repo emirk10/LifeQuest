@@ -4,9 +4,9 @@ import leaderboardService from '../services/leaderboardService';
 import { getUserIdFromToken } from '../utils/authUtils';
 
 const RANK_COLORS = [
-  'from-amber-400 to-yellow-500',   // 1st
-  'from-slate-300 to-slate-400',    // 2nd
-  'from-amber-600 to-orange-700',   // 3rd
+  'from-amber-400 to-yellow-500',   
+  'from-slate-300 to-slate-400',    
+  'from-amber-600 to-orange-700',   
 ];
 
 const RANK_ICONS = ['👑', '🥈', '🥉'];
@@ -16,8 +16,8 @@ const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [myRank, setMyRank] = useState(null);
-  const [filter, setFilter] = useState('global'); // 'global' | 'friends'
-  const [timeRange, setTimeRange] = useState('alltime'); // 'alltime' | 'weekly' | 'monthly'
+  const [filter, setFilter] = useState('global'); 
+  const [timeRange, setTimeRange] = useState('alltime'); 
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const currentUserId = getUserIdFromToken?.() || null;
@@ -31,7 +31,7 @@ const LeaderboardPage = () => {
         setLeaderboard(list);
         setTotalCount(response.totalCount || 0);
         
-        // Find current user's rank
+        
         const userData = JSON.parse(sessionStorage.getItem('user_data') || '{}');
         const myEntryIndex = list.findIndex(u => u.userName === userData?.userName);
         if (myEntryIndex >= 0) {
@@ -52,7 +52,7 @@ const LeaderboardPage = () => {
   return (
     <MainLayout>
       <div className="space-y-8 max-w-3xl mx-auto">
-        {/* Header */}
+        {}
         <section className="relative">
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-amber-600/10 blur-[80px] rounded-full"></div>
           <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">SIRALAMALAR</h2>

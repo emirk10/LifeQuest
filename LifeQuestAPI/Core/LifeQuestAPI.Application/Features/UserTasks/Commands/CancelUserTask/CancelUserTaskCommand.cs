@@ -40,7 +40,7 @@ public class CancelUserTaskCommandHandler : IRequestHandler<CancelUserTaskComman
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new Exception("Görev bulunamadı.");
 
-        // Yalnızca tamamlanmamış, ertelenmemiş ve vazgeçilmemiş görevler iptal edilebilir.
+        
         if (userTask.Status == AppTaskStatus.Completed || userTask.Status == AppTaskStatus.Abandoned || userTask.Status == AppTaskStatus.Cancelled)
             throw new InvalidOperationException("Bu durumdaki görevler iptal edilemez.");
 

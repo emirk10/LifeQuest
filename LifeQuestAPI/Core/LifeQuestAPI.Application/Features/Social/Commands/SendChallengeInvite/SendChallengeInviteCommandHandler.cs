@@ -59,7 +59,7 @@ public sealed class SendChallengeInviteCommandHandler
     public async Task<SendChallengeInviteCommandResponse> Handle(
         SendChallengeInviteCommandRequest request, CancellationToken cancellationToken)
     {
-        // Arkadaşlık kontrolü
+        
         var areFriends = await _friendshipReadRepository.GetWhere(
             f => ((f.RequesterId == request.ChallengerId && f.AddresseeId == request.OpponentId) ||
                   (f.RequesterId == request.OpponentId && f.AddresseeId == request.ChallengerId)) &&
@@ -70,7 +70,7 @@ public sealed class SendChallengeInviteCommandHandler
         if (!areFriends)
             throw new Exception("Mücadele daveti göndermek için karşı tarafın arkadaşın olması gerekir.");
 
-        // Aktif mücadele çakışma kontrolü
+        
         var hasActiveChallenge = await _challengeReadRepository.GetWhere(
             c => (c.ChallengerId == request.ChallengerId && c.OpponentId == request.OpponentId ||
                   c.ChallengerId == request.OpponentId && c.OpponentId == request.ChallengerId) &&
@@ -81,11 +81,11 @@ public sealed class SendChallengeInviteCommandHandler
         if (hasActiveChallenge)
             throw new Exception("Bu kullanıcı ile zaten aktif bir mücadeleniz var.");
 
-        // Rakip kullanıcıyı bul
+        
         var opponent = await _userReadRepository.GetByIdAsync(request.OpponentId.ToString())
             ?? throw new Exception("Rakip kullanıcı bulunamadı.");
 
-        // Başlık oluştur
+        
         var title = request.Title ?? $"{request.ChallengeType} Mücadelesi";
 
         var challenge = new Challenge
@@ -110,24 +110,24 @@ public sealed class SendChallengeInviteCommandHandler
         await _challengeWriteRepository.AddAsync(challenge);
         await _challengeWriteRepository.SaveAsync();
 
-        // ChallengeParticipants kayıtları
+        
         await _participantWriteRepository.AddAsync(new ChallengeParticipant
         {
             ChallengeId = challenge.Id,
             UserId = request.ChallengerId,
-            Role = 0, // Challenger
+            Role = 0, 
             JoinedAt = DateTime.UtcNow
         });
         await _participantWriteRepository.AddAsync(new ChallengeParticipant
         {
             ChallengeId = challenge.Id,
             UserId = request.OpponentId,
-            Role = 1, // Opponent
+            Role = 1, 
             JoinedAt = DateTime.UtcNow
         });
         await _participantWriteRepository.SaveAsync();
 
-        // Karşı tarafa bildirim
+        
         await _notificationService.SendNotificationAsync(
             request.OpponentId,
             "Mücadele Daveti! ⚔️",

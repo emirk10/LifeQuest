@@ -97,7 +97,7 @@ public sealed class ProcessChatActionCommandHandler
                     if (request.Payload == null || !request.Payload.ContainsKey("title"))
                         return Fail("Görev başlığı eksik.");
 
-                    // Varsayılan bir kategori bul (Genel veya ilk kategori)
+                    
                     var category = await _categoryRead.GetAll(false).FirstOrDefaultAsync(cancellationToken);
                     if (category == null) return Fail("Sistemde kategori bulunamadı.");
 
@@ -134,7 +134,7 @@ public sealed class ProcessChatActionCommandHandler
                     return Fail($"Bilinmeyen aksiyon: {request.ActionType}");
             }
 
-            // Mesajı güncelle (ActionSelected)
+            
             if (request.MessageId.HasValue)
             {
                 var msg = await _chatReadRepository.GetByIdAsync(

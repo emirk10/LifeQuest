@@ -1,4 +1,4 @@
-/* ─── EnhancedTaskCard ──────────────────────────────────────────────────── */
+
 .task-card {
   position: relative;
   display: flex;
@@ -48,7 +48,7 @@
   50% { box-shadow: 0 0 0 4px rgba(245,158,11,0.2); }
 }
 
-/* Match Ring */
+
 .task-match-badge {
   position: absolute;
   top: 1rem;
@@ -94,7 +94,7 @@
   color: #475569;
 }
 
-/* Card Header */
+
 .task-card-header {
   display: flex;
   justify-content: space-between;
@@ -116,7 +116,7 @@
   font-weight: 600;
 }
 
-/* Title & Description */
+
 .task-title {
   font-size: 1.05rem;
   font-weight: 700;
@@ -137,7 +137,7 @@
   overflow: hidden;
 }
 
-/* Why + Reason */
+
 .task-why {
   display: flex;
   gap: 0.4rem;
@@ -155,7 +155,7 @@
   font-style: italic;
 }
 
-/* Meta */
+
 .task-meta {
   display: flex;
   gap: 0.75rem;
@@ -163,7 +163,7 @@
   color: #475569;
 }
 
-/* Badge Hint */
+
 .task-badge-hint {
   font-size: 0.78rem;
   color: #f59e0b;
@@ -172,7 +172,7 @@
   border-radius: 0.5rem;
 }
 
-/* Actions */
+
 .task-actions {
   display: flex;
   gap: 0.5rem;
@@ -219,7 +219,7 @@
 .task-btn--postpone { border-color: #6366f1; color: #6366f1; }
 .task-btn--abandon { border-color: #ef4444; color: #ef4444; margin-left: auto; }
 
-/* Postpone Panel */
+
 .postpone-panel {
   display: flex;
   flex-direction: column;

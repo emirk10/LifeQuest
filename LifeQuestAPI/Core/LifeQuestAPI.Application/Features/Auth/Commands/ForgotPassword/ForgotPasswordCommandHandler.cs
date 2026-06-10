@@ -29,7 +29,7 @@ public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordComman
 
         if (user == null)
         {
-            // Do not reveal that the user does not exist for security reasons
+            
             return new ForgotPasswordCommandResponse
             {
                 IsSuccess = true,

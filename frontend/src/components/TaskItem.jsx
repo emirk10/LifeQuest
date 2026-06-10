@@ -33,7 +33,7 @@ const TaskItem = ({
   const [touchEnd, setTouchEnd] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
 
-  // Swipe thresholds
+  
   const minSwipeDistance = 50;
 
   const safeDifficulty = DIFFICULTY_COLORS[difficulty] ? difficulty : "Medium";
@@ -148,7 +148,7 @@ const TaskItem = ({
     }
   };
 
-  // Swipe Handlers
+  
   const onTouchStart = (e) => {
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
@@ -158,7 +158,7 @@ const TaskItem = ({
     const currentTouch = e.targetTouches[0].clientX;
     const offset = currentTouch - touchStart;
     
-    // Limit swipe offset for visual effect
+    
     if (Math.abs(offset) < 150) {
       setSwipeOffset(offset);
     }
@@ -194,7 +194,7 @@ const TaskItem = ({
           : "border-slate-800 hover:border-indigo-500/40 bg-slate-900/40 hover:bg-slate-900/60 hover:shadow-lg hover:shadow-indigo-500/5"
       }`}
     >
-      {/* Swipe Indicators */}
+      {}
       {swipeOffset > 20 && !isCompleted && status !== 'Cancelled' && status !== 'Abandoned' && (
         <div className="absolute inset-y-0 left-0 w-16 bg-emerald-500/20 flex items-center justify-center text-emerald-500 font-black text-xs animate-pulse">
           BİTİR
@@ -206,7 +206,7 @@ const TaskItem = ({
         </div>
       )}
       <div className="p-4 flex items-center justify-between gap-4">
-        {/* Checkbox + Info */}
+        {}
         <div
           className="flex items-center gap-4 flex-1 cursor-pointer min-w-0"
           onClick={() => description && setShowDesc(!showDesc)}
@@ -266,7 +266,7 @@ const TaskItem = ({
                 </span>
               )}
             </div>
-            {/* Tags Display */}
+            {}
             {(tags.length > 0 || customTags) && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {tags.map((tag, i) => (
@@ -277,7 +277,7 @@ const TaskItem = ({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {}
         <div className="flex items-center gap-2 shrink-0 border-l border-slate-800/50 pl-4 py-2">
           {status === 'Cancelled' ? (
             <button
@@ -365,7 +365,7 @@ const TaskItem = ({
         </div>
       </div>
 
-      {/* Postpone Panel */}
+      {}
       {showPostpone && (
         <div className="px-4 pb-4 border-t border-slate-800/50 bg-amber-500/5 rounded-b-2xl">
           <div className="pt-4 flex flex-col gap-3">

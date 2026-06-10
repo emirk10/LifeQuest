@@ -34,7 +34,7 @@ const taskService = {
     return await axiosClient.post('/Tasks/create-bulk-tasks', { tasks: tasksArray });
   },
 
-  // ─── SP-01: Yeni Görev Aksiyonları ─────────────────────────────────────
+  
   getDailyPool: async () => {
     const response = await axiosClient.get('/user-tasks/daily-pool');
     return response.data;

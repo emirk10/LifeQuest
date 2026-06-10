@@ -15,7 +15,7 @@ const StepSummary = ({ answers, result, onFinish }) => {
   const [confetti, setConfetti] = useState([]);
 
   useEffect(() => {
-    // Konfeti animasyonu
+    
     const items = Array.from({ length: 20 }, (_, i) => ({
       id: i,
       left: `${Math.random() * 100}%`,
@@ -31,7 +31,7 @@ const StepSummary = ({ answers, result, onFinish }) => {
 
   return (
     <div style={{ textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-      {/* Konfeti */}
+      {}
       <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
         {confetti.map(c => (
           <div
@@ -61,7 +61,7 @@ const StepSummary = ({ answers, result, onFinish }) => {
         Merhaba, <strong style={{ color: '#fff' }}>{answers.displayName || 'Kahraman'}</strong>! Profiin oluşturuldu.
       </div>
 
-      {/* Özet Kartlar */}
+      {}
       <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
         <div className="summary-card">
           <div className="summary-icon">🎯</div>

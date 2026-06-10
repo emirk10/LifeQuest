@@ -20,12 +20,26 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     sessionStorage.setItem("user_data", JSON.stringify(userData));
     setUser(userData);
-    navigate("/dashboard");
+    if (userData.onboardingCompleted) {
+      navigate("/dashboard");
+    } else {
+      navigate("/onboarding");
+    }
+  };
+
+  const updateUser = (updatedData) => {
+    setUser((prev) => {
+      const newUser = prev ? { ...prev, ...updatedData } : null;
+      if (newUser) {
+        sessionStorage.setItem("user_data", JSON.stringify(newUser));
+      }
+      return newUser;
+    });
   };
 
   const logout = async () => {
     try {
-      // Import and call API to clear cookies
+      
       const axiosClient = (await import("../api/axiosClient")).default;
       await axiosClient.post("/Auth/revoke");
     } catch (err) {
@@ -37,7 +51,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
       {!loading && children}
     </AuthContext.Provider>
   );

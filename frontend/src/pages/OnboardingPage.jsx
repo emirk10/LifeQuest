@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/authContext';
 import { onboardingService } from '../services/onboardingService';
 import StepWelcome from '../components/onboarding/StepWelcome';
 import StepLifestyle from '../components/onboarding/StepLifestyle';
@@ -15,6 +16,7 @@ const TOTAL_STEPS = 8;
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -45,7 +47,8 @@ const OnboardingPage = () => {
     try {
       const response = await onboardingService.completeOnboarding(answers);
       setResult(response);
-      setStep(8);
+      updateUser({ onboardingCompleted: true });
+      setStep(7);
     } catch (err) {
       console.error('Onboarding tamamlanırken hata:', err);
     } finally {
@@ -60,7 +63,7 @@ const OnboardingPage = () => {
   return (
     <div className="onboarding-page">
       <div className="onboarding-container">
-        {/* Progress Bar */}
+        {}
         <div className="onboarding-progress">
           <div className="progress-header">
             <span className="progress-step">Adım {step} / {TOTAL_STEPS}</span>
@@ -79,7 +82,7 @@ const OnboardingPage = () => {
           </div>
         </div>
 
-        {/* Adım İçeriği */}
+        {}
         <div className="step-content">
           {step === 1 && (
             <StepWelcome answers={answers} onChange={updateAnswers} onNext={next} />

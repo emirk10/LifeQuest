@@ -1,14 +1,14 @@
 
-// ─── LifeQuest Chatbot Flow Engine ───────────────────────────────────────────
-// Her "node" bir ekran durumunu temsil eder.
-// type: "message" | "options" | "api_call" | "dynamic"
-// options içindeki her buton { label, icon, nextNode, action? } içerir.
+
+
+
+
 
 export const FLOWS = {
 
-  // ══════════════════════════════════════════════════════
-  //  ANA MENÜ
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   main_menu: {
     id: "main_menu",
     type: "options",
@@ -24,9 +24,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  GÖREV MENÜSÜ
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   tasks_menu: {
     id: "tasks_menu",
     type: "options",
@@ -124,9 +124,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  HEDEF MENÜSÜ
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   goals_menu: {
     id: "goals_menu",
     type: "options",
@@ -176,9 +176,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  İSTATİSTİK MENÜSÜ
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   stats_menu: {
     id: "stats_menu",
     type: "options",
@@ -257,9 +257,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  MOTİVASYON AKIŞI (AI Destekli)
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   motivation_check_mood: {
     id: "motivation_check_mood",
     type: "api_call",
@@ -271,8 +271,8 @@ export const FLOWS = {
   motivation_mood_aware: {
     id: "motivation_mood_aware",
     type: "dynamic",
-    // Bu node, mood datasına göre farklı mesaj üretir
-    // Mood yoksa → mood_missing, varsa → AI motivasyon çağrısı
+    
+    
     dynamicType: "motivation_with_mood",
     options: [
       { label: "🔄 Farklı Mesaj", icon: "🔄", nextNode: "motivation_mood_aware", action: "refresh_motivation" },
@@ -313,9 +313,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  GÖREV ÖNERİ AKIŞI (Kişiselleştirilmiş)
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   suggest_task_category: {
     id: "suggest_task_category",
     type: "options",
@@ -368,9 +368,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  ROZET AKIŞI
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   badges_show: {
     id: "badges_show",
     type: "api_call",
@@ -388,9 +388,9 @@ export const FLOWS = {
     ],
   },
 
-  // ══════════════════════════════════════════════════════
-  //  RUH HALİ GÜNCELLEME
-  // ══════════════════════════════════════════════════════
+  
+  
+  
   mood_update_intro: {
     id: "mood_update_intro",
     type: "options",
@@ -449,7 +449,7 @@ export const FLOWS = {
   },
 };
 
-// ── Motivasyon mesajları (AI olmadan offline fallback) ────────────────────────
+
 export const MOTIVATION_TEMPLATES = {
   pozitif: [
     "🔥 Muhteşem bir enerji içindesin! Bu gücü bugün tam anlamıyla kullan. Her görev tamamlandığında bir adım daha ileri gidiyorsun.",

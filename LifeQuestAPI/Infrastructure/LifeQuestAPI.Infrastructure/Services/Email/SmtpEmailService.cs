@@ -45,8 +45,8 @@ public class SmtpEmailService : IEmailService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending email to {toEmail}", toEmail);
-            // We shouldn't throw an exception to interrupt the registration flow
-            // in a real app, maybe enqueue this or handle gracefully.
+            
+            
         }
     }
 }

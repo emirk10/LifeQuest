@@ -40,7 +40,7 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
             .Include(ub => ub.Badge)
             .ToListAsync(cancellationToken);
 
-        // ─── Timezone Adjusted Lazy Reset Logic for UI ───────────────────────
+        
         TimeZoneInfo tz;
         try
         {
@@ -53,7 +53,7 @@ public sealed class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQ
         var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
         var today = DateOnly.FromDateTime(nowInLocal);
 
-        // Eğer bugün için henüz sıfırlama yapılmamışsa UI'da 0 göster
+        
         var displayTodayTaskCount = (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
             ? 0
             : user.TodayTaskCount;

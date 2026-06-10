@@ -57,9 +57,9 @@ public class SocialController : ControllerBase
         _mediator = mediator;
     }
 
-    // ================================================================
-    // ARKADAŞLIK
-    // ================================================================
+    
+    
+    
 
     [HttpGet("friends")]
     public async Task<IActionResult> GetFriends([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -153,7 +153,7 @@ public class SocialController : ControllerBase
         {
             if (existing.Status == FriendshipStatus.Rejected)
             {
-                // Yeniden istek göndermeye izin ver: durumu beklemede yap ve isteği göndereni güncelle
+                
                 existing.RequesterId = userId.Value;
                 existing.AddresseeId = targetUserId;
                 existing.Status = FriendshipStatus.Pending;
@@ -165,7 +165,7 @@ public class SocialController : ControllerBase
 
             if (existing.Status == FriendshipStatus.Pending && existing.AddresseeId == userId)
             {
-                // Karşı taraftan zaten gelen bir beklemedeki istek varsa, doğrudan arkadaşlığı kabul et
+                
                 existing.Status = FriendshipStatus.Accepted;
                 existing.AcceptedAt = DateTime.UtcNow;
                 _friendshipWrite.Update(existing);
@@ -179,7 +179,7 @@ public class SocialController : ControllerBase
             return BadRequest(new { success = false, message = msg });
         }
 
-        // Soft-deleted (silinmiş) kayıt var mı? Unique index çakışmasını önlemek için kontrol et
+        
         var deletedFriendship = await _friendshipRead.GetAll(false)
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(f =>
@@ -189,7 +189,7 @@ public class SocialController : ControllerBase
 
         if (deletedFriendship != null)
         {
-            // Yeni kayıt oluşturmak yerine silinmiş kaydı sıfırla ve yeniden kullan
+            
             deletedFriendship.RequesterId = userId.Value;
             deletedFriendship.AddresseeId = targetUserId;
             deletedFriendship.Status = FriendshipStatus.Pending;
@@ -283,7 +283,7 @@ public class SocialController : ControllerBase
         else
         {
             friendship.Status = FriendshipStatus.Blocked;
-            // Engelleyen her zaman requester gibi davranırız (basitlik için)
+            
             friendship.RequesterId = userId.Value;
             friendship.AddresseeId = targetUserId;
             _friendshipWrite.Update(friendship);
@@ -381,7 +381,7 @@ public class SocialController : ControllerBase
         return Ok(new { success = true, users });
     }
 
-    /// <summary>Görevi tamamlayan arkadaşına Kudos ver — FEAT-005</summary>
+    
     [HttpPost("kudos")]
     public async Task<IActionResult> GiveKudos([FromBody] GiveKudosCommandRequest request)
     {
@@ -396,11 +396,11 @@ public class SocialController : ControllerBase
         return Ok(response);
     }
 
-    // ================================================================
-    // SP-05: MÜCADELELER — MediatR Handler'lar
-    // ================================================================
+    
+    
+    
 
-    /// <summary>SP-05: Mücadele listesi (status: active | invited | completed | all)</summary>
+    
     [HttpGet("challenges")]
     public async Task<IActionResult> GetChallenges([FromQuery] string status = "active")
     {
@@ -416,7 +416,7 @@ public class SocialController : ControllerBase
         return Ok(new { success = true, challenges });
     }
 
-    /// <summary>SP-05: Mücadele daveti gönder</summary>
+    
     [HttpPost("challenges/invite")]
     public async Task<IActionResult> SendChallengeInvite([FromBody] SendChallengeInviteCommandRequest request)
     {
@@ -436,7 +436,7 @@ public class SocialController : ControllerBase
         }
     }
 
-    /// <summary>SP-05: Mücadele davetine cevap ver (kabul/red)</summary>
+    
     [HttpPatch("challenges/{challengeId}/respond")]
     public async Task<IActionResult> RespondToChallenge(Guid challengeId, [FromBody] ChallengeRespondBody body)
     {
@@ -460,7 +460,7 @@ public class SocialController : ControllerBase
         }
     }
 
-    /// <summary>SP-05: Mücadeleyi iptal et</summary>
+    
     [HttpDelete("challenges/{challengeId}")]
     public async Task<IActionResult> CancelChallenge(Guid challengeId)
     {
@@ -484,7 +484,7 @@ public class SocialController : ControllerBase
         return Ok(new { success = true, message = "Mücadele iptal edildi." });
     }
 
-    /// <summary>P4-T2: Mücadele detaylarını ve katılımcı sıralamasını getir</summary>
+    
     [HttpGet("challenges/{challengeId}")]
     public async Task<IActionResult> GetChallengeDetails(Guid challengeId)
     {
@@ -538,11 +538,11 @@ public class SocialController : ControllerBase
         });
     }
 
-    // ================================================================
-    // YARDIMCI
-    // ================================================================
+    
+    
+    
 
-    /// <summary>SP-05: Görevi e-posta ile arkadaşınla veya bir kullanıcıyla paylaş</summary>
+    
     [HttpPost("share-task")]
     public async Task<IActionResult> ShareTask([FromBody] ShareTaskBody body)
     {
@@ -574,7 +574,7 @@ public class SocialController : ControllerBase
             inviteText = $@"<p>Bu görev <strong>{user.FullName}</strong> tarafından seninle paylaşıldı!</p>
                             <p>Daha fazlası için <a href='{actionLink}'>LifeQuest'e giriş yapın</a> ve gelişiminize hemen başlayın!</p>";
 
-            // Gerçekten görevi paylaşıyoruz: Eğer kullanıcıda bu görev bugün yoksa, onlara atayalım.
+            
             var existingUserTask = await _userTaskRead.GetAll(false)
                 .AnyAsync(ut => ut.AppUserId == recipientUser.Id && ut.AppTaskId == task.Id && ut.AssignedAt.Date == DateTime.UtcNow.Date);
 

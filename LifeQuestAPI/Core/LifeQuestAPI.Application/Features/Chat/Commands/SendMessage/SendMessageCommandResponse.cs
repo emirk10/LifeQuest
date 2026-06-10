@@ -18,7 +18,7 @@ public class SendMessageCommandResponse
     public bool ShouldShowMoodSelector { get; set; } = false;
     public string? FlowRedirect { get; set; }
 
-    // Eski uyumluluk
+    
     public Guid? SuggestedTaskId { get; set; }
     public string? SuggestedTaskTitle { get; set; }
     public int? SuggestedTaskXp { get; set; }

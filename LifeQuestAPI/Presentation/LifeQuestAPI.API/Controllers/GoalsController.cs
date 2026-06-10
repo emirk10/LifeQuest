@@ -34,7 +34,7 @@ public class GoalsController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>SP-05: Hedef dashboard (aktif/tamamlanan/arşiv + lag detection)</summary>
+    
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
@@ -56,7 +56,7 @@ public class GoalsController : ControllerBase
             StartDate = body.StartDate,
             EndDate = body.EndDate,
             BonusXP = body.BonusXP,
-            // SP-05 alanlar
+            
             Icon = body.Icon,
             Color = body.Color,
             Why = body.Why,
@@ -72,7 +72,7 @@ public class GoalsController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>SP-05: Manuel ilerleme güncelle (+1 / +5 / +10)</summary>
+    
     [HttpPatch("{goalId}/progress")]
     public async Task<IActionResult> UpdateProgress(Guid goalId, [FromBody] UpdateProgressBody body)
     {
@@ -93,7 +93,7 @@ public class GoalsController : ControllerBase
         }
     }
 
-    /// <summary>SP-05: Hedefi arşivle</summary>
+    
     [HttpPatch("{goalId}/archive")]
     public async Task<IActionResult> ArchiveGoal(Guid goalId)
     {
@@ -177,7 +177,7 @@ public class CreateGoalBody
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public int BonusXP { get; set; }
-    // SP-05
+    
     public string? Icon { get; set; }
     public string? Color { get; set; }
     public string? Why { get; set; }

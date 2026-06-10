@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace LifeQuestAPI.API.BackgroundServices;
 
-/// <summary>
-/// SP-04: Her Pazar 20:00'de çalışır.
-/// Son 14 günde tamamlama oranı %20'nin altında olan ve kullanıcı hedefinde yer alan
-/// kategorileri tespit eder; chatbot üzerinden hedef revizyon sorusu gönderir.
-/// </summary>
+
+
+
+
+
 public sealed class GoalRevisionWorker : BackgroundService
 {
     private readonly ILogger<GoalRevisionWorker> _logger;
@@ -36,13 +36,13 @@ public sealed class GoalRevisionWorker : BackgroundService
         {
             var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TurkeyTz);
 
-            // Her Pazar 20:00
+            
             if (nowLocal.DayOfWeek == DayOfWeek.Sunday && nowLocal.Hour == 20)
             {
                 _logger.LogInformation("GoalRevisionWorker: Hedef revizyonu başlıyor.");
                 await RunRevisionAsync(stoppingToken);
 
-                // 2 saat bekle (aynı gün tekrar çalışmasın)
+                
                 await Task.Delay(TimeSpan.FromHours(2), stoppingToken);
             }
             else
@@ -77,7 +77,7 @@ public sealed class GoalRevisionWorker : BackgroundService
 
                 if (!tasks.Any()) continue;
 
-                // Kategori bazlı tamamlama oranı
+                
                 var categoryStats = tasks
                     .Where(t => t.AppTask?.Category != null)
                     .GroupBy(t => t.AppTask!.Category!.Name)
@@ -92,9 +92,9 @@ public sealed class GoalRevisionWorker : BackgroundService
                     })
                     .ToList();
 
-                // %20 altında olan, kullanıcı hedefinde yer alan kategoriler
+                
                 var weakGoals = categoryStats
-                    .Where(s => s.Rate < 0.20 && s.Total >= 3 // en az 3 görev atanmış olmalı
+                    .Where(s => s.Rate < 0.20 && s.Total >= 3 
                         && (user.UserGoals ?? new()).Any(g =>
                             g.Contains(s.Category, StringComparison.OrdinalIgnoreCase)))
                     .ToList();
@@ -105,7 +105,7 @@ public sealed class GoalRevisionWorker : BackgroundService
                         $"'{weak.Category}' hedefini son 2 haftadır zor buluyor gibisin " +
                         $"(tamamlama: %{(int)(weak.Rate * 100)}). Bu hedefi güncellemek ister misin?";
 
-                    // ChatBotMessage olarak kaydet (aksiyonlu)
+                    
                     var chatMsg = new Domain.Entities.ChatBotMessage
                     {
                         Id = Guid.NewGuid(),
@@ -114,7 +114,7 @@ public sealed class GoalRevisionWorker : BackgroundService
                         SenderType = Domain.Enums.SenderType.Bot,
                         IsProactive = true,
                         Intent = "goal_revision",
-                        // Aksiyonlar JSON string formatında saklanır
+                        
                         ActionsOfferedJson = new List<string>
                         {
                             $"{{\"type\":\"update_goal\",\"label\":\"Evet, güncelle\",\"payload\":\"{weak.Category}\"}}",
@@ -127,7 +127,7 @@ public sealed class GoalRevisionWorker : BackgroundService
                     await chatWriteRepo.AddAsync(chatMsg);
                     await chatWriteRepo.SaveAsync();
 
-                    // SignalR push
+                    
                     await notifService.SendNotificationAsync(
                         user.Id,
                         "Hedef Revizyonu 🎯",

@@ -33,7 +33,7 @@ public class GetChatHistoryQueryHandler : IRequestHandler<GetChatHistoryQueryReq
             .Take(request.Limit)
             .ToListAsync(cancellationToken);
 
-        // Tarihe göre artan sırada döndürelim ki UI'da düzgün sıralansın
+        
         return messages.OrderBy(m => m.CreatedAt).Select(m => new ChatBotMessageDto
         {
             Id = m.Id,

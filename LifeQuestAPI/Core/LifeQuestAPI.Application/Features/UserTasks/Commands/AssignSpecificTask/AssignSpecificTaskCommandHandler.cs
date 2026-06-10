@@ -39,7 +39,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             return new AssignSpecificTaskCommandResponse { Success = false, Message = "Kullanıcı bulunamadı." };
         }
 
-        // ─── Lazy Reset Logic (Timezone Adjusted) ──────────────────────
+        
         TimeZoneInfo tz;
         try
         {
@@ -53,7 +53,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
         var nowInLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
         var today = DateOnly.FromDateTime(nowInLocal);
 
-        // Günlük sayaç sıfırlama
+        
         if (!user.LastCounterResetDate.HasValue || user.LastCounterResetDate.Value < today)
         {
             user.TodayTaskCount = 0;
@@ -61,7 +61,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             user.LastCounterResetDate = today;
         }
 
-        // Haftalık sayaç sıfırlama (Pazartesi kontrolü)
+        
         var isMonday = nowInLocal.DayOfWeek == DayOfWeek.Monday;
         if (isMonday && (!user.LastWeeklyResetDate.HasValue || user.LastWeeklyResetDate.Value < today))
         {
@@ -69,7 +69,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             user.LastWeeklyResetDate = today;
         }
 
-        // ─── DailyLimitRule ─────────────────────────────────────────
+        
         if (user.TodayTaskCount >= user.DailyTaskLimit)
         {
             return new AssignSpecificTaskCommandResponse 
@@ -79,7 +79,7 @@ public class AssignSpecificTaskCommandHandler : IRequestHandler<AssignSpecificTa
             };
         }
 
-        // ─── ActiveLimitRule ────────────────────────────────────────
+        
         if (user.ActiveTaskCount >= user.DailyTaskLimit * 2)
         {
             return new AssignSpecificTaskCommandResponse 

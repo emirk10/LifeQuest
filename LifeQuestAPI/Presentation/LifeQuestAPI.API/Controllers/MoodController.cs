@@ -23,7 +23,7 @@ public class MoodController : ControllerBase
         _moodReadRepository = moodReadRepository;
     }
 
-    /// <summary>POST /api/mood/daily — Günlük mood kaydet (UPSERT)</summary>
+    
     [HttpPost("daily")]
     public async Task<IActionResult> RecordDailyMood([FromBody] RecordDailyMoodRequest request)
     {
@@ -41,7 +41,7 @@ public class MoodController : ControllerBase
         return Ok(new { success = true, data = result });
     }
 
-    /// <summary>GET /api/mood/today — Bugünkü mood kaydını getir</summary>
+    
     [HttpGet("today")]
     public async Task<IActionResult> GetTodayMood()
     {
@@ -70,7 +70,7 @@ public class MoodController : ControllerBase
         return Ok(new { success = true, data = mood });
     }
 
-    /// <summary>GET /api/mood/history — Mood geçmişi (paginated)</summary>
+    
     [HttpGet("history")]
     public async Task<IActionResult> GetMoodHistory([FromQuery] int page = 1, [FromQuery] int pageSize = 30)
     {

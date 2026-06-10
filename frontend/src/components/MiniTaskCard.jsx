@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-/**
- * MiniTaskCard — SP-02: Chatbot içinde görev önerisi için kompakt kart.
- */
+
+
+
 const MiniTaskCard = ({ task, onSelect, isSelected: initialSelected = false }) => {
   const [selected, setSelected] = useState(initialSelected);
   const [loading, setLoading] = useState(false);

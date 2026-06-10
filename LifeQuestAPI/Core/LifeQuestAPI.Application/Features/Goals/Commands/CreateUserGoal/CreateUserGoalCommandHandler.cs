@@ -33,7 +33,7 @@ public class CreateUserGoalCommandHandler : IRequestHandler<CreateUserGoalComman
             BonusXP = request.BonusXP,
             IsCompleted = false,
             CreatedAt = DateTime.UtcNow,
-            // SP-05
+            
             Icon = request.Icon,
             Color = request.Color,
             Why = request.Why,

@@ -53,13 +53,13 @@ public class AchievementService : IAchievementService
 
         foreach (var ach in allAchievements)
         {
-            // Eger onceden acildiysa atla
+            
             if (userAchievementIds.Contains(ach.Id)) continue;
 
             bool isEarned = false;
 
-            // Simple rule checks (Based on enum string or logic)
-            // Varsayılarak AchievementType enum veya isimlendirme:
+            
+            
             if (ach.Title.Contains("Seviye") && user.GeneralLevel >= ach.RequiredCount)
             {
                 isEarned = true;
@@ -68,7 +68,7 @@ public class AchievementService : IAchievementService
             {
                 isEarned = true;
             }
-            // Dilersen burada AchievementType Enum'una göre net kontroller yapılabilir.
+            
 
             if (isEarned)
             {
@@ -82,7 +82,7 @@ public class AchievementService : IAchievementService
 
                 await _userAchievementWriteRepository.AddAsync(newUserAchievement);
                 
-                // Anlık Bildirim (SignalR + veritabanı)
+                
                 await _notificationService.SendNotificationAsync(
                     userId, 
                     $"🏆 Yeni Başarım: {ach.Title}!", 

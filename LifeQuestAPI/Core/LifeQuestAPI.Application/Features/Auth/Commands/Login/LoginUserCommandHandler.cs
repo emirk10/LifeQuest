@@ -55,7 +55,8 @@ public sealed class LoginUserCommandHandler : IRequestHandler<LoginUserCommandRe
             RefreshTokenExpiration = expiry,
             UserId = user.Id,
             UserName = user.UserName,
-            Role = user.AppRole?.Name ?? "User"
+            Role = user.AppRole?.Name ?? "User",
+            OnboardingCompleted = user.OnboardingCompleted
         };
     }
 }

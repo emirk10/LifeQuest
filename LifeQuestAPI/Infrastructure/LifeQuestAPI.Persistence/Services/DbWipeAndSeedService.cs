@@ -33,7 +33,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
 
                     if (request.WipeDatabase)
                     {
-                        // 1. Wipe everything safely
+                        
                         _context.UserCategoryProgresses.RemoveRange(_context.UserCategoryProgresses);
                         _context.UserTasks.RemoveRange(_context.UserTasks);
                         _context.AppTasks.RemoveRange(_context.AppTasks);
@@ -47,7 +47,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
                     }
                     else
                     {
-                        // Load existing categories to avoid duplicates
+                        
                         var existingCats = await _context.Categories.ToListAsync();
                         foreach (var cat in existingCats)
                         {
@@ -55,7 +55,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
                         }
                     }
 
-                    // 2. Insert Categories and map to their IDs
+                    
                     if (request.Categories != null)
                     {
                         foreach (var cat in request.Categories)
@@ -77,7 +77,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
                         await _context.SaveChangesAsync();
                     }
 
-                    // 3. Insert Tasks
+                    
                     if (request.Tasks != null)
                     {
                         foreach (var t in request.Tasks)
@@ -115,7 +115,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
                         await _context.SaveChangesAsync();
                     }
 
-                    // 4. Insert Badges
+                    
                     if (request.Badges != null)
                     {
                         foreach (var b in request.Badges)
@@ -132,7 +132,7 @@ public class DbWipeAndSeedService : IDbWipeAndSeedService
                         await _context.SaveChangesAsync();
                     }
 
-                    // 5. Insert Achievements
+                    
                     if (request.Achievements != null)
                     {
                         foreach (var a in request.Achievements)

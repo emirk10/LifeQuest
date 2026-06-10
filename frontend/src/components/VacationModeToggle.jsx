@@ -55,7 +55,7 @@ const VacationModeToggle = ({ isOnVacation: initialVacation = false, onVacationC
 
   return (
     <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/60 border border-slate-700/50 rounded-[2rem] p-6 space-y-5">
-      {/* Başlık */}
+      {}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-base font-black text-white tracking-wider uppercase italic flex items-center gap-2">
@@ -95,12 +95,12 @@ const VacationModeToggle = ({ isOnVacation: initialVacation = false, onVacationC
         </div>
       )}
 
-      {/* Onay formu */}
+      {}
       {showConfirm && !isOnVacation && (
         <div className="space-y-4 border border-slate-700/50 rounded-2xl p-4 bg-slate-900/40">
           <p className="text-sm text-slate-300 font-semibold">Tatil nedeni nedir?</p>
 
-          {/* Neden seçimi */}
+          {}
           <div className="grid grid-cols-3 gap-2">
             {VACATION_REASONS.map((r) => (
               <button
@@ -117,7 +117,7 @@ const VacationModeToggle = ({ isOnVacation: initialVacation = false, onVacationC
             ))}
           </div>
 
-          {/* Bitiş tarihi */}
+          {}
           <div>
             <label className="text-xs text-slate-400 block mb-1">Bitiş tarihi (opsiyonel)</label>
             <input
@@ -129,14 +129,14 @@ const VacationModeToggle = ({ isOnVacation: initialVacation = false, onVacationC
             />
           </div>
 
-          {/* Açıklama */}
+          {}
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
             <p className="text-amber-300 text-xs">
               ⚠️ Tatil süresince sana görev atanmaz. Dilediğin zaman kapatabilirsin.
             </p>
           </div>
 
-          {/* Butonlar */}
+          {}
           <div className="flex gap-2">
             <button
               onClick={handleStartVacation}
@@ -155,7 +155,7 @@ const VacationModeToggle = ({ isOnVacation: initialVacation = false, onVacationC
         </div>
       )}
 
-      {/* Mesaj */}
+      {}
       {message && (
         <div
           className={`rounded-xl px-4 py-2 text-sm ${

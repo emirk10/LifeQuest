@@ -61,7 +61,7 @@ public sealed class UpdateGoalProgressCommandHandler
 
         goal.CurrentValue += request.IncrementBy;
 
-        // Tamamlandı mı?
+        
         if (goal.CurrentValue >= goal.TargetValue)
         {
             goal.IsCompleted = true;
@@ -75,7 +75,7 @@ public sealed class UpdateGoalProgressCommandHandler
         }
         else
         {
-            // Milestone kontrolü
+            
             var milestones = await _milestoneReadRepository
                 .GetWhere(m => m.UserGoalId == goal.Id && !m.IsCompleted, tracking: true)
                 .OrderBy(m => m.OrderIndex)

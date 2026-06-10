@@ -33,13 +33,14 @@ public sealed class AuthController : ControllerBase
         
         SetTokenCookies(response.Token, response.RefreshToken, response.RefreshTokenExpiration);
         
-        // Return without sensitive tokens in body
+        
         return Ok(new { 
             response.IsSuccess, 
             response.Message,
             response.UserId,
             response.UserName,
-            response.Role
+            response.Role,
+            response.OnboardingCompleted
         });
     }
 
@@ -99,14 +100,14 @@ public sealed class AuthController : ControllerBase
     {
         Response.Cookies.Delete("accessToken");
         Response.Cookies.Delete("refreshToken");
-        // We could also call a command to clear it in DB, but just clearing cookie is fine for frontend logout.
+        
         return Ok(new { IsSuccess = true, Message = "Çıkış yapıldı." });
     }
 
     private void SetTokenCookies(string accessToken, string refreshToken, DateTime? refreshTokenExpiration)
     {
-        // Secure=true yalnızca HTTPS'te çalışır. Dev/Docker ortamında HTTP kullanıldığında
-        // Secure=true cookie göndermez ve auth tamamen bozulur.
+        
+        
         var isSecure = !HttpContext.RequestServices
             .GetRequiredService<IWebHostEnvironment>()
             .IsDevelopment();

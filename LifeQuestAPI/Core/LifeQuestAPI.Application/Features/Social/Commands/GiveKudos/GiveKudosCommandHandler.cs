@@ -38,7 +38,7 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
             .Include(ut => ut.AppUser)
             .FirstOrDefaultAsync(ut => ut.Id == request.UserTaskId, cancellationToken);
 
-        // Fallback: Eğer direkt UserTaskId ile bulunamadıysa, belki PostTagId gönderilmiştir (Eski gönderiler için)
+        
         if (userTask == null)
         {
             var postTag = await _postTagReadRepository.Table
@@ -48,10 +48,10 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
 
             if (postTag != null)
             {
-                // Bu AppTaskId ve Post Sahibi için UserTask bulalım
+                
                 userTask = await _userTaskReadRepository.Table
                     .Include(ut => ut.AppUser)
-                    .OrderByDescending(ut => ut.CompletedAt) // En son tamamlananı al
+                    .OrderByDescending(ut => ut.CompletedAt) 
                     .FirstOrDefaultAsync(ut => ut.AppUserId == postTag.Post.AppUserId && 
                                               ut.AppTaskId == postTag.AppTaskId && 
                                               ut.CompletedAt.HasValue, cancellationToken);
@@ -64,13 +64,13 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
         if (userTask.AppUserId == request.SenderId)
             return new() { Success = false, Message = "Kendi görevinize kudos veremezsiniz." };
 
-        // Zaten kudos verildi mi?
+        
         var existingKudos = await _kudosReadRepository.Table
             .AnyAsync(k => k.SenderId == request.SenderId && k.UserTaskId == request.UserTaskId, cancellationToken);
         if (existingKudos)
             return new() { Success = false, Message = "Bu görev için zaten kudos verdiniz." };
 
-        // Günlük limit kontrolü (Receiver için max 3)
+        
         var today = DateTime.UtcNow.Date;
         var kudosCountToday = await _kudosReadRepository.Table
             .CountAsync(k => k.ReceiverId == userTask.AppUserId && k.CreatedAt >= today, cancellationToken);
@@ -82,16 +82,16 @@ public sealed class GiveKudosCommandHandler : IRequestHandler<GiveKudosCommandRe
         {
             SenderId = request.SenderId,
             ReceiverId = userTask.AppUserId,
-            UserTaskId = userTask.Id // P4-T2: request.UserTaskId yerine bulduğumuz asıl ID'yi kullan
+            UserTaskId = userTask.Id 
         };
 
         await _kudosWriteRepository.AddAsync(kudos);
         await _kudosWriteRepository.SaveAsync();
 
-        // +2 XP
+        
         await _gamificationService.AddExperienceAsync(userTask.AppUserId, 2);
 
-        // Bildirim
+        
         await _notificationService.SendNotificationAsync(
             userTask.AppUserId,
             "Kudos Aldın! 🌟",

@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useSignalRContext } from "../context/SignalRContext";
 
-/**
- * useSignalR — LifeQuest gerçek zamanlı bildirim hook'u (v2 - Singleton Context tabanlı)
- */
+
+
+
 export const useSignalR = ({ onNotification, onProactiveMessage } = {}) => {
     const { on, off } = useSignalRContext();
 
@@ -13,7 +13,7 @@ export const useSignalR = ({ onNotification, onProactiveMessage } = {}) => {
         };
 
         const handleProactive = (message) => {
-            // Plan P2-T1: openChatBot custom event dispatch
+            
             window.dispatchEvent(new CustomEvent("openChatBot", { detail: message }));
             if (onProactiveMessage) onProactiveMessage(message);
         };

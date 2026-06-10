@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.API.BackgroundServices;
 
-/// <summary>SP-05: Hedef hatırlatma bildirimleri. Her gün 09:00'da çalışır.</summary>
+
 public class GoalReminderWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -23,7 +23,7 @@ public class GoalReminderWorker : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var now = DateTime.UtcNow;
-            var nextRun = now.Date.AddDays(1).AddHours(6); // UTC 06:00 = TR 09:00
+            var nextRun = now.Date.AddDays(1).AddHours(6); 
             var delay = nextRun - now;
             if (delay < TimeSpan.Zero) delay = TimeSpan.FromSeconds(10);
 
@@ -66,7 +66,7 @@ public class GoalReminderWorker : BackgroundService
             };
 
             if (!shouldRemind) continue;
-            if (goal.LastReminderAt?.Date == now.Date) continue; // Bugün zaten gönderildi
+            if (goal.LastReminderAt?.Date == now.Date) continue; 
 
             var progressPct = goal.TargetValue > 0
                 ? (int)((double)goal.CurrentValue / goal.TargetValue * 100)

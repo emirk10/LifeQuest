@@ -11,29 +11,29 @@ public class CompleteOnboardingCommandRequest : IRequest<CompleteOnboardingComma
 {
     public Guid UserId { get; set; }
 
-    // Adım 1 — Karşılama
+    
     public string? DisplayName { get; set; }
     public int? AvatarId { get; set; }
 
-    // Adım 2 — Yaşam tarzı
+    
     public string? LifestyleType { get; set; }
-    public string? WakeUpTime { get; set; }  // "07:00"
+    public string? WakeUpTime { get; set; }  
     public List<int>? WorkDays { get; set; }
 
-    // Adım 3 — Hedefler
+    
     public string? PrimaryFocusArea { get; set; }
     public List<string>? SecondaryGoals { get; set; }
 
-    // Adım 4 — Kapasite
+    
     public int? DailyAvailableMinutes { get; set; }
     public string? PreferredTaskDuration { get; set; }
     public int? PreferredTasksPerWeek { get; set; }
 
-    // Adım 5 — Motivasyon
+    
     public string? MotivationFactor { get; set; }
     public List<string>? MotivationKillers { get; set; }
 
-    // Adım 6 — Zorluk
+    
     public string? DifficultyPreference { get; set; }
     public string? AgeRange { get; set; }
 }
@@ -76,7 +76,7 @@ public sealed class CompleteOnboardingCommandHandler
         var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString(), tracking: true)
             ?? throw new Exception("Kullanıcı bulunamadı.");
 
-        // AppUser alanlarını güncelle
+        
         if (!string.IsNullOrWhiteSpace(request.DisplayName))
             user.Name = request.DisplayName;
 
@@ -101,7 +101,7 @@ public sealed class CompleteOnboardingCommandHandler
         {
             user.PreferredTasksPerWeek = request.PreferredTasksPerWeek;
             user.WeeklyTaskLimit = request.PreferredTasksPerWeek.Value;
-            // DailyTaskLimit = max(3, haftada / 7) — Seviye 1 başlangıcı için minimum 3.
+            
             user.DailyTaskLimit = Math.Max(3, request.PreferredTasksPerWeek.Value / 7);
         }
 
@@ -112,7 +112,7 @@ public sealed class CompleteOnboardingCommandHandler
         _userWriteRepository.Update(user);
         await _userWriteRepository.SaveAsync();
 
-        // Onboarding ham cevaplarını kaydet
+        
         var answers = new Dictionary<string, object?>
         {
             ["display_name"] = request.DisplayName,
@@ -144,7 +144,7 @@ public sealed class CompleteOnboardingCommandHandler
         }
         await _onboardingWriteRepository.SaveAsync();
 
-        // İlk görev önerisi al (1 adet, Easy, PrimaryFocusArea)
+        
         Guid? firstTaskId = null;
         string? firstTaskTitle = null;
 
@@ -164,7 +164,7 @@ public sealed class CompleteOnboardingCommandHandler
                 firstTaskTitle = recommendations[0].Title;
             }
         }
-        catch { /* İlk görev alınamazsa sessizce geç */ }
+        catch {  }
 
         return new CompleteOnboardingCommandResponse
         {

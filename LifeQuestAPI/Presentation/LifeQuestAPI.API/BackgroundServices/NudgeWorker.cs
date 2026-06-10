@@ -9,21 +9,21 @@ using Microsoft.Extensions.Logging;
 
 namespace LifeQuestAPI.API.BackgroundServices;
 
-/// <summary>
-/// SP-03: Belirli saatlerde pasif kullanıcılara proaktif chatbot nudge mesajı gönderir.
-/// Zamanlama (UTC+3): 13:00, 19:00, 21:30
-/// </summary>
+
+
+
+
 public sealed class NudgeWorker : BackgroundService
 {
     private readonly ILogger<NudgeWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    // Türkiye saati (UTC+3) — offset
+    
     private static readonly TimeZoneInfo TurkeyTz =
         TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time") ??
         TimeZoneInfo.CreateCustomTimeZone("Turkey Standard Time", TimeSpan.FromHours(3), "Turkey", "Turkey");
 
-    // Günlük gönderim zamanları (yerel saat)
+    
     private static readonly (TimeOnly Time, NudgeType Type)[] Schedule =
     [
         (new TimeOnly(13, 0), NudgeType.Midday),
@@ -49,7 +49,7 @@ public sealed class NudgeWorker : BackgroundService
 
             foreach (var (scheduleTime, nudgeType) in Schedule)
             {
-                // ±2 dakika tolerans penceresi
+                
                 var diff = Math.Abs((nowTime - scheduleTime).TotalMinutes);
                 if (diff <= 2)
                 {
@@ -59,7 +59,7 @@ public sealed class NudgeWorker : BackgroundService
                 }
             }
 
-            // Bir dakika bekle — gereksiz döngü yok
+            
             await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
         }
     }
@@ -74,7 +74,7 @@ public sealed class NudgeWorker : BackgroundService
 
         var today = DateOnly.FromDateTime(nowLocal);
 
-        // NudgeEnabled=true olan kullanıcıları çek
+        
         var users = await userReadRepo
             .GetWhere(u => u.NudgeEnabled, tracking: false)
             .ToListAsync(ct);
@@ -83,7 +83,7 @@ public sealed class NudgeWorker : BackgroundService
         {
             try
             {
-                // Bugün bu türden nudge gönderildi mi? (ChatBotMessage kontrolü)
+                
                 var chatReadRepo = scope.ServiceProvider.GetRequiredService<IChatBotMessageReadRepository>();
                 var alreadySent = await chatReadRepo.GetWhere(
                     m => m.AppUserId == user.Id
@@ -94,7 +94,7 @@ public sealed class NudgeWorker : BackgroundService
 
                 if (alreadySent) continue;
 
-                // Bugünkü görev durumunu kontrol et
+                
                 var todayTasks = await userTaskReadRepo.Table
                     .Where(ut => ut.AppUserId == user.Id)
                     .ToListAsync(ct);
@@ -102,7 +102,7 @@ public sealed class NudgeWorker : BackgroundService
                 string? message = BuildNudgeMessage(nudgeType, user, todayTasks);
                 if (message == null) continue;
 
-                // ChatBotMessage kaydı (IsProactive=true)
+                
                 var chatMsg = new ChatBotMessage
                 {
                     Id = Guid.NewGuid(),
@@ -117,7 +117,7 @@ public sealed class NudgeWorker : BackgroundService
                 await chatWriteRepo.AddAsync(chatMsg);
                 await chatWriteRepo.SaveAsync();
 
-                // SignalR ile push
+                
                 await notifService.SendNotificationAsync(
                     user.Id,
                     "LifeQuest AI 🤖",
@@ -157,7 +157,7 @@ public sealed class NudgeWorker : BackgroundService
             NudgeType.NightStreak when completed == 0 =>
                 $"Gece olmadan önce {name}! 🌙 Sadece 5 dakikalık mini bir görev bile serini kurtarır. Hadi!",
 
-            _ => null // Koşul sağlanmıyorsa mesaj gönderme
+            _ => null 
         };
     }
 }

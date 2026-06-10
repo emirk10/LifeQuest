@@ -1,6 +1,6 @@
 import axiosClient from './axiosClient';
 
-// ─── Mood API ────────────────────────────────────────────────────────────────
+
 export const moodApi = {
   recordDailyMood: (data) =>
     axiosClient.post('/mood/daily', data),
@@ -12,7 +12,7 @@ export const moodApi = {
     axiosClient.get('/mood/history'),
 };
 
-// ─── Mood Service (Merged) ───────────────────────────────────────────────────
+
 export const moodService = {
   recordDailyMood: async (moodData) => {
     const response = await axiosClient.post('/mood/daily', moodData);
@@ -30,7 +30,7 @@ export const moodService = {
   }
 };
 
-// ─── Daily Task Pool API ──────────────────────────────────────────────────────
+
 export const taskPoolApi = {
   getDailyPool: (count = 6) =>
     axiosClient.get(`/user-tasks/daily-pool?count=${count}`),

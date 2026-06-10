@@ -20,7 +20,7 @@ public class ChatController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>AI chatbot'a mesaj gönder ve bağlam-duyarlı cevap al.</summary>
+    
     [HttpPost("send")]
     public async Task<IActionResult> SendMessage([FromBody] ChatMessageBody body)
     {
@@ -38,7 +38,7 @@ public class ChatController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>SP-02: Chatbot aksiyon butonuna tıklandığında aksiyonu işle.</summary>
+    
     [HttpPost("action")]
     public async Task<IActionResult> ProcessAction([FromBody] ProcessChatActionBody body)
     {
@@ -58,7 +58,7 @@ public class ChatController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>SP-02: Konuşma geçmişi (son 50 mesaj).</summary>
+    
     [HttpGet("history")]
     public async Task<IActionResult> GetHistory([FromQuery] int limit = 50)
     {

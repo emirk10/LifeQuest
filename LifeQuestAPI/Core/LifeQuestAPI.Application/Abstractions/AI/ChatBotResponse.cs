@@ -1,8 +1,8 @@
 namespace LifeQuestAPI.Application.Abstractions.AI;
 
-/// <summary>
-/// Python AI servisinden dönen chatbot cevabını temsil eder.
-/// </summary>
+
+
+
 public class ChatBotResponse
 {
     public string Intent { get; set; } = string.Empty;

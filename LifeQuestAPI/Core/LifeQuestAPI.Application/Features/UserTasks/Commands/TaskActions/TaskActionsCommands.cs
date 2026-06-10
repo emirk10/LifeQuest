@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.Application.Features.UserTasks.Commands.PauseResumeTask;
 
-// ─── Pause ────────────────────────────────────────────────────────────────────
+
 public class PauseTaskCommandRequest : IRequest<UserTaskDto>
 {
     public Guid UserId { get; set; }
@@ -45,7 +45,7 @@ public class PauseTaskCommandHandler : IRequestHandler<PauseTaskCommandRequest, 
     }
 }
 
-// ─── Resume ───────────────────────────────────────────────────────────────────
+
 public class ResumeTaskCommandRequest : IRequest<UserTaskDto>
 {
     public Guid UserId { get; set; }
@@ -89,7 +89,7 @@ public class ResumeTaskCommandHandler : IRequestHandler<ResumeTaskCommandRequest
     }
 }
 
-// ─── Abandon ──────────────────────────────────────────────────────────────────
+
 public class AbandonTaskCommandRequest : IRequest<bool>
 {
     public Guid UserId { get; set; }
@@ -139,21 +139,21 @@ public class AbandonTaskCommandHandler : IRequestHandler<AbandonTaskCommandReque
         _writeRepository.Update(userTask);
         await _writeRepository.SaveAsync();
 
-        // Gerçek zamanlı davranış analizi tetikleme
+        
         try
         {
             await _behaviorAnalysisService.AnalyzeAndUpdateUserBehaviorAsync(request.UserId, cancellationToken);
         }
         catch
         {
-            // Analiz hatası iptal etmeyi engellemesin
+            
         }
 
         return true;
     }
 }
 
-// ─── Start ─────────────────────────────────────────────────────────────────────
+
 public class StartTaskCommandRequest : IRequest<UserTaskDto>
 {
     public Guid UserId { get; set; }

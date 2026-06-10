@@ -3,13 +3,13 @@ using MediatR;
 
 namespace LifeQuestAPI.Application.Features.User.Commands.Vacation;
 
-// ─── Request ──────────────────────────────────────────────────────────────────
+
 
 public class StartVacationCommandRequest : IRequest<VacationCommandResponse>
 {
     public Guid UserId { get; set; }
     public DateOnly? EndDate { get; set; }
-    public string? Reason { get; set; } // Tatil / Hastalık / Çok yoğunum
+    public string? Reason { get; set; } 
 }
 
 public class VacationCommandResponse
@@ -18,7 +18,7 @@ public class VacationCommandResponse
     public string Message { get; set; } = string.Empty;
 }
 
-// ─── Handler ──────────────────────────────────────────────────────────────────
+
 
 public sealed class StartVacationCommandHandler
     : IRequestHandler<StartVacationCommandRequest, VacationCommandResponse>
@@ -48,7 +48,7 @@ public sealed class StartVacationCommandHandler
         user.VacationStartDate = DateOnly.FromDateTime(DateTime.UtcNow);
         user.VacationEndDate   = request.EndDate;
         user.VacationReason    = request.Reason;
-        user.FrozenStreak      = 0; // Streak GamificationService'de tutulur; 0 = aktif koruma
+        user.FrozenStreak      = 0; 
         user.UpdatedAt         = DateTime.UtcNow;
 
         _userWrite.Update(user);

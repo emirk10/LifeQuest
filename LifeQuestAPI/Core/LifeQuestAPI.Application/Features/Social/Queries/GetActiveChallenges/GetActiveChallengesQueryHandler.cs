@@ -8,7 +8,7 @@ namespace LifeQuestAPI.Application.Features.Social.Queries.GetActiveChallenges;
 public class GetActiveChallengesQueryRequest : IRequest<List<ChallengeDto>>
 {
     public Guid UserId { get; set; }
-    /// <summary>active | invited | completed | all</summary>
+    
     public string StatusFilter { get; set; } = "active";
 }
 

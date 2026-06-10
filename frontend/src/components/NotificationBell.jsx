@@ -7,7 +7,7 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    // Fetch initial notifications
+    
     useEffect(() => {
         const fetchNotifications = async () => {
             try {
@@ -22,10 +22,10 @@ const NotificationBell = () => {
         fetchNotifications();
     }, []);
 
-    // Setup SignalR — real-time notifications via useSignalR hook (MISS-007)
+    
     useSignalR({
         onNotification: () => {
-            // Re-fetch to keep grouping correct
+            
             axiosClient.get("/notifications").then(response => {
                 setNotifications(response.data.grouped || {});
                 setUnreadCount(response.data.unreadCount || 0);
@@ -37,7 +37,7 @@ const NotificationBell = () => {
         if (!isOpen && unreadCount > 0) {
             axiosClient.patch("/notifications/mark-all-as-read").then(() => {
                 setUnreadCount(0);
-                // Lokal olarak hepsini okundu işaretle (Gruplanmış veride derin güncelleme)
+                
                 setNotifications(prev => {
                     const newGroups = { ...prev };
                     Object.keys(newGroups).forEach(key => {

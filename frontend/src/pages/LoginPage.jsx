@@ -24,7 +24,8 @@ const LoginPage = () => {
         const userData = {
           userId: response.userId,
           userName: response.userName,
-          role: response.role
+          role: response.role,
+          onboardingCompleted: response.onboardingCompleted
         };
         sessionStorage.setItem("user_data", JSON.stringify(userData));
 
@@ -33,7 +34,7 @@ const LoginPage = () => {
           sessionStorage.setItem("acceptTask", acceptTask);
         }
 
-        // We pass userData to the context login method
+        
         login(userData);
       } else {
         setError("Beklenmedik bir sunucu yanıtı alındı.");

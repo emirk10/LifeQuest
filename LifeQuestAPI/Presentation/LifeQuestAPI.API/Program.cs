@@ -11,7 +11,7 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog Yapılandırması
+
 Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -26,12 +26,12 @@ builder.Services.AddPersistenceServices(builder.Configuration);
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddHostedService<DailyQuestWorker>();
 builder.Services.AddHostedService<LifeQuestAPI.API.BackgroundServices.WeeklyReportWorker>();
-builder.Services.AddHostedService<NudgeWorker>(); // SP-03
-builder.Services.AddHostedService<GoalRevisionWorker>(); // SP-04
-builder.Services.AddHostedService<GoalReminderWorker>(); // SP-05
-builder.Services.AddHostedService<ChallengeExpiryWorker>(); // SP-05
+builder.Services.AddHostedService<NudgeWorker>(); 
+builder.Services.AddHostedService<GoalRevisionWorker>(); 
+builder.Services.AddHostedService<GoalReminderWorker>(); 
+builder.Services.AddHostedService<ChallengeExpiryWorker>(); 
 
-// API Versioning (Phase 3)
+
 builder.Services.AddApiVersioning(options =>
 {
     options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
@@ -84,7 +84,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSignalR();
 builder.Services.AddScoped<LifeQuestAPI.Application.Abstractions.Notifications.IAppNotificationService, LifeQuestAPI.API.Services.AppNotificationService>();
 
-// CORS Politikası
+
 builder.Services.AddCors(options =>
 {
     var allowedOrigins = builder.Configuration.GetSection("AppSettings:AllowedOrigins").Get<string[]>() 
@@ -96,11 +96,11 @@ builder.Services.AddCors(options =>
             policy.WithOrigins(allowedOrigins)
                   .AllowAnyMethod()
                   .AllowAnyHeader()
-                  .AllowCredentials(); // SignalR için gerekli
+                  .AllowCredentials(); 
         });
 });
 
-// Rate Limiting
+
 builder.Services.AddRateLimiter(options =>
 {
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
@@ -181,13 +181,13 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
 }
-// app.UseHttpsRedirection(); // Dev ortamında (Docker) localhost mixed-content ve sertifika sorunlarını önlemek için kapatıldı
+
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Statik dosyalar (uploads klasoru icin)
+
 app.UseStaticFiles();
 
 app.MapControllers();

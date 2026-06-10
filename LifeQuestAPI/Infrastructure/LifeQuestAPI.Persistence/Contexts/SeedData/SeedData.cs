@@ -17,10 +17,10 @@ public static class SeedData
     {
         using var context = serviceProvider.GetRequiredService<LifeQuestDbContext>();
 
-        // Ensure database is created and migrations are applied
+        
         context.Database.Migrate();
 
-        // 1. ---- ROLLER ----
+        
         var adminRole = await context.AppRoles.FirstOrDefaultAsync(r => r.Name == "Admin");
         if (adminRole == null)
         {
@@ -37,7 +37,7 @@ public static class SeedData
 
         await context.SaveChangesAsync();
 
-        // 2. ---- KATEGORİLER ----
+        
         var egitim = await context.Categories.FirstOrDefaultAsync(c => c.Name == "Eğitim");
         if (egitim == null)
         {
@@ -82,12 +82,12 @@ public static class SeedData
 
         await context.SaveChangesAsync();
 
-        // 3. ---- ROZETLER (Min 20 - Burada 25 rozet tanımlıyoruz) ----
+        
         if (!await context.Badges.AnyAsync())
         {
             var badges = new List<Badge>
             {
-                // Level Rozetleri
+                
                 new() { Name = "Yeni Başlayan", Description = "İlk adımı attın! (Level 1)", IconPath = "🌱", Type = BadgeType.Level, RequiredValue = 1, BadgeColor = "#10B981", Rarity = "Common" },
                 new() { Name = "Hırslı Kaşif", Description = "Artık durdurulamazsın! (Level 5)", IconPath = "⚡", Type = BadgeType.Level, RequiredValue = 5, BadgeColor = "#3B82F6", Rarity = "Common" },
                 new() { Name = "Kararlı Savaşçı", Description = "Tutarlı ilerliyorsun. (Level 10)", IconPath = "🎯", Type = BadgeType.Level, RequiredValue = 10, BadgeColor = "#8B5CF6", Rarity = "Rare" },
@@ -95,7 +95,7 @@ public static class SeedData
                 new() { Name = "Efsanevi Quest Master", Description = "Efsanevi seviyeye ulaştın! (Level 25)", IconPath = "👑", Type = BadgeType.Level, RequiredValue = 25, BadgeColor = "#EF4444", Rarity = "Legendary" },
                 new() { Name = "Bilge Lider", Description = "Büyük bir zihinsel olgunluğa ulaştın (Level 35)", IconPath = "🧠", Type = BadgeType.Level, RequiredValue = 35, BadgeColor = "#EC4899", Rarity = "Legendary" },
 
-                // Kategori Rozetleri
+                
                 new() { Name = "Bilgi Avcısı", Description = "Eğitim görevlerinde sınır tanımıyorsun", IconPath = "📖", Type = BadgeType.CategoryMaster, RequiredValue = 10, CategoryId = egitim.Id, BadgeColor = "#3B82F6", Rarity = "Rare" },
                 new() { Name = "Sağlık Gurusu", Description = "Sağlık kategorisinde uzmanlaştın", IconPath = "🥗", Type = BadgeType.CategoryMaster, RequiredValue = 10, CategoryId = saglik.Id, BadgeColor = "#10B981", Rarity = "Rare" },
                 new() { Name = "Kariyer Mimarı", Description = "Profesyonel hayatını ilmek ilmek dokuyorsun", IconPath = "🏗️", Type = BadgeType.CategoryMaster, RequiredValue = 10, CategoryId = kariyer.Id, BadgeColor = "#6B7280", Rarity = "Rare" },
@@ -103,19 +103,19 @@ public static class SeedData
                 new() { Name = "Kişisel Gelişim Öncüsü", Description = "Her gün biraz daha iyileşiyorsun", IconPath = "🔝", Type = BadgeType.CategoryMaster, RequiredValue = 10, CategoryId = kisiselGelisim.Id, BadgeColor = "#8B5CF6", Rarity = "Rare" },
                 new() { Name = "Sanat Dehası", Description = "Yaratıcılığınla dünyayı renklendiriyorsun", IconPath = "🎨", Type = BadgeType.CategoryMaster, RequiredValue = 10, CategoryId = yaraticilik.Id, BadgeColor = "#F59E0B", Rarity = "Rare" },
 
-                // Seri (Streak) Rozetleri
+                
                 new() { Name = "3 Günlük Ateş", Description = "3 günlük seri yakaladın", IconPath = "🔥", Type = BadgeType.Streak, RequiredValue = 3, BadgeColor = "#F59E0B", Rarity = "Common" },
                 new() { Name = "Haftalık Kıvılcım", Description = "7 günlük seriyle düzenliliği yakaladın", IconPath = "⚡", Type = BadgeType.Streak, RequiredValue = 7, BadgeColor = "#EF4444", Rarity = "Common" },
                 new() { Name = "Ay Tutulması", Description = "30 günlük seriyle imkansızı başardın", IconPath = "🌑", Type = BadgeType.Streak, RequiredValue = 30, BadgeColor = "#8B5CF6", Rarity = "Epic" },
                 new() { Name = "Yıllık Abide", Description = "365 gün kesintisiz LifeQuest!", IconPath = "🏛️", Type = BadgeType.Streak, RequiredValue = 365, BadgeColor = "#EF4444", Rarity = "Legendary" },
 
-                // Görev Tamamlama Sayısı Rozetleri
+                
                 new() { Name = "İlk Adım", Description = "İlk görevini tamamladın", IconPath = "👣", Type = BadgeType.TaskCount, RequiredValue = 1, BadgeColor = "#10B981", Rarity = "Common" },
                 new() { Name = "Görev İşçisi", Description = "Toplamda 25 görev tamamladın", IconPath = "🛠️", Type = BadgeType.TaskCount, RequiredValue = 25, BadgeColor = "#3B82F6", Rarity = "Common" },
                 new() { Name = "Çalışkan Karınca", Description = "Toplamda 100 görev tamamladın", IconPath = "🐜", Type = BadgeType.TaskCount, RequiredValue = 100, BadgeColor = "#8B5CF6", Rarity = "Rare" },
                 new() { Name = "Görev Canavarı", Description = "Toplamda 500 görev tamamladın", IconPath = "👹", Type = BadgeType.TaskCount, RequiredValue = 500, BadgeColor = "#EF4444", Rarity = "Epic" },
 
-                // Sosyal ve Diğer Rozetler
+                
                 new() { Name = "Sosyal Kelebek", Description = "3 arkadaş edindin", IconPath = "🦋", Type = BadgeType.Social, RequiredValue = 3, BadgeColor = "#EC4899", Rarity = "Common" },
                 new() { Name = "Popüler Figür", Description = "10 arkadaş edindin", IconPath = "👥", Type = BadgeType.Social, RequiredValue = 10, BadgeColor = "#EC4899", Rarity = "Rare" },
                 new() { Name = "Geri Dönüş Kahramanı", Description = "Uzun süre sonra uygulamaya dönüp görev tamamladın", IconPath = "💫", Type = BadgeType.Comeback, RequiredValue = 1, BadgeColor = "#6B7280", Rarity = "Rare" },
@@ -127,7 +127,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // 4. ---- BAŞARIMLAR (Min 12) ----
+        
         if (!await context.Achievements.AnyAsync())
         {
             var achievements = new List<Achievement>
@@ -151,12 +151,12 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // 5. ---- GÖREVLER (Min 150 - Toplamda 156 gerçek görev ekliyoruz) ----
+        
         if (!await context.AppTasks.AnyAsync())
         {
             var tasks = new List<AppTask>();
 
-            // Helper to generate AppTask object
+            
             AppTask CreateTask(string title, string desc, Guid categoryId, DifficultyLevel difficulty, int xp, int minutes, string why, List<DayTimeSlot> slots, List<string> weaknesses, List<string> goals, List<string> tags)
             {
                 return new AppTask
@@ -185,7 +185,7 @@ public static class SeedData
                 };
             }
 
-            // --- EĞİTİM GÖREVLERİ (26 adet) ---
+            
             var eduId = egitim.Id;
             tasks.Add(CreateTask("Haber Analizi", "Gündemdeki önemli bir haberi en az 3 farklı kaynaktan okuyup karşılaştır.", eduId, DifficultyLevel.Easy, 40, 15, "Medya okuryazarlığını artırmak ve tarafsız bakış açısı kazanmak için.", new() { DayTimeSlot.Morning, DayTimeSlot.Noon }, new() { "bias", "distraction" }, new() { "intellectual_growth" }, new() { "analiz", "haber" }));
             tasks.Add(CreateTask("Online Kurs Videosu", "Devam ettiğin online eğitimden en az 1 ders videosu izle ve not al.", eduId, DifficultyLevel.Medium, 80, 30, "Sürekli öğrenme ve mesleki bilgiyi taze tutmak amacıyla önerilmiştir.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "procrastination" }, new() { "career_advancement", "learning" }, new() { "kurs", "video" }));
@@ -214,7 +214,7 @@ public static class SeedData
             tasks.Add(CreateTask("Seminer Notlarını Düzenleme", "Daha önce katıldığın bir seminer veya webinarda aldığın karmaşık notları temiz bir belgeye aktar.", eduId, DifficultyLevel.Medium, 65, 25, "Dağınık verileri bilgiye dönüştürerek kalıcılığını sağlamak için.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "disorder" }, new() { "organization" }, new() { "seminer", "notlar" }));
             tasks.Add(CreateTask("Sanat Tarihi Okuması", "Önemli bir sanat akımını ve en önemli 3 temsilcisini araştır.", eduId, DifficultyLevel.Easy, 40, 15, "Sanat dünyasına dair entelektüel bakış açını derinleştirmek için.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "lack_of_art" }, new() { "general_knowledge" }, new() { "sanattarihi", "kultur" }));
 
-            // --- SAĞLIK GÖREVLERİ (26 adet) ---
+            
             var healthId = saglik.Id;
             tasks.Add(CreateTask("Sabah Esnemesi", "Yataktan kalktıktan sonra kaslarını gevşetmek için 10 dakika hafif esneme hareketleri yap.", healthId, DifficultyLevel.Easy, 35, 10, "Güne enerjik başlamak ve gece boyu kasılan vücudu rahatlatmak için.", new() { DayTimeSlot.Morning }, new() { "stiffness" }, new() { "flexibility" }, new() { "esneme", "sabah" }));
             tasks.Add(CreateTask("2 Litre Su Tüketimi", "Gün boyunca su şişeni yanından ayırmayarak en az 2 litre su tüket.", healthId, DifficultyLevel.Easy, 50, 5, "Vücut hidrasyonunu ideal düzeyde tutarak baş ağrılarını ve halsizliği önlemek için.", new() { DayTimeSlot.Morning, DayTimeSlot.Noon, DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "dehydration" }, new() { "hydration" }, new() { "su", "detoks" }));
@@ -243,7 +243,7 @@ public static class SeedData
             tasks.Add(CreateTask("Zihinsel Rahatlama (Güdümlü Meditasyon)", "10 dakikalık güdümlü uyku/stres meditasyonu yap.", healthId, DifficultyLevel.Easy, 50, 10, "Günün mental yorgunluğunu silmek ve derin dinlenme sağlamak amacıyla.", new() { DayTimeSlot.Evening, DayTimeSlot.Night }, new() { "overthinking" }, new() { "mindfulness" }, new() { "meditasyon", "stres" }));
             tasks.Add(CreateTask("10.000 Adım Hedefi", "Gün bitmeden adım sayarında 10.000 rakamına ulaşmak için ekstra hareket et.", healthId, DifficultyLevel.Hard, 130, 60, "Günlük aktif kalori yakımı ve bacak kaslarının güçlendirilmesi için harika bir hedeftir.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "inactivity" }, new() { "cardio" }, new() { "yuruyus", "adim" }));
 
-            // --- KARİYER GÖREVLERİ (26 adet) ---
+            
             var careerId = kariyer.Id;
             tasks.Add(CreateTask("E-Posta Kutusunu Sıfırlama", "Gereksiz e-postaları sil, okunmamışları yanıtla ve gelen kutunu temizle.", careerId, DifficultyLevel.Easy, 40, 20, "Zihinsel dağınıklığı önlemek ve önemli iş kaçırmamak için.", new() { DayTimeSlot.Morning, DayTimeSlot.Afternoon }, new() { "clutter" }, new() { "inbox_zero" }, new() { "eposta", "duzen" }));
             tasks.Add(CreateTask("LinkedIn Güncellemesi", "Profilindeki deneyim, yetenek veya sertifika alanlarından birini güncelle.", careerId, DifficultyLevel.Easy, 50, 15, "Profesyonel ağını güncel tutmak ve yeni fırsatlara hazır olmak için.", new() { DayTimeSlot.Afternoon }, new() { "outdated_profile" }, new() { "personal_brand" }, new() { "linkedin", "kariyer" }));
@@ -272,7 +272,7 @@ public static class SeedData
             tasks.Add(CreateTask("Sertifika Programı Araştırması", "Sektöründe geçerliliği yüksek olan profesyonel bir sertifika programını araştır.", careerId, DifficultyLevel.Easy, 50, 20, "Uzmanlığını uluslararası geçerliliği olan belgelerle taçlandırmak için.", new() { DayTimeSlot.Noon, DayTimeSlot.Afternoon }, new() { "undocumented_skills" }, new() { "credentials" }, new() { "sertifika", "arastirma" }));
             tasks.Add(CreateTask("Networking Buluşması", "Eski bir iş arkadaşınla kahve içmek veya online görüşmek için plan yap.", careerId, DifficultyLevel.Medium, 80, 15, "Bağlantıları koparmamak ve gelecekteki olası iş birliklerine kapı açmak için.", new() { DayTimeSlot.Noon, DayTimeSlot.Afternoon }, new() { "weak_network" }, new() { "social_capital" }, new() { "networking", "kahve" }));
 
-            // --- SOSYAL SORUMLULUK GÖREVLERİ (26 adet) ---
+            
             var socialId = sosyal.Id;
             tasks.Add(CreateTask("Geri Dönüşüm Ayrıştırma", "Evindeki kağıt, plastik ve cam atıkları ayrı poşetlerde toplayıp geri dönüşüm kutusuna at.", socialId, DifficultyLevel.Easy, 45, 10, "Doğal kaynakların korunması ve çöp miktarının azaltılması için.", new() { DayTimeSlot.Morning, DayTimeSlot.Evening }, new() { "wastefulness" }, new() { "ecology" }, new() { "geridonusum", "cevre" }));
             tasks.Add(CreateTask("Su/Yiyecek Tasarrufu", "Bugün tabakta yemek bırakmayarak ve gereksiz su akıtmayarak kaynak tasarrufu yap.", socialId, DifficultyLevel.Easy, 40, 5, "Dünyadaki kıtlık ve su stresiyle mücadelede bireysel sorumluluk almak için.", new() { DayTimeSlot.Morning, DayTimeSlot.Noon, DayTimeSlot.Evening }, new() { "extravagance" }, new() { "sustainability" }, new() { "tasarruf", "su" }));
@@ -301,7 +301,7 @@ public static class SeedData
             tasks.Add(CreateTask("Çevre Dostu Temizlik Maddesi", "Ev temizliğinde kimyasal yerine sirke, karbonat gibi doğal alternatifleri kullanmayı dene.", socialId, DifficultyLevel.Medium, 60, 20, "Su kaynaklarının kimyasallarla zehirlenmesini ve ev içi hava kalitesinin bozulmasını önlemek için.", new() { DayTimeSlot.Morning, DayTimeSlot.Afternoon }, new() { "chemical_exposure" }, new() { "healthy_home" }, new() { "sirke", "dogaltemizlik" }));
             tasks.Add(CreateTask("Engelli Farkındalığı", "Engelli bireylerin erişebilirliği hakkında yazılmış bir kılavuzu oku veya video izle.", socialId, DifficultyLevel.Easy, 40, 15, "Engelsiz bir yaşam tasarımı ve empati duygusunun gelişmesi için.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "ableism" }, new() { "inclusion" }, new() { "engelli", "farkindalik" }));
 
-            // --- KİŞİSEL GELİŞİM GÖREVLERİ (26 adet) ---
+            
             var growthId = kisiselGelisim.Id;
             tasks.Add(CreateTask("Günlük Yazma Seansı", "Günün nasıl geçtiğini, hislerini ve öğrendiklerini içeren en az 1 sayfalık günlük yaz.", growthId, DifficultyLevel.Easy, 45, 15, "Zihinsel netlik kazanmak, duygularını regüle etmek ve anıları saklamak için.", new() { DayTimeSlot.Evening, DayTimeSlot.Night }, new() { "emotional_fog" }, new() { "self_reflection" }, new() { "gunluk", "yazma" }));
             tasks.Add(CreateTask("Şükran Günlüğü", "Hayatında sahip olduğun ve minnettar olduğun 3 şeyi detaylarıyla yaz.", growthId, DifficultyLevel.Easy, 40, 10, "Zihni olumluluklara odaklayarak kaygı ve tatminsizlik seviyelerini düşürmek için.", new() { DayTimeSlot.Morning, DayTimeSlot.Night }, new() { "pessimism" }, new() { "gratitude" }, new() { "sukran", "pozitif" }));
@@ -330,7 +330,7 @@ public static class SeedData
             tasks.Add(CreateTask("Beden Dili Analizi", "İletişimde etkili beden dili kullanımı hakkında 15 dakikalık eğitici bir video izle.", growthId, DifficultyLevel.Easy, 45, 15, "Karşındaki insanlarda güven uyandırmak ve beden dilini doğru okumak için.", new() { DayTimeSlot.Noon, DayTimeSlot.Afternoon }, new() { "insecurity" }, new() { "body_language" }, new() { "bedendili", "iletisim" }));
             tasks.Add(CreateTask("Aktif Dinleme", "Bugün bir arkadaşınla konuşurken sözünü kesmeden, sadece onu anlamaya odaklan.", growthId, DifficultyLevel.Easy, 40, 15, "Karşındakine saygı göstermek ve yüzeysel olmayan güçlü bağlar kurmak için.", new() { DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "selfish_talk" }, new() { "active_listening" }, new() { "dinleme", "empati" }));
 
-            // --- YARATICILIK GÖREVLERİ (26 adet) ---
+            
             var creativeId = yaraticilik.Id;
             tasks.Add(CreateTask("Serbest Karalama (Doodling)", "Boş bir kağıda aklına gelen şekilleri 10 dakika boyunca çiz.", creativeId, DifficultyLevel.Easy, 30, 10, "Zihindeki baskıyı azaltmak ve bilinçdışı yaratıcılığı tetiklemek için.", new() { DayTimeSlot.Noon, DayTimeSlot.Evening }, new() { "perfectionism" }, new() { "stress_relief" }, new() { "cizim", "karalama" }));
             tasks.Add(CreateTask("Yeni Bir Şarkı Keşfi", "Daha önce hiç dinlemediğin tarzda bir albüm bul ve dinle.", creativeId, DifficultyLevel.Easy, 40, 15, "Müzikal ufkunu genişletmek ve beyinde yeni nöral bağlantılar kurmak için.", new() { DayTimeSlot.Noon, DayTimeSlot.Afternoon, DayTimeSlot.Evening }, new() { "cliche_choices" }, new() { "aesthetic_sense" }, new() { "muzik", "kesif" }));
@@ -363,7 +363,7 @@ public static class SeedData
             await context.SaveChangesAsync();
         }
 
-        // 6. ---- KULLANICILAR (5 mock kullanıcı) ----
+        
         if (!await context.AppUsers.AnyAsync(u => u.Email == "admin@lifequest.com"))
         {
             var users = new List<AppUser>();
@@ -445,13 +445,13 @@ public static class SeedData
             await context.AppUsers.AddRangeAsync(users);
             await context.SaveChangesAsync();
 
-            // 7. ---- KULLANICI GÖREV GEÇMİŞİ (UserTasks Seeding) ----
+            
             var allDbTasks = await context.AppTasks.ToListAsync();
             
-            // Seed UserTasks for each user
+            
             foreach (var user in users.Where(u => u.UserName != "system_admin"))
             {
-                // 1. Seed some Completed Tasks (Past activity)
+                
                 var randomTasks = allDbTasks.OrderBy(x => Guid.NewGuid()).Take(8).ToList();
                 foreach (var task in randomTasks)
                 {
@@ -475,9 +475,9 @@ public static class SeedData
                     context.UserTasks.Add(ut);
                 }
 
-                // 2. Seed some Active Tasks (In Progress / Selected)
+                
                 var activeTasks = allDbTasks.OrderBy(x => Guid.NewGuid()).Take(2).ToList();
-                // Task 1: InProgress
+                
                 var activeUt1 = new UserTask
                 {
                     Id = Guid.NewGuid(),
@@ -490,7 +490,7 @@ public static class SeedData
                     UserEnergyAtStart = 4,
                     UserMoodAtStart = MoodMode.Normal
                 };
-                // Task 2: Selected
+                
                 var activeUt2 = new UserTask
                 {
                     Id = Guid.NewGuid(),
@@ -504,7 +504,7 @@ public static class SeedData
                 context.UserTasks.Add(activeUt1);
                 context.UserTasks.Add(activeUt2);
 
-                // 3. Seed some Suggested Tasks (Suggested pool)
+                
                 var suggestedTasks = allDbTasks.OrderBy(x => Guid.NewGuid()).Take(4).ToList();
                 foreach (var task in suggestedTasks)
                 {
@@ -521,7 +521,7 @@ public static class SeedData
                     context.UserTasks.Add(sugUt);
                 }
 
-                // 4. Seed User Category Progresses
+                
                 foreach (var category in new[] { egitim, saglik, kariyer, sosyal, kisiselGelisim, yaraticilik })
                 {
                     var progress = new UserCategoryProgress
@@ -535,7 +535,7 @@ public static class SeedData
                     context.UserCategoryProgresses.Add(progress);
                 }
 
-                // 5. Seed User Daily Moods (For the last 7 days)
+                
                 for (int d = -6; d <= 0; d++)
                 {
                     var moodDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(d));
@@ -554,7 +554,7 @@ public static class SeedData
                     context.UserDailyMoods.Add(mood);
                 }
 
-                // 6. Seed some User Badges
+                
                 var randomBadges = await context.Badges.OrderBy(x => Guid.NewGuid()).Take(3).ToListAsync();
                 foreach (var badge in randomBadges)
                 {
@@ -568,7 +568,7 @@ public static class SeedData
                     context.UserBadges.Add(ub);
                 }
 
-                // 7. Seed some User Achievements
+                
                 var randomAchievements = await context.Achievements.OrderBy(x => Guid.NewGuid()).Take(2).ToListAsync();
                 foreach (var ach in randomAchievements)
                 {
@@ -586,7 +586,7 @@ public static class SeedData
 
             await context.SaveChangesAsync();
 
-            // 8. ---- ARKADAŞLIKLAR (Friendships) ----
+            
             var ahmetUser = users.First(u => u.UserName == "ahmet_yilmaz");
             var ayseUser = users.First(u => u.UserName == "ayse_demir");
             var mehmetUser = users.First(u => u.UserName == "mehmet_kaya");
@@ -603,8 +603,8 @@ public static class SeedData
             await context.Friendships.AddRangeAsync(friendships);
             await context.SaveChangesAsync();
 
-            // 9. ---- MÜCADELELER (Challenges) ----
-            // Active Challenge
+            
+            
             var challengeActive = new Challenge
             {
                 Id = Guid.NewGuid(),
@@ -625,7 +625,7 @@ public static class SeedData
                 ChallengerMessage = "Hadi bakalım, kim daha çok okuyacak?"
             };
 
-            // Completed Challenge
+            
             var challengeCompleted = new Challenge
             {
                 Id = Guid.NewGuid(),
@@ -650,7 +650,7 @@ public static class SeedData
             await context.Challenges.AddRangeAsync(new[] { challengeActive, challengeCompleted });
             await context.SaveChangesAsync();
 
-            // Challenge Participants Seeding
+            
             var activeParticipant1 = new ChallengeParticipant { Id = Guid.NewGuid(), ChallengeId = challengeActive.Id, UserId = ahmetUser.Id, Role = 0, CurrentProgress = 3, IsWinner = false };
             var activeParticipant2 = new ChallengeParticipant { Id = Guid.NewGuid(), ChallengeId = challengeActive.Id, UserId = ayseUser.Id, Role = 1, CurrentProgress = 2, IsWinner = false };
             var compParticipant1 = new ChallengeParticipant { Id = Guid.NewGuid(), ChallengeId = challengeCompleted.Id, UserId = mehmetUser.Id, Role = 0, CurrentProgress = 5, IsWinner = false };
@@ -659,7 +659,7 @@ public static class SeedData
             await context.ChallengeParticipants.AddRangeAsync(new[] { activeParticipant1, activeParticipant2, compParticipant1, compParticipant2 });
             await context.SaveChangesAsync();
 
-            // 10. ---- SOSYAL FEED (Posts, Likes, Comments) ----
+            
             var post1 = new Post
             {
                 Id = Guid.NewGuid(),
@@ -687,7 +687,7 @@ public static class SeedData
             await context.Posts.AddRangeAsync(new[] { post1, post2, post3 });
             await context.SaveChangesAsync();
 
-            // Add Likes
+            
             var like1 = new PostLike { Id = Guid.NewGuid(), PostId = post1.Id, AppUserId = ayseUser.Id, CreatedAt = DateTime.UtcNow.AddHours(-17) };
             var like2 = new PostLike { Id = Guid.NewGuid(), PostId = post1.Id, AppUserId = elifUser.Id, CreatedAt = DateTime.UtcNow.AddHours(-16) };
             var like3 = new PostLike { Id = Guid.NewGuid(), PostId = post2.Id, AppUserId = ahmetUser.Id, CreatedAt = DateTime.UtcNow.AddHours(-10) };
@@ -695,7 +695,7 @@ public static class SeedData
 
             await context.PostLikes.AddRangeAsync(new[] { like1, like2, like3, like4 });
 
-            // Add Comments
+            
             var comment1 = new PostComment
             {
                 Id = Guid.NewGuid(),

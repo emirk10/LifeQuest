@@ -10,4 +10,5 @@ public sealed record LoginUserCommandResponse
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
     public string Role { get; set; } = "User";
+    public bool OnboardingCompleted { get; set; }
 }

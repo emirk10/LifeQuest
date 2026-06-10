@@ -19,7 +19,7 @@ public class TaskRecommendationService : ITaskRecommendationService
     private readonly ILogger<TaskRecommendationService> _logger;
     private ITransformer? _model;
     
-    // Uygulama kök dizininde Models klasörü
+    
     private readonly string _modelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Models", "task_recommendation_model.zip");
 
     public bool IsModelReady => _model != null;
@@ -56,7 +56,7 @@ public class TaskRecommendationService : ITaskRecommendationService
         if (availableTasks == null || !availableTasks.Any())
             return new List<Guid>();
 
-        // Eğer model yoksa Kural Tabanlı Fallback kullan
+        
         if (!IsModelReady)
         {
             return GetRuleBasedRecommendations(user, availableTasks, count);
@@ -80,7 +80,7 @@ public class TaskRecommendationService : ITaskRecommendationService
                     DayOfWeek = (float)DateTime.Now.DayOfWeek,
                     HourOfDay = DateTime.Now.Hour,
                     UserCompletedTaskCount = user.UserTasks?.Count(ut => ut.Status == AppTaskStatus.Completed) ?? 0,
-                    UserStreakDays = 0 // Eğer streak prop'u varsa kullanılabilir, şu an sabit
+                    UserStreakDays = 0 
                 };
 
                 var prediction = predEngine.Predict(inputData);
@@ -128,7 +128,7 @@ public class TaskRecommendationService : ITaskRecommendationService
             }
             return true;
         })
-        .OrderBy(x => Guid.NewGuid()) // Geçici kural: randomize et
+        .OrderBy(x => Guid.NewGuid()) 
         .Take(count)
         .Select(t => t.Id)
         .ToList();
@@ -191,7 +191,7 @@ public class TaskRecommendationService : ITaskRecommendationService
         }
     }
 
-    // --- ML.NET Data Models ---
+    
     public class TaskInteractionData
     {
         public float UserLevel { get; set; }

@@ -29,7 +29,7 @@ const SLOT_LABELS = {
 };
 
 export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh, isPoolMode = false, isLimitReached = false, selectedIds = new Set() }) {
-  const [filter, setFilter] = useState('all'); // all | quick | deep
+  const [filter, setFilter] = useState('all'); 
 
   if (!poolData) return null;
 
@@ -49,7 +49,7 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh, is
 
   return (
     <div className="task-pool-container">
-      {/* Header */}
+      {}
       <div className="task-pool-header">
         <div className="pool-context">
           <div className="pool-mood-badge" style={{ '--mood-color': mood.color }}>
@@ -79,7 +79,7 @@ export default function TaskPoolSelector({ poolData, onTaskSelect, onRefresh, is
         </button>
       </div>
 
-      {/* Task Grid */}
+      {}
       {filteredTasks.length === 0 ? (
         <div className="pool-empty">
           <span>🎉</span>

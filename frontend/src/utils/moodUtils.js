@@ -1,6 +1,6 @@
-/**
- * Mood and Energy level helpers
- */
+
+
+
 export function getMoodHint(energyLevel) {
   if (!energyLevel) return "normal";
   if (energyLevel >= 8) return "pozitif";

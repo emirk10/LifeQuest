@@ -28,7 +28,7 @@ public sealed class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQ
                 .Select(f => f.RequesterId == request.CurrentUserId ? f.AddresseeId : f.RequesterId)
                 .ToListAsync(cancellationToken);
             
-            friendIds.Add(request.CurrentUserId.Value); // Kendisi de listede olsun
+            friendIds.Add(request.CurrentUserId.Value); 
 
             userQuery = userQuery.Where(u => friendIds.Contains(u.Id));
         }
@@ -47,7 +47,7 @@ public sealed class GetLeaderboardQueryHandler : IRequestHandler<GetLeaderboardQ
 
         var paginatedResult = await query.ToPaginatedListAsync(request.PageNumber, request.PageSize, cancellationToken);
         
-        // Fix ranks based on page
+        
         int baseRank = (request.PageNumber - 1) * request.PageSize;
         for (int i = 0; i < paginatedResult.Items.Count; i++)
         {

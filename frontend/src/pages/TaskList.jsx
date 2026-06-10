@@ -60,7 +60,7 @@ const TaskList = () => {
     }
   }, [currentCategoryName, categories, page]);
 
-  // Yardımcı: Görevleri tarihe göre grupla
+  
   const groupTasksByDate = (tasks) => {
     const groups = {};
     tasks.forEach((task) => {
@@ -96,7 +96,7 @@ const TaskList = () => {
 
   const handleCategoryChange = (e) => {
     const selectedName = e.target.value;
-    setPage(1); // Kategori değişince başa dön
+    setPage(1); 
     if (selectedName === "all") {
       setSearchParams({});
     } else {
@@ -188,7 +188,7 @@ const TaskList = () => {
 
   return (
     <MainLayout>
-      {/* Toast Notification */}
+      {}
       {toast && (
         <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-2xl font-bold text-sm shadow-2xl transition-all animate-bounce ${
           toast.type === "success"
@@ -200,7 +200,7 @@ const TaskList = () => {
       )}
 
       <div className="max-w-5xl mx-auto space-y-10">
-        {/* Header */}
+        {}
         <section className="flex flex-col md:flex-row justify-between items-end gap-4">
           <div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2">
@@ -239,7 +239,7 @@ const TaskList = () => {
           </div>
         </section>
 
-        {/* Progress Bar */}
+        {}
         {totalCount > 0 && !loading && (
           <div className="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
             <div className="flex justify-between text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
@@ -261,7 +261,7 @@ const TaskList = () => {
           </div>
         )}
 
-        {/* Tabs Filter */}
+        {}
         <div className="flex border-b border-slate-800 gap-6 text-sm font-bold pb-2 overflow-x-auto">
           {[
             { id: "active", label: "Aktif Görevler", count: tasks.filter(t => !t.isCompleted && t.status !== "Postponed" && t.status !== "Cancelled" && t.status !== "Abandoned").length },
@@ -295,7 +295,7 @@ const TaskList = () => {
           ))}
         </div>
 
-        {/* Task List */}
+        {}
         <div className="space-y-12">
           {!loading ? (
             filteredTasks.length > 0 ? (
@@ -367,7 +367,7 @@ const TaskList = () => {
           )}
         </div>
 
-        {/* Pagination Controls */}
+        {}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-6 pt-10 border-t border-slate-800/50">
             <button

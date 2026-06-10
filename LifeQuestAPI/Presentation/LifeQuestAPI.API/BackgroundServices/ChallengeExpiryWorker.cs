@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LifeQuestAPI.API.BackgroundServices;
 
-/// <summary>SP-05: Süresi dolan mücadeleler için saatlik kontrol.</summary>
+
 public class ChallengeExpiryWorker : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
@@ -45,7 +45,7 @@ public class ChallengeExpiryWorker : BackgroundService
         var notificationService = services.GetRequiredService<IAppNotificationService>();
         var now = DateTime.UtcNow;
 
-        // 1. Invited + 48 saat geçmiş → Expired
+        
         var expiredInvites = await challengeReadRepo.GetWhere(
             c => c.Status == ChallengeStatus.Invited &&
                  c.InvitedAt.AddHours(48) < now,
@@ -58,7 +58,7 @@ public class ChallengeExpiryWorker : BackgroundService
             challengeWriteRepo.Update(c);
         }
 
-        // 2. Active + EndDate geçmiş → Complete
+        
         var expiredActive = await challengeReadRepo.GetWhere(
             c => c.Status == ChallengeStatus.Active && c.EndDate < now,
             tracking: true)
@@ -68,14 +68,14 @@ public class ChallengeExpiryWorker : BackgroundService
         {
             c.Status = ChallengeStatus.Completed;
 
-            // Kazananı belirle
+            
             Guid? winnerId = null;
             int challengerProg = c.ChallengerProgress;
             int opponentProg = c.OpponentProgress;
 
             if (challengerProg > opponentProg) winnerId = c.ChallengerId;
             else if (opponentProg > challengerProg) winnerId = c.OpponentId;
-            // Eşitlik → winnerId = null, her ikisine yarı bonus
+            
 
             c.WinnerId = winnerId;
 
@@ -93,7 +93,7 @@ public class ChallengeExpiryWorker : BackgroundService
             }
             else
             {
-                // Beraberlik
+                
                 int halfBonus = c.WinnerXPBonus / 2;
                 await gamificationService.AddExperienceAsync(c.ChallengerId, halfBonus);
                 await gamificationService.AddExperienceAsync(c.OpponentId, halfBonus);

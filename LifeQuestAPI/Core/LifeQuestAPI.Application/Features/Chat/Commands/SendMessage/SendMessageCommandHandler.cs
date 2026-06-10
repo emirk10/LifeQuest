@@ -40,7 +40,7 @@ public sealed class SendMessageCommandHandler
         if (string.IsNullOrWhiteSpace(request.Message))
             return new SendMessageCommandResponse { Success = false, Response = "Mesaj boş olamaz." };
 
-        // ── Bağlam toplama ──────────────────────────────────────────────────
+        
         var user = await _userReadRepository.GetByIdAsync(request.UserId.ToString());
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -90,11 +90,11 @@ public sealed class SendMessageCommandHandler
             PrimaryFocusArea = user?.PrimaryFocusArea
         };
 
-        // ── AI Servisi çağır ───────────────────────────────────────────────
+        
         var aiResult = await _aiChatService.ProcessMessageWithContextAsync(
             request.UserId, request.Message, context);
 
-        // ── Mesajı kaydet ──────────────────────────────────────────────────
+        
         if (request.SaveToHistory)
         {
             var chatMessage = new ChatBotMessage
@@ -116,7 +116,7 @@ public sealed class SendMessageCommandHandler
             await _chatWriteRepository.SaveAsync();
         }
 
-        // ── Öneri intent'i (eski davranış korunuyor) ──────────────────────
+        
         if (aiResult.Intent is "oneri" or "oneri_iste" && (aiResult.SuggestedTasks == null || !aiResult.SuggestedTasks.Any()))
         {
             var userTaskIds = todayTasks.Select(ut => ut.AppTaskId).ToList();

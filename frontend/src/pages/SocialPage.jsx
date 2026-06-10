@@ -33,7 +33,7 @@ const SocialPage = () => {
     targetCategoryId: '',
   });
 
-  // Real-time challenge updates
+  
   useSignalR({
     onNotification: (notif) => {
       if (notif?.type === 'ChallengeProgressUpdated' || notif?.type === 'ChallengeCompleted') {
@@ -51,7 +51,7 @@ const SocialPage = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Ayrıştırılmış hata yönetimi: Bir servis çökerse diğerleri çalışmaya devam etsin
+      
       const safeFetch = async (fn, setter, defaultValue = []) => {
         try {
           const res = await fn();
@@ -196,7 +196,7 @@ const SocialPage = () => {
 
   return (
     <MainLayout>
-      {/* Toast */}
+      {}
       {toast && (
         <div className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-2xl font-bold text-sm shadow-2xl ${
           toast.type === 'success' ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
@@ -206,7 +206,7 @@ const SocialPage = () => {
       )}
 
       <div className="space-y-8">
-        {/* Header */}
+        {}
         <section className="relative">
           <div className="absolute -left-10 -top-10 w-40 h-40 bg-violet-600/10 blur-[80px] rounded-full"></div>
           <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2 relative z-10">SOSYAL</h2>
@@ -227,7 +227,7 @@ const SocialPage = () => {
           </div>
         </section>
 
-        {/* Tabs */}
+        {}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {tabs.map((tab, i) => (
             <button
@@ -249,7 +249,7 @@ const SocialPage = () => {
           ))}
         </div>
 
-        {/* Tab Content */}
+        {}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[1, 2, 3].map(i => (
@@ -258,7 +258,7 @@ const SocialPage = () => {
           </div>
         ) : (
           <>
-            {/* ARKADAŞLARIM */}
+            {}
             {activeTab === 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {friends.length === 0 ? (
@@ -311,7 +311,7 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* BEKLEYEN İSTEKLER */}
+            {}
             {activeTab === 1 && (
               <div className="space-y-4">
                 {requests.length === 0 ? (
@@ -351,10 +351,10 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* SP-05: MÜCADELELER */}
+            {}
             {activeTab === 2 && (
               <div className="space-y-4">
-                {/* Status filter */}
+                {}
                 <div className="flex gap-2">
                   {[['active','Aktif'],['invited','Davetler'],['completed','Tamamlanan']].map(([s, l]) => (
                     <button key={s}
@@ -385,7 +385,7 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* KULLANICI ARA */}
+            {}
             {activeTab === 3 && (
               <div className="space-y-6">
                 <div className="flex gap-3">
@@ -443,7 +443,7 @@ const SocialPage = () => {
               </div>
             )}
 
-            {/* ENGELLENENLER */}
+            {}
             {activeTab === 4 && (
               <div className="space-y-4">
                 {blockedUsers.length === 0 ? (
@@ -478,7 +478,7 @@ const SocialPage = () => {
         )}
       </div>
 
-      {/* SP-05: Mücadele Modal */}
+      {}
       {showChallengeModal && challengeTarget && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-3xl p-8 w-full max-w-md shadow-2xl">

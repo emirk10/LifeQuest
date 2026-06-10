@@ -62,7 +62,7 @@ public static class ServiceRegistration
         services.AddScoped<IChatBotMessageReadRepository, ChatBotMessageReadRepository>();
         services.AddScoped<IChatBotMessageWriteRepository, ChatBotMessageWriteRepository>();
 
-        // SP-05 Yeni Repository'ler
+        
         services.AddScoped<IOnboardingResponseReadRepository, OnboardingResponseReadRepository>();
         services.AddScoped<IOnboardingResponseWriteRepository, OnboardingResponseWriteRepository>();
         services.AddScoped<IGoalMilestoneReadRepository, GoalMilestoneReadRepository>();
@@ -70,7 +70,7 @@ public static class ServiceRegistration
         services.AddScoped<IChallengeParticipantReadRepository, ChallengeParticipantReadRepository>();
         services.AddScoped<IChallengeParticipantWriteRepository, ChallengeParticipantWriteRepository>();
 
-        // Social Feed
+        
         services.AddScoped<IPostReadRepository, PostReadRepository>();
         services.AddScoped<IPostWriteRepository, PostWriteRepository>();
         services.AddScoped<IPostTagWriteRepository, PostTagWriteRepository>();
@@ -80,11 +80,11 @@ public static class ServiceRegistration
         services.AddScoped<IPostCommentReadRepository, PostCommentReadRepository>();
         services.AddScoped<IPostCommentWriteRepository, PostCommentWriteRepository>();
         
-        // Kudos — FEAT-005
+        
         services.AddScoped<IKudosReadRepository, KudosReadRepository>();
         services.AddScoped<IKudosWriteRepository, KudosWriteRepository>();
 
-        // DbWipeAndSeedService
+        
         services.AddScoped<LifeQuestAPI.Application.Abstractions.IDbWipeAndSeedService, Services.DbWipeAndSeedService>();
     }
 }

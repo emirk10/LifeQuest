@@ -66,13 +66,13 @@ const ReportsPage = () => {
             </div>
         ) : (
             <div className="space-y-8">
-                {/* SP-04: Adaptif Davranış Analizi */}
+                {}
                 {behaviorSummary && (
                    <BehaviorInsightCard summary={behaviorSummary} />
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* XP Grafiği */}
+                    {}
                 <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl shadow-xl">
                     <h3 className="text-slate-300 font-bold mb-6 flex items-center gap-2">
                         <span className="w-2 h-2 bg-fuchsia-500 rounded-full"></span> 
@@ -100,7 +100,7 @@ const ReportsPage = () => {
                     </div>
                 </div>
 
-                {/* Görev Başarı Grafiği */}
+                {}
                 <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-3xl shadow-xl">
                     <h3 className="text-slate-300 font-bold mb-6 flex items-center gap-2">
                         <span className="w-2 h-2 bg-emerald-500 rounded-full"></span> 

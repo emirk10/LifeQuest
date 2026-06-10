@@ -7,10 +7,10 @@ using Microsoft.Extensions.Logging;
 
 namespace LifeQuestAPI.Infrastructure.Services.AI;
 
-/// <summary>
-/// Python AI mikro servisine HTTP isteği atarak chatbot işlevselliği sağlar.
-/// SP-02: Context-aware yanıt + action desteği eklendi.
-/// </summary>
+
+
+
+
 public class AIChatService : IAIChatService
 {
     private readonly HttpClient _httpClient;
@@ -28,7 +28,7 @@ public class AIChatService : IAIChatService
         _logger = logger;
     }
 
-    // SP-01 uyumluluk — eski çağrılar için
+    
     public async Task<ChatBotResponse> ProcessMessageAsync(Guid userId, string message)
     {
         try
@@ -57,7 +57,7 @@ public class AIChatService : IAIChatService
         }
     }
 
-    // SP-02: Context-aware yanıt
+    
     public async Task<ChatResponseDto> ProcessMessageWithContextAsync(Guid userId, string message, ChatContextDto context)
     {
         try
@@ -160,7 +160,7 @@ public class AIChatService : IAIChatService
         Actions = new()
     };
 
-    // ─── Request/Response iç modelleri ───────────────────────────────────────
+    
 
     private class AIChatRequest
     {

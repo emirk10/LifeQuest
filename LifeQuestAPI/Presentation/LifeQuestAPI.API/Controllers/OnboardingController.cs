@@ -18,7 +18,7 @@ public class OnboardingController : ControllerBase
     private Guid GetUserId() => Guid.Parse(User.FindFirst("sub")?.Value
         ?? User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
 
-    /// <summary>SP-05: Onboarding akışını tamamla.</summary>
+    
     [HttpPost("complete")]
     public async Task<IActionResult> CompleteOnboarding([FromBody] CompleteOnboardingCommandRequest request)
     {
@@ -27,7 +27,7 @@ public class OnboardingController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>SP-05: Onboarding durumunu sorgula.</summary>
+    
     [HttpGet("status")]
     public async Task<IActionResult> GetStatus()
     {

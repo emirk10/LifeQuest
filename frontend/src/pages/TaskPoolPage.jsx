@@ -9,8 +9,8 @@ import { moodApi, taskPoolApi } from "../api/moodApi";
 import "../styles/DailyTaskPage.css";
 
 const TaskPoolPage = () => {
-  const [activeTab, setActiveTab] = useState("recommended"); // "recommended" | "all"
-  const [phase, setPhase] = useState("loading"); // loading | mood | pool
+  const [activeTab, setActiveTab] = useState("recommended"); 
+  const [phase, setPhase] = useState("loading"); 
   const [poolData, setPoolData] = useState(null);
   const [poolLoading, setPoolLoading] = useState(false);
   const [availableTasks, setAvailableTasks] = useState([]);
@@ -19,12 +19,12 @@ const TaskPoolPage = () => {
   const [toast, setToast] = useState(null);
   const [userLevel, setUserLevel] = useState(1);
 
-  // Filter & Pagination States for ALL Tasks
+  
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [userLimits, setUserLimits] = useState({ daily: 3, today: 0, active: 0 });
   const [selectedInSession, setSelectedInSession] = useState(0);
-  const [pendingSelections, setPendingSelections] = useState(new Map()); // Map<taskId, {task, type}>
+  const [pendingSelections, setPendingSelections] = useState(new Map()); 
   const pageSize = 6;
   const navigate = useNavigate();
 
@@ -56,7 +56,7 @@ const TaskPoolPage = () => {
     try {
       const res = await moodApi.getTodayMood();
       if (res.data?.data || res.data) {
-        // Bugün mood girilmiş — direkt pool'a geç
+        
         await loadPool();
         setPhase("pool");
       } else {
@@ -109,10 +109,10 @@ const TaskPoolPage = () => {
       if (newMap.has(taskId)) {
         newMap.delete(taskId);
       } else {
-        // Limit check BEFORE adding
+        
         if (userLimits.today + newMap.size >= userLimits.daily) {
           showToast(`⚠️ Günlük limitine (${userLimits.daily}) ulaştın!`, "error");
-          return prev; // Do not add
+          return prev; 
         }
         newMap.set(taskId, { task, type });
       }
@@ -121,7 +121,7 @@ const TaskPoolPage = () => {
   };
 
 
-  // Get dynamic categories list from available tasks - MEMOIZED
+  
   const uniqueCategories = useMemo(() => {
     return [
       "all",
@@ -129,7 +129,7 @@ const TaskPoolPage = () => {
     ];
   }, [availableTasks]);
 
-  // Client-side category filter - MEMOIZED
+  
   const filteredTasks = useMemo(() => {
     return availableTasks.filter((task) =>
       selectedCategory === "all"
@@ -138,7 +138,7 @@ const TaskPoolPage = () => {
     );
   }, [availableTasks, selectedCategory]);
 
-  // Client-side pagination - MEMOIZED
+  
   const totalPages = useMemo(() => {
     return Math.ceil(filteredTasks.length / pageSize);
   }, [filteredTasks]);
@@ -151,7 +151,7 @@ const TaskPoolPage = () => {
 
   const handleCategoryChange = useCallback((category) => {
     setSelectedCategory(category);
-    setCurrentPage(1); // Reset to page 1
+    setCurrentPage(1); 
   }, []);
 
   const mostCommonCategory = useMemo(() => {
@@ -174,7 +174,7 @@ const TaskPoolPage = () => {
     let successCount = 0;
     
     try {
-      // Process all pending selections
+      
       for (const [taskId, data] of pendingSelections.entries()) {
         if (data.type === 'recommended') {
           await taskPoolApi.selectTask(taskId);
@@ -193,7 +193,7 @@ const TaskPoolPage = () => {
       const msg = err.response?.data?.message || "Görevler atanırken bir hata oluştu.";
       showToast(msg, "error");
       
-      // If some succeeded, we still want to clear them and maybe navigate
+      
       if (successCount > 0) {
         showToast(`⚠️ Sadece ${successCount} görev atanabildi.`, "warning");
         setTimeout(() => navigate("/tasks"), 2000);
@@ -205,7 +205,7 @@ const TaskPoolPage = () => {
 
   return (
     <MainLayout>
-      {/* Toast Notification */}
+      {}
       {toast && (
         <div
           className={`fixed top-6 right-6 z-50 px-6 py-4 rounded-2xl font-bold text-sm shadow-2xl transition-all animate-bounce ${
@@ -219,7 +219,7 @@ const TaskPoolPage = () => {
       )}
 
       <div className="max-w-6xl mx-auto space-y-10">
-        {/* Header */}
+        {}
         <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h2 className="text-4xl font-black text-white italic tracking-tighter mb-2">
@@ -231,7 +231,7 @@ const TaskPoolPage = () => {
             </p>
           </div>
 
-          {/* Custom Tabs */}
+          {}
           <div className="flex bg-slate-900/60 p-1 border border-slate-800 rounded-2xl">
             <button
               onClick={() => setActiveTab("recommended")}
@@ -256,7 +256,7 @@ const TaskPoolPage = () => {
           </div>
         </section>
         
-        {/* Limit Warning Banner */}
+        {}
         {userLimits.today >= userLimits.daily && (
           <div className="bg-amber-500/10 border border-amber-500/30 p-6 rounded-[2rem] flex flex-col md:flex-row items-center gap-6 animate-pulse">
             <div className="text-4xl">⚠️</div>
@@ -275,9 +275,9 @@ const TaskPoolPage = () => {
           </div>
         )}
 
-        {/* Contents */}
+        {}
         {activeTab === "recommended" ? (
-          /* SECTION 1: RECOMMENDED (FROM /daily) */
+          
           <div className="daily-task-page space-y-6">
             {phase === "loading" && (
               <div className="flex flex-col items-center justify-center p-12">
@@ -324,9 +324,9 @@ const TaskPoolPage = () => {
             )}
           </div>
         ) : (
-          /* SECTION 2: ALL LEVEL-APPROPRIATE TASKS */
+          
           <div className="space-y-8">
-            {/* Quick Stats Banner */}
+            {}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-900/40 p-4 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
@@ -351,7 +351,7 @@ const TaskPoolPage = () => {
               </div>
             </div>
 
-            {/* Category selection */}
+            {}
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-xs font-black text-slate-400 uppercase mr-2 tracking-wider">
                 Kategori Seç:
@@ -449,7 +449,7 @@ const TaskPoolPage = () => {
                   ))}
                 </div>
 
-                {/* Pagination Controls */}
+                {}
                 {totalPages > 1 && (
                   <div className="flex justify-center items-center gap-4 pt-4">
                     <button
@@ -476,7 +476,7 @@ const TaskPoolPage = () => {
           </div>
         )}
 
-        {/* Global Redirection Button */}
+        {}
         {(selectedInSession > 0 || pendingSelections.size > 0 || userLimits.active > 0) && (
           <div className="flex justify-center py-12 border-t border-slate-800/50 mt-12">
             <button

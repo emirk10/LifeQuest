@@ -53,7 +53,7 @@ public class DailyQuestWorker : BackgroundService
                     var dailyQuestService = scope.ServiceProvider.GetRequiredService<IDailyQuestService>();
                     await dailyQuestService.DistributeDailyQuestsAsync();
 
-                    // SP-05: Günlük sayaçları sıfırla
+                    
                     await ResetDailyCountersAsync(scope.ServiceProvider, stoppingToken);
                 }
             }
@@ -69,7 +69,7 @@ public class DailyQuestWorker : BackgroundService
         }
     }
 
-    /// <summary>SP-05 + MISS-004: Gece yarısı sayaçları sıfırla, streak'leri güncelle. BUG-008: Paralel batch işleme.</summary>
+    
     private async Task ResetDailyCountersAsync(IServiceProvider services, CancellationToken ct)
     {
         var userReadRepo = services.GetRequiredService<IAppUserReadRepository>();
@@ -94,7 +94,7 @@ public class DailyQuestWorker : BackgroundService
         var isMonday = localTime.DayOfWeek == DayOfWeek.Monday;
         var yesterday = DateOnly.FromDateTime(localTime.AddDays(-1));
 
-        // 100'lük batch'ler halinde paralel işleme
+        
         var batches = userIds.Chunk(100).ToList();
         
         await Parallel.ForEachAsync(batches, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = ct }, async (batch, token) =>
@@ -127,4 +127,4 @@ public class DailyQuestWorker : BackgroundService
 
         _logger.LogInformation("SP-05 + MISS-004: {Count} kullanıcının günlük sayaçları ve streak'leri paralel olarak güncellendi.", userIds.Count);
     }
-}
+}

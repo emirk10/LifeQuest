@@ -51,22 +51,22 @@ public class PostsController : ControllerBase
         _env = env;
     }
 
-    // ─── GET /api/posts/feed ─────────────────────────────────────────────────
-    /// <summary>Arkadaşların ve kendi paylaşımlarını kronolojik sırayla getir.</summary>
+    
+    
     [HttpGet("feed")]
     public async Task<IActionResult> GetFeed([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var userId = GetUserId();
         if (userId == null) return Unauthorized();
 
-        // Kabul edilmiş arkadaşlıklar
+        
         var friendIds = await _friendshipRead.GetAll(false)
             .Where(f => (f.RequesterId == userId || f.AddresseeId == userId)
                         && f.Status == Domain.Enums.FriendshipStatus.Accepted)
             .Select(f => f.RequesterId == userId ? f.AddresseeId : f.RequesterId)
             .ToListAsync();
 
-        // Kendi id'si de dahil
+        
         friendIds.Add(userId.Value);
 
         var posts = await _postRead.GetAll(false)
@@ -96,7 +96,7 @@ public class PostsController : ControllerBase
                 {
                     id = t.Id,
                     taskId = t.AppTaskId,
-                    userTaskId = t.UserTaskId, // P4-T2: Kudos için eklendi
+                    userTaskId = t.UserTaskId, 
                     taskTitle = t.AppTask.Title,
                     x = t.CoordinateX,
                     y = t.CoordinateY
@@ -110,8 +110,8 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, posts });
     }
 
-    // ─── POST /api/posts ─────────────────────────────────────────────────────
-    /// <summary>Yeni gönderi oluştur (metin veya resimli + etiket).</summary>
+    
+    
     [HttpPost]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> CreatePost([FromForm] CreatePostDto request)
@@ -124,14 +124,14 @@ public class PostsController : ControllerBase
 
         string? imageUrl = null;
 
-        // 1. Görsel yükleme
+        
         if (request.Image != null && request.Image.Length > 0)
         {
             var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp", "image/gif" };
             if (!allowedTypes.Contains(request.Image.ContentType.ToLower()))
                 return BadRequest(new { success = false, message = "Sadece JPEG, PNG, WEBP veya GIF yükleyebilirsiniz." });
 
-            if (request.Image.Length > 10 * 1024 * 1024) // 10 MB limit
+            if (request.Image.Length > 10 * 1024 * 1024) 
                 return BadRequest(new { success = false, message = "Görsel boyutu 10MB'yi geçemez." });
 
             var wwwroot = _env.WebRootPath;
@@ -152,7 +152,7 @@ public class PostsController : ControllerBase
             imageUrl = $"/uploads/posts/{uniqueFileName}";
         }
 
-        // 3. Etiketleri doğrula (Kaydetmeden önce)
+        
         if (string.IsNullOrWhiteSpace(request.TagsJson))
             return BadRequest(new { success = false, message = "Bu paylaşımı yapabilmek için en az bir tamamlanmış görev etiketlemelisiniz." });
 
@@ -170,10 +170,10 @@ public class PostsController : ControllerBase
         if (tags == null || tags.Count == 0)
             return BadRequest(new { success = false, message = "En az bir görev etiketlemelisiniz." });
 
-        // Görevlerin gerçekten bu kullanıcı tarafından tamamlanıp tamamlanmadığını kontrol et
+        
         var taskIds = tags.Select(t => t.TaskId).ToList();
         
-        // Debug için konsola yazdır
+        
         Console.WriteLine($"[SocialFeed] User: {userId}, Received TaskIds: {string.Join(", ", taskIds)}");
 
         var validUserTasks = await _userTaskRead.GetAll(false)
@@ -193,7 +193,7 @@ public class PostsController : ControllerBase
             });
         }
 
-        // 4. Gönderiyi kaydet (Doğrulama başarılı ise)
+        
         var post = new Post
         {
             AppUserId = userId.Value,
@@ -204,7 +204,7 @@ public class PostsController : ControllerBase
         await _postWrite.AddAsync(post);
         await _postWrite.SaveAsync();
 
-        // 5. Etiketleri kaydet
+        
         var postTags = new List<PostTag>();
         foreach (var ut in validUserTasks)
         {
@@ -214,7 +214,7 @@ public class PostsController : ControllerBase
                 {
                     PostId = post.Id,
                     AppTaskId = ut.AppTaskId,
-                    UserTaskId = ut.Id, // P4-T2: Spesifik görev ID'sini kaydet
+                    UserTaskId = ut.Id, 
                     CoordinateX = 0,
                     CoordinateY = 0
                 });
@@ -227,7 +227,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, message = "Gönderi başarıyla paylaşıldı! 🎉", postId = post.Id });
     }
 
-    // ─── DELETE /api/posts/{id} ──────────────────────────────────────────────
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePost(Guid id)
     {
@@ -238,7 +238,7 @@ public class PostsController : ControllerBase
         if (post == null) return NotFound(new { success = false, message = "Gönderi bulunamadı." });
         if (post.AppUserId != userId) return Forbid();
 
-        // Görseli diskten sil
+        
         if (!string.IsNullOrEmpty(post.ImageUrl))
         {
             var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", post.ImageUrl.TrimStart('/'));
@@ -252,7 +252,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, message = "Gönderi silindi." });
     }
 
-    // ─── GET /api/posts/{id} ─────────────────────────────────────────────────
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPostById(Guid id)
     {
@@ -298,7 +298,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, post });
     }
 
-    // ─── PUT /api/posts/{id} ─────────────────────────────────────────────────
+    
     [HttpPut("{id}")]
     public async Task<IActionResult> EditPost(Guid id, [FromBody] EditPostDto request)
     {
@@ -318,7 +318,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, message = "Gönderi güncellendi." });
     }
 
-    // ─── POST /api/posts/{id}/like ───────────────────────────────────────────
+    
     [HttpPost("{id}/like")]
     public async Task<IActionResult> LikePost(Guid id)
     {
@@ -337,7 +337,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true });
     }
 
-    // ─── DELETE /api/posts/{id}/like ─────────────────────────────────────────
+    
     [HttpDelete("{id}/like")]
     public async Task<IActionResult> UnlikePost(Guid id)
     {
@@ -356,7 +356,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true });
     }
 
-    // ─── POST /api/posts/{id}/comments ───────────────────────────────────────
+    
     [HttpPost("{id}/comments")]
     public async Task<IActionResult> AddComment(Guid id, [FromBody] AddCommentDto request)
     {
@@ -379,7 +379,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, commentId = comment.Id });
     }
 
-    // ─── GET /api/posts/{id}/comments ────────────────────────────────────────
+    
     [HttpGet("{id}/comments")]
     public async Task<IActionResult> GetComments(Guid id)
     {
@@ -405,7 +405,7 @@ public class PostsController : ControllerBase
         return Ok(new { success = true, comments });
     }
 
-    // ─── DELETE /api/posts/comments/{commentId} ──────────────────────────────
+    
     [HttpDelete("comments/{commentId}")]
     public async Task<IActionResult> DeleteComment(Guid commentId)
     {
@@ -429,13 +429,13 @@ public class PostsController : ControllerBase
     }
 }
 
-// ─── DTO'lar ─────────────────────────────────────────────────────────────────
+
 
 public class CreatePostDto
 {
     public string? Content { get; set; }
     public IFormFile? Image { get; set; }
-    /// <summary>JSON string: [{"taskId":"guid","x":45.5,"y":80.2}]</summary>
+    
     public string? TagsJson { get; set; }
 }
 

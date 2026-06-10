@@ -10,7 +10,7 @@ namespace LifeQuestAPI.API.Controllers;
 
 [Route("api/recommendation")]
 [ApiController]
-[Authorize(Roles = "Admin")] // Sadece Admin tetikleyebilir
+[Authorize(Roles = "Admin")] 
 public class RecommendationController : ControllerBase
 {
     private readonly ITaskRecommendationService _recommendationService;

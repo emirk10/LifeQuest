@@ -41,7 +41,7 @@ const AdminAnalytics = () => {
 
   return (
     <div className="space-y-8 p-4">
-      {/* Retention Stats */}
+      {}
       {retention && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-3xl">
@@ -60,7 +60,7 @@ const AdminAnalytics = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Task Dropout (Pie) */}
+        {}
         <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem]">
           <h4 className="text-sm font-black text-white uppercase tracking-widest mb-6">Görev Durum Dağılımı</h4>
           <div className="h-64">
@@ -95,7 +95,7 @@ const AdminAnalytics = () => {
           </div>
         </div>
 
-        {/* Category Performance (Bar) */}
+        {}
         <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem]">
           <h4 className="text-sm font-black text-white uppercase tracking-widest mb-6">Kategori Bazlı Tamamlama</h4>
           <div className="h-64">
@@ -114,7 +114,7 @@ const AdminAnalytics = () => {
           </div>
         </div>
 
-        {/* Hourly Completions (Area) */}
+        {}
         <div className="bg-slate-900/60 border border-slate-800 p-8 rounded-[2rem] lg:col-span-2">
           <h4 className="text-sm font-black text-white uppercase tracking-widest mb-6">Saatlik Aktivite Yoğunluğu</h4>
           <div className="h-72">

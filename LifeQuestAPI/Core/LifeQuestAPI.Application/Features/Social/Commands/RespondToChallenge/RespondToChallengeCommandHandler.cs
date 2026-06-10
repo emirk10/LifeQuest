@@ -56,7 +56,7 @@ public sealed class RespondToChallengeCommandHandler
             challenge.StartDate = DateTime.UtcNow;
             challenge.EndDate = DateTime.UtcNow.Add(challenge.EndDate - challenge.StartDate);
 
-            // Her iki kullanıcıya bildirim
+            
             await _notificationService.SendNotificationAsync(
                 challenge.ChallengerId, "Mücadele Başladı! ⚔️",
                 $"'{challenge.Title}' mücadeleniz başladı!", "ChallengeAccepted");
@@ -68,7 +68,7 @@ public sealed class RespondToChallengeCommandHandler
         {
             challenge.Status = ChallengeStatus.Declined;
 
-            // Davet edene bildirim
+            
             await _notificationService.SendNotificationAsync(
                 challenge.ChallengerId, "Mücadele Reddedildi",
                 $"'{challenge.Title}' mücadele davetin reddedildi.", "ChallengeDeclined");

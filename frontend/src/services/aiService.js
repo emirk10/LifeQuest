@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Python AI Mikro Servis
+
 const aiClient = axios.create({
   baseURL: import.meta.env.VITE_AI_SERVICE_URL || "http://localhost:5001",
   headers: {
@@ -9,13 +9,13 @@ const aiClient = axios.create({
 });
 
 const aiService = {
-  // Sağlık kontrolü
+  
   healthCheck: async () => {
     const response = await aiClient.get("/health");
     return response.data;
   },
 
-  // Chatbot — mesaj gönder
+  
   chat: async (userId, message) => {
     const response = await aiClient.post("/api/chat", {
       user_id: userId,
@@ -24,7 +24,7 @@ const aiService = {
     return response.data;
   },
 
-  // Yansıma metni doğrulama
+  
   verifyReflection: async (text, minWordCount = 10, taskCategory = null) => {
     const response = await aiClient.post("/api/verify-reflection", {
       text,
@@ -34,7 +34,7 @@ const aiService = {
     return response.data;
   },
 
-  // Görüntü doğrulama
+  
   verifyImage: async (userId, taskId, taskCategory, imageBase64) => {
     const response = await aiClient.post("/api/verify-image", {
       user_id: userId,
@@ -45,7 +45,7 @@ const aiService = {
     return response.data;
   },
 
-  // Modelleri yeniden eğit (Admin)
+  
   trainModels: async () => {
     const response = await aiClient.post("/api/train");
     return response.data;

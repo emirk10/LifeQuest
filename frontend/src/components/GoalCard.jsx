@@ -41,7 +41,7 @@ const GoalCard = ({ goal, onUpdate }) => {
       alignItems: 'flex-start',
       transition: 'all 0.2s'
     }}>
-      {/* Progress Ring */}
+      {}
       <div style={{ flexShrink: 0 }}>
         <GoalProgressRing
           percent={goal.progressPercent}
@@ -52,7 +52,7 @@ const GoalCard = ({ goal, onUpdate }) => {
         />
       </div>
 
-      {/* Info */}
+      {}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '0.2rem' }}>
           {goal.title}
@@ -63,14 +63,14 @@ const GoalCard = ({ goal, onUpdate }) => {
           {goal.isOnLag && <span style={{ color: '#f59e0b', marginLeft: '0.4rem' }}>⚠️ Geride</span>}
         </div>
 
-        {/* Milestone bar */}
+        {}
         {goal.milestoneCount > 0 && (
           <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginBottom: '0.5rem' }}>
             🎯 {goal.completedMilestoneCount}/{goal.milestoneCount} milestone
           </div>
         )}
 
-        {/* Quick actions */}
+        {}
         {!goal.isCompleted && (
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             {[1, 5, 10].map(inc => (

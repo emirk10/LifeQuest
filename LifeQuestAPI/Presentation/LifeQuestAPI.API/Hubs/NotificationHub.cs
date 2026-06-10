@@ -22,7 +22,7 @@ public class NotificationHub : Hub
         var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!string.IsNullOrEmpty(userId))
         {
-            // Kullanıcıyı kendi Id'sine sahip bir gruba al
+            
             Groups.AddToGroupAsync(Context.ConnectionId, userId);
             _logger.LogInformation($"SignalR: User connected: {userId} ({Context.ConnectionId})");
         }

@@ -7,7 +7,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from '../context/authContext';
 
-// ─── PostCard Bileşeni ───────────────────────────────────────────────────────
+
 const PostCard = ({ post, currentUserId, onDelete }) => {
   const [liked, setLiked] = useState(post.isLikedByMe);
   const [likesCount, setLikesCount] = useState(post.likeCount || 0);
@@ -86,7 +86,7 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
 
   return (
     <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden hover:border-indigo-500/20 transition-all duration-300 group">
-      {/* Header */}
+      {}
       <div className="flex items-center justify-between p-5 pb-3">
         <div className="flex items-center gap-3">
           <div className={`w-10 h-10 ${avatarColor} rounded-2xl flex items-center justify-center font-black text-white`}>
@@ -113,12 +113,12 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
         </div>
       </div>
 
-      {/* Text Content */}
+      {}
       {post.content && (
         <p className="px-5 pb-3 text-slate-300 text-sm leading-relaxed">{post.content}</p>
       )}
 
-      {/* Image */}
+      {}
       {imageUrl && (
         <div className="relative mx-4 mb-4 rounded-2xl overflow-hidden bg-slate-800">
           <img
@@ -130,7 +130,7 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
         </div>
       )}
 
-      {/* Tagged Tasks */}
+      {}
       {post.tags?.length > 0 && (
         <div className="px-5 pb-4 flex flex-wrap gap-2">
           {post.tags.map((tag) => (
@@ -167,7 +167,7 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
         </div>
       )}
 
-      {/* Interactions */}
+      {}
       <div className="px-5 py-4 border-t border-slate-800/50 flex items-center gap-6">
         <button 
           onClick={handleLike}
@@ -190,10 +190,10 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
         </button>
       </div>
 
-      {/* Comment Section */}
+      {}
       {showComments && (
         <div className="px-5 pb-5 pt-2 border-t border-slate-800/30 animate-in slide-in-from-top-2 duration-300">
-          {/* New Comment Input */}
+          {}
           <form onSubmit={handleAddComment} className="flex gap-3 mb-4">
             <input
               type="text"
@@ -211,7 +211,7 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
             </button>
           </form>
 
-          {/* Comments List */}
+          {}
           <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
             {loadingComments ? (
               <div className="py-4 text-center">
@@ -242,7 +242,7 @@ const PostCard = ({ post, currentUserId, onDelete }) => {
   );
 };
 
-// ─── Gönderi Oluşturma Formu ─────────────────────────────────────────────────
+
 const ITEM_TYPES = [
   { id: 'task',      label: 'Görevler',    icon: '⚔️',  color: 'indigo' },
   { id: 'goal',      label: 'Hedefler',    icon: '🎯',  color: 'teal'   },
@@ -255,13 +255,13 @@ const COLOR_MAP = {
   rose:   { bg: 'bg-rose-500/10',   border: 'border-rose-500/30',   text: 'text-rose-400',   active: 'bg-rose-500/20 border-rose-500/50'   },
 };
 
-// Son 7 günlük filtreleme
+
 const isWithin7Days = (dateStr) => {
   if (!dateStr) return false;
   return (Date.now() - new Date(dateStr).getTime()) <= 7 * 24 * 60 * 60 * 1000;
 };
 
-// Tarihe göre Türkçe etiket
+
 const dayLabel = (dateStr) => {
   if (!dateStr) return 'Tarih yok';
   const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
@@ -270,7 +270,7 @@ const dayLabel = (dateStr) => {
   return `${diff} gün önce`;
 };
 
-// Gün gün grupla
+
 const groupByDay = (items, getDate) => {
   const groups = {};
   items.forEach(item => {
@@ -278,7 +278,7 @@ const groupByDay = (items, getDate) => {
     if (!groups[label]) groups[label] = [];
     groups[label].push(item);
   });
-  // Sıralı: Bugün → Dün → 2 gün önce → ...
+  
   return Object.entries(groups).sort((a, b) => {
     const order = (l) => l === 'Bugün' ? 0 : l === 'Dün' ? 1 : parseInt(l);
     return order(a[0]) - order(b[0]);
@@ -294,13 +294,13 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
   const [showPicker, setShowPicker] = useState(false);
   const [pickerType, setPickerType] = useState('task');
 
-  // Son 7 gün filtreli veriler
+  
   const filteredTasks = userTasks.filter(t => {
     const isDone = t.status === 'Completed' || t.Status === 'Completed'
       || t.isCompleted === true || t.IsCompleted === true;
     if (!isDone) return false;
     const completedDate = t.completedAt || t.CompletedAt;
-    // completedAt yoksa ama tamamlandıysa yine göster (güvenli fallback)
+    
     if (!completedDate) return true;
     return isWithin7Days(completedDate);
   });
@@ -357,7 +357,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
     }
   };
 
-  // Picker içeriğini belirle
+  
   const pickerItems  = pickerType === 'task' ? filteredTasks : pickerType === 'goal' ? filteredGoals : filteredChallenges;
   const pickerGetDate = pickerType === 'task'
     ? (i) => i.completedAt || i.CompletedAt
@@ -375,7 +375,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
         Başarını Paylaş
       </h3>
 
-      {/* Seçilen öğeler */}
+      {}
       <div className="mb-4">
         <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Başarı Seç (Zorunlu)</label>
         <div className="flex flex-wrap gap-2 mb-2">
@@ -408,10 +408,10 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
           )}
         </div>
 
-        {/* Picker Paneli */}
+        {}
         {showPicker && (
           <div className="bg-slate-800/80 border border-slate-700 rounded-2xl overflow-hidden mb-4 animate-in slide-in-from-top-2 duration-300">
-            {/* Tip seçici */}
+            {}
             <div className="flex border-b border-slate-700">
               {ITEM_TYPES.map(t => {
                 const c = COLOR_MAP[t.color];
@@ -432,7 +432,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
               <button onClick={() => setShowPicker(false)} className="px-4 text-slate-500 hover:text-white text-xs font-bold border-l border-slate-700">✕</button>
             </div>
 
-            {/* Liste — gün gün gruplu */}
+            {}
             <div className="max-h-64 overflow-y-auto p-3 space-y-3 custom-scrollbar">
               {grouped.length === 0 ? (
                 <p className="text-slate-500 text-xs italic py-6 text-center">
@@ -475,7 +475,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
         )}
       </div>
 
-      {/* Deneyim metni */}
+      {}
       <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 block">Deneyimini Anlat</label>
       <textarea
         value={content}
@@ -486,7 +486,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
         className="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-4 py-3 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500/50 resize-none text-sm mb-4"
       />
 
-      {/* Görsel yükleme */}
+      {}
       <div className="mb-6">
         {!imagePreview ? (
           <label className="flex items-center gap-3 cursor-pointer text-slate-500 hover:text-indigo-400 transition-all text-xs font-bold bg-slate-800/30 hover:bg-indigo-500/5 border border-slate-800 hover:border-indigo-500/20 px-4 py-3 rounded-xl w-fit">
@@ -522,7 +522,7 @@ const CreatePostForm = ({ onPostCreated, userTasks, completedGoals, completedCha
   );
 };
 
-// ─── Tab Navigator ───────────────────────────────────────────────────────────
+
 const TabNavigator = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: 'create', label: 'Paylaş',     icon: '✍️', color: 'indigo'  },
@@ -532,9 +532,9 @@ const TabNavigator = ({ activeTab, setActiveTab }) => {
   const activeIdx = tabs.findIndex(t => t.id === activeTab);
 
   return (
-    // sticky kaldırıldı — scroll'da içerik üstüne gelme sorunu çözüldü
+    
     <div className="max-w-xl mx-auto relative flex p-1.5 bg-slate-950/90 backdrop-blur-2xl border border-slate-800/50 rounded-[2rem] mb-10 shadow-2xl shadow-black/40">
-      {/* Sliding Indicator */}
+      {}
       <div
         className="absolute h-[calc(100%-12px)] top-1.5 rounded-2xl transition-all duration-500 shadow-lg z-0"
         style={{
@@ -565,7 +565,7 @@ const TabNavigator = ({ activeTab, setActiveTab }) => {
   );
 };
 
-// ─── Ana Sayfa ───────────────────────────────────────────────────────────────
+
 const SocialFeedPage = () => {
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id || null;
@@ -574,7 +574,7 @@ const SocialFeedPage = () => {
   const [userTasks, setUserTasks] = useState([]);
   const [completedGoals, setCompletedGoals] = useState([]);
   const [completedChallenges, setCompletedChallenges] = useState([]);
-  const [activeTab, setActiveTab] = useState('feed'); // 'create', 'feed', 'mine'
+  const [activeTab, setActiveTab] = useState('feed'); 
 
   const fetchFeed = useCallback(async () => {
     try {
@@ -587,13 +587,13 @@ const SocialFeedPage = () => {
     }
   }, []);
 
-  // Son 7 günde tamamlanan görevleri çek
-  // Backend, /user-tasks endpoint'ini gün bazlı paginate eder:
-  // page=1 → bugün, page=2 → dün, page=3 → 2 gün önce...
+  
+  
+  
   const fetchCompletedTasks = useCallback(async () => {
     try {
       const allCompleted = [];
-      // 7 günü kapsayan sayfaları paralel çek
+      
       const pagePromises = Array.from({ length: 7 }, (_, i) =>
         taskService.getAllTasks(null, i + 1, 100).catch(() => null)
       );
@@ -609,18 +609,18 @@ const SocialFeedPage = () => {
         allCompleted.push(...completed);
       }
 
-      // Aynı userTask ID'sine veya aynı appTaskId'ye sahip kayıtları tekrar gösterme
+      
       const seenIds = new Set();
       const seenAppTaskIds = new Set();
       const deduplicated = allCompleted.filter(t => {
         const uid = t.id || t.Id;
         const atid = t.appTaskId || t.AppTaskId;
 
-        // Önce userTask ID'sine göre kontrol
+        
         if (uid && seenIds.has(uid)) return false;
         if (uid) seenIds.add(uid);
 
-        // Sonra appTaskId'ye göre kontrol (aynı görev farklı günlerde atandıysa)
+        
         if (atid && seenAppTaskIds.has(atid)) return false;
         if (atid) seenAppTaskIds.add(atid);
 
@@ -663,27 +663,27 @@ const SocialFeedPage = () => {
     }
   };
 
-  // Paylaşımları ayrıştır
+  
   const myPosts = posts.filter(p => p.author.id === currentUserId);
   const friendsPosts = posts.filter(p => p.author.id !== currentUserId);
 
   return (
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
-        {/* Header Section */}
+        {}
         <section className="mb-10 text-center lg:text-left">
           <h2 className="text-4xl lg:text-5xl font-black text-white italic tracking-tighter mb-2">SOSYAL AKIŞ</h2>
           <div className="h-1.5 w-24 bg-indigo-600 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.6)] mx-auto lg:mx-0" />
           <p className="text-slate-500 text-sm mt-4">Toplulukla etkileşime geç, başarılarını kutla.</p>
         </section>
 
-        {/* Tab Navigation */}
+        {}
         <TabNavigator activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Tab İçeriği — conditional render ile absolute çakışma kaldırıldı */}
+        {}
         <div className="max-w-4xl mx-auto">
 
-          {/* Paylaş */}
+          {}
           {activeTab === 'create' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -699,7 +699,7 @@ const SocialFeedPage = () => {
             </div>
           )}
 
-          {/* Akış */}
+          {}
           {activeTab === 'feed' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
@@ -726,7 +726,7 @@ const SocialFeedPage = () => {
             </div>
           )}
 
-          {/* Başarılarım */}
+          {}
           {activeTab === 'mine' && (
             <div className="max-w-2xl mx-auto">
               <h3 className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-4 flex items-center gap-2">

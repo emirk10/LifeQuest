@@ -48,7 +48,7 @@ public class RefreshTokenCommandHandler : IRequestHandler<RefreshTokenCommandReq
             };
         }
 
-        // Token rotation: Generate new tokens
+        
         string newAccessToken = _tokenService.CreateToken(user);
         string newRefreshToken = _tokenService.CreateRefreshToken();
         var expiry = DateTime.UtcNow.AddDays(7);

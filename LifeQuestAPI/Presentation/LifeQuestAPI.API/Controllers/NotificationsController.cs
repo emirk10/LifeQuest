@@ -56,7 +56,7 @@ public class NotificationsController : ControllerBase
         { 
             success = true, 
             unreadCount,
-            notifications, // Düz liste de kalsın
+            notifications, 
             grouped,
             totalCount,
             page,

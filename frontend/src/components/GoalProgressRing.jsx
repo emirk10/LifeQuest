@@ -15,14 +15,14 @@ const GoalProgressRing = ({
   return (
     <div style={{ position: 'relative', width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', position: 'absolute' }}>
-        {/* Track */}
+        {}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
           fill="none"
           stroke="rgba(255,255,255,0.08)"
           strokeWidth={stroke}
         />
-        {/* Progress */}
+        {}
         <circle
           cx={size / 2} cy={size / 2} r={radius}
           fill="none"

@@ -121,7 +121,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Görevi paylaşmak için token oluştur — FEAT-001</summary>
+    
     [HttpPost("{id}/share")]
     public async Task<IActionResult> ShareTask([FromRoute] Guid id)
     {
@@ -140,7 +140,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Paylaşılan görevi görüntüle (Login gerekmez) — FEAT-001</summary>
+    
     [HttpGet("shared/{token}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetSharedTask([FromRoute] string token)
@@ -187,9 +187,9 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    // ─── SP-01: Yeni Endpoint'ler ─────────────────────────────────────────
+    
 
-    /// <summary>Bugünkü görev havuzunu getir (6 öneri, mood-duyarlı)</summary>
+    
     [HttpGet("daily-pool")]
     public async Task<IActionResult> GetDailyPool([FromQuery] int count = 6)
     {
@@ -204,7 +204,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Havuzdan görev seç (Suggested → Selected)</summary>
+    
     [HttpPost("{id}/select")]
     public async Task<IActionResult> SelectTask([FromRoute] Guid id, [FromQuery] bool forceOverLimit = false)
     {
@@ -228,7 +228,7 @@ public class UserTasksController : ControllerBase
     }
 
 
-    /// <summary>Görevi ertele</summary>
+    
     [HttpPost("{id}/postpone")]
     public async Task<IActionResult> PostponeTask([FromRoute] Guid id, [FromBody] PostponeTaskBody body)
     {
@@ -252,7 +252,7 @@ public class UserTasksController : ControllerBase
         }
     }
 
-    /// <summary>Görev ertelemesini iptal et</summary>
+    
     [HttpPost("{id}/cancel-postpone")]
     public async Task<IActionResult> CancelPostponeTask([FromRoute] Guid id)
     {
@@ -274,7 +274,7 @@ public class UserTasksController : ControllerBase
         }
     }
 
-    /// <summary>Görevi başlat</summary>
+    
     [HttpPost("{id}/start")]
     public async Task<IActionResult> StartTask([FromRoute] Guid id)
     {
@@ -289,7 +289,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Görevi duraklat</summary>
+    
     [HttpPost("{id}/pause")]
     public async Task<IActionResult> PauseTask([FromRoute] Guid id)
     {
@@ -304,7 +304,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Görevi devam ettir</summary>
+    
     [HttpPost("{id}/resume")]
     public async Task<IActionResult> ResumeTask([FromRoute] Guid id)
     {
@@ -319,7 +319,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Görevden vazgeç</summary>
+    
     [HttpPost("{id}/abandon")]
     public async Task<IActionResult> AbandonTask([FromRoute] Guid id, [FromBody] AbandonTaskBody body)
     {
@@ -335,7 +335,7 @@ public class UserTasksController : ControllerBase
         return Ok(new { success = response });
     }
 
-    /// <summary>Manuel olarak bugünün görev dağıtımını tetikle</summary>
+    
     [HttpPost("trigger-daily-quests")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TriggerDailyQuests()
@@ -344,7 +344,7 @@ public class UserTasksController : ControllerBase
         return Ok(new { success = true, message = "Günlük görev dağıtımı başarıyla manuel olarak tetiklendi." });
     }
 
-    /// <summary>Ekstra görev ve rozet seed verilerini yükle</summary>
+    
     [HttpPost("seed")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> TriggerSeed()
@@ -353,7 +353,7 @@ public class UserTasksController : ControllerBase
         return Ok(new { success = true, message = "Seed verileri başarıyla yüklendi!" });
     }
 
-    /// <summary>Tek bir görevin detayını getir</summary>
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTaskById([FromRoute] Guid id)
     {
@@ -370,7 +370,7 @@ public class UserTasksController : ControllerBase
         return Ok(response);
     }
 
-    /// <summary>Görevi iptal et</summary>
+    
     [HttpPost("{id}/cancel")]
     public async Task<IActionResult> CancelTask([FromRoute] Guid id)
     {
@@ -393,7 +393,7 @@ public class UserTasksController : ControllerBase
     }
 }
 
-// Request body record'ları
+
 public record PostponeTaskBody(DateOnly? PostponeTo, string? SkipReason);
 public record AbandonTaskBody(string? Reason);
 public record CompleteTaskBody(string? ReflectionText, List<string>? CustomTags);

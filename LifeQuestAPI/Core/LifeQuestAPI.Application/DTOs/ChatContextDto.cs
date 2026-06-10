@@ -2,19 +2,19 @@ using LifeQuestAPI.Domain.Enums;
 
 namespace LifeQuestAPI.Application.DTOs;
 
-/// <summary>SP-02: Chat için kullanıcı bağlam objesi — Python AI servisine gönderilir.</summary>
+
 public sealed record ChatContextDto
 {
     public string UserName { get; init; } = string.Empty;
-    public string Personality { get; init; } = "friendly"; // friendly | motivator | coach
+    public string Personality { get; init; } = "friendly"; 
     public List<TaskContextDto> TodayTasks { get; init; } = new();
     public int CompletedToday { get; init; }
     public int CurrentStreak { get; init; }
     public int TotalXP { get; init; }
-    public string? TodayMood { get; init; }      // "Energetic", "Tired", vb.
+    public string? TodayMood { get; init; }      
     public int AvailableMinutes { get; init; } = 30;
 
-    // Behavioral Analysis & Profile fields
+    
     public double GeneralLevel { get; init; } = 1.0;
     public string? MostSkippedCategory { get; init; }
     public string? PreferredMorningTime { get; init; }

@@ -11,7 +11,7 @@ public static class PaginationExtensions
         int pageSize, 
         CancellationToken cancellationToken = default)
     {
-        // Clamp pageSize between 1 and 100
+        
         pageSize = Math.Clamp(pageSize, 1, 100);
         pageNumber = Math.Max(pageNumber, 1);
 
